@@ -51,6 +51,16 @@ var supabase=(function(e){function t(e,t){var n={};for(var r in e)Object.prototy
 Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/auth-js: Invalid SIWE message field "resources". Every resource must be a valid string. Provided value: ${t}`);e+=`\n- ${t}`}m+=e}return`${p}\n${m}`}var Q=class extends Error{constructor({message:e,code:t,cause:n,name:r}){super(e,{cause:n}),this.__isWebAuthnError=!0,this.name=r??(n instanceof Error?n.name:void 0)??`Unknown Error`,this.code=t}toJSON(){return{name:this.name,message:this.message,code:this.code}}},Di=class extends Q{constructor(e,t){super({code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:t,message:e}),this.name=`WebAuthnUnknownError`,this.originalError=t}};function Oi({error:e,options:t}){let{publicKey:n}=t;if(!n)throw Error(`options was missing required publicKey property`);if(e.name===`AbortError`){if(t.signal instanceof AbortSignal)return new Q({message:`Registration ceremony was sent an abort signal`,code:`ERROR_CEREMONY_ABORTED`,cause:e})}else if(e.name===`ConstraintError`){if(n.authenticatorSelection?.requireResidentKey===!0)return new Q({message:`Discoverable credentials were required but no available authenticator supported it`,code:`ERROR_AUTHENTICATOR_MISSING_DISCOVERABLE_CREDENTIAL_SUPPORT`,cause:e});if(t.mediation===`conditional`&&n.authenticatorSelection?.userVerification===`required`)return new Q({message:`User verification was required during automatic registration but it could not be performed`,code:`ERROR_AUTO_REGISTER_USER_VERIFICATION_FAILURE`,cause:e});if(n.authenticatorSelection?.userVerification===`required`)return new Q({message:`User verification was required but no available authenticator supported it`,code:`ERROR_AUTHENTICATOR_MISSING_USER_VERIFICATION_SUPPORT`,cause:e})}else if(e.name===`InvalidStateError`)return new Q({message:`The authenticator was previously registered`,code:`ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED`,cause:e});else if(e.name===`NotAllowedError`)return new Q({message:e.message,code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:e});else if(e.name===`NotSupportedError`)return n.pubKeyCredParams.filter(e=>e.type===`public-key`).length===0?new Q({message:`No entry in pubKeyCredParams was of type "public-key"`,code:`ERROR_MALFORMED_PUBKEYCREDPARAMS`,cause:e}):new Q({message:`No available authenticator supported any of the specified pubKeyCredParams algorithms`,code:`ERROR_AUTHENTICATOR_NO_SUPPORTED_PUBKEYCREDPARAMS_ALG`,cause:e});else if(e.name===`SecurityError`){let t=window.location.hostname;if(Fi(t)){if(n.rp.id!==t)return new Q({message:`The RP ID "${n.rp.id}" is invalid for this domain`,code:`ERROR_INVALID_RP_ID`,cause:e})}else return new Q({message:`${window.location.hostname} is an invalid domain`,code:`ERROR_INVALID_DOMAIN`,cause:e})}else if(e.name===`TypeError`){if(n.user.id.byteLength<1||n.user.id.byteLength>64)return new Q({message:`User ID was not between 1 and 64 characters`,code:`ERROR_INVALID_USER_ID_LENGTH`,cause:e})}else if(e.name===`UnknownError`)return new Q({message:`The authenticator was unable to process the specified options, or could not create a new credential`,code:`ERROR_AUTHENTICATOR_GENERAL_ERROR`,cause:e});return new Q({message:`a Non-Webauthn related error has occurred`,code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:e})}function ki({error:e,options:t}){let{publicKey:n}=t;if(!n)throw Error(`options was missing required publicKey property`);if(e.name===`AbortError`){if(t.signal instanceof AbortSignal)return new Q({message:`Authentication ceremony was sent an abort signal`,code:`ERROR_CEREMONY_ABORTED`,cause:e})}else if(e.name===`NotAllowedError`)return new Q({message:e.message,code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:e});else if(e.name===`SecurityError`){let t=window.location.hostname;if(Fi(t)){if(n.rpId!==t)return new Q({message:`The RP ID "${n.rpId}" is invalid for this domain`,code:`ERROR_INVALID_RP_ID`,cause:e})}else return new Q({message:`${window.location.hostname} is an invalid domain`,code:`ERROR_INVALID_DOMAIN`,cause:e})}else if(e.name===`UnknownError`)return new Q({message:`The authenticator was unable to process the specified options, or could not create a new assertion signature`,code:`ERROR_AUTHENTICATOR_GENERAL_ERROR`,cause:e});return new Q({message:`a Non-Webauthn related error has occurred`,code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:e})}let Ai=new class{createNewAbortSignal(){if(this.controller){let e=Error(`Cancelling existing WebAuthn API call for new one`);e.name=`AbortError`,this.controller.abort(e)}let e=new AbortController;return this.controller=e,e.signal}cancelCeremony(){if(this.controller){let e=Error(`Manually cancelling existing WebAuthn API call`);e.name=`AbortError`,this.controller.abort(e),this.controller=void 0}}};function ji(e){if(!e)throw Error(`Credential creation options are required`);if(typeof PublicKeyCredential<`u`&&`parseCreationOptionsFromJSON`in PublicKeyCredential&&typeof PublicKeyCredential.parseCreationOptionsFromJSON==`function`)return PublicKeyCredential.parseCreationOptionsFromJSON(e);let{challenge:n,user:r,excludeCredentials:i}=e,a=t(e,[`challenge`,`user`,`excludeCredentials`]),o=Sr(n).buffer,s=Object.assign(Object.assign({},r),{id:Sr(r.id).buffer}),c=Object.assign(Object.assign({},a),{challenge:o,user:s});if(i&&i.length>0){c.excludeCredentials=Array(i.length);for(let e=0;e<i.length;e++){let t=i[e];c.excludeCredentials[e]=Object.assign(Object.assign({},t),{id:Sr(t.id).buffer,type:t.type||`public-key`,transports:t.transports})}}return c}function Mi(e){if(!e)throw Error(`Credential request options are required`);if(typeof PublicKeyCredential<`u`&&`parseRequestOptionsFromJSON`in PublicKeyCredential&&typeof PublicKeyCredential.parseRequestOptionsFromJSON==`function`)return PublicKeyCredential.parseRequestOptionsFromJSON(e);let{challenge:n,allowCredentials:r}=e,i=t(e,[`challenge`,`allowCredentials`]),a=Sr(n).buffer,o=Object.assign(Object.assign({},i),{challenge:a});if(r&&r.length>0){o.allowCredentials=Array(r.length);for(let e=0;e<r.length;e++){let t=r[e];o.allowCredentials[e]=Object.assign(Object.assign({},t),{id:Sr(t.id).buffer,type:t.type||`public-key`,transports:t.transports})}}return o}function Ni(e){if(`toJSON`in e&&typeof e.toJSON==`function`)return e.toJSON();let t=e;return{id:e.id,rawId:e.id,response:{attestationObject:z(new Uint8Array(e.response.attestationObject)),clientDataJSON:z(new Uint8Array(e.response.clientDataJSON))},type:`public-key`,clientExtensionResults:e.getClientExtensionResults(),authenticatorAttachment:t.authenticatorAttachment??void 0}}function Pi(e){if(`toJSON`in e&&typeof e.toJSON==`function`)return e.toJSON();let t=e,n=e.getClientExtensionResults(),r=e.response;return{id:e.id,rawId:e.id,response:{authenticatorData:z(new Uint8Array(r.authenticatorData)),clientDataJSON:z(new Uint8Array(r.clientDataJSON)),signature:z(new Uint8Array(r.signature)),userHandle:r.userHandle?z(new Uint8Array(r.userHandle)):void 0},type:`public-key`,clientExtensionResults:n,authenticatorAttachment:t.authenticatorAttachment??void 0}}function Fi(e){return e===`localhost`||/^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i.test(e)}function Ii(){return!!(B()&&`PublicKeyCredential`in window&&window.PublicKeyCredential&&`credentials`in navigator&&typeof(navigator==null?void 0:navigator.credentials)?.create==`function`&&typeof(navigator==null?void 0:navigator.credentials)?.get==`function`)}async function Li(e){try{let t=await navigator.credentials.create(e);return t?t instanceof PublicKeyCredential?{data:t,error:null}:{data:null,error:new Di(`Browser returned unexpected credential type`,t)}:{data:null,error:new Di(`Empty credential response`,t)}}catch(t){return{data:null,error:Oi({error:t,options:e})}}}async function Ri(e){try{let t=await navigator.credentials.get(e);return t?t instanceof PublicKeyCredential?{data:t,error:null}:{data:null,error:new Di(`Browser returned unexpected credential type`,t)}:{data:null,error:new Di(`Empty credential response`,t)}}catch(t){return{data:null,error:ki({error:t,options:e})}}}let zi={hints:[`security-key`],authenticatorSelection:{authenticatorAttachment:`cross-platform`,requireResidentKey:!1,userVerification:`preferred`,residentKey:`discouraged`},attestation:`direct`},Bi={userVerification:`preferred`,hints:[`security-key`],attestation:`direct`};function Vi(...e){let t=e=>typeof e==`object`&&!!e&&!Array.isArray(e),n=e=>e instanceof ArrayBuffer||ArrayBuffer.isView(e),r={};for(let i of e)if(i)for(let e in i){let a=i[e];if(a!==void 0)if(Array.isArray(a))r[e]=a;else if(n(a))r[e]=a;else if(t(a)){let n=r[e];t(n)?r[e]=Vi(n,a):r[e]=Vi(a)}else r[e]=a}return r}function Hi(e,t){return Vi(zi,e,t||{})}function Ui(e,t){return Vi(Bi,e,t||{})}var Wi=class{constructor(e){this.client=e,this.enroll=this._enroll.bind(this),this.challenge=this._challenge.bind(this),this.verify=this._verify.bind(this),this.authenticate=this._authenticate.bind(this),this.register=this._register.bind(this)}async _enroll(e){return this.client.mfa.enroll(Object.assign(Object.assign({},e),{factorType:`webauthn`}))}async _challenge({factorId:e,webauthn:t,friendlyName:n,signal:r},i){try{let{data:a,error:o}=await this.client.mfa.challenge({factorId:e,webauthn:t});if(!a)return{data:null,error:o};let s=r??Ai.createNewAbortSignal();if(a.webauthn.type===`create`){let{user:e}=a.webauthn.credential_options.publicKey;if(!e.name){let t=n;if(t)e.name=`${e.id}:${t}`;else{let t=(await this.client.getUser()).data.user,n=t?.user_metadata?.name||t?.email||t?.id||`User`;e.name=`${e.id}:${n}`}}e.displayName||=e.name}switch(a.webauthn.type){case`create`:{let{data:t,error:n}=await Li({publicKey:Hi(a.webauthn.credential_options.publicKey,i?.create),signal:s});return t?{data:{factorId:e,challengeId:a.id,webauthn:{type:a.webauthn.type,credential_response:t}},error:null}:{data:null,error:n}}case`request`:{let t=Ui(a.webauthn.credential_options.publicKey,i?.request),{data:n,error:r}=await Ri(Object.assign(Object.assign({},a.webauthn.credential_options),{publicKey:t,signal:s}));return n?{data:{factorId:e,challengeId:a.id,webauthn:{type:a.webauthn.type,credential_response:n}},error:null}:{data:null,error:r}}}}catch(e){return P(e)?{data:null,error:e}:{data:null,error:new F(`Unexpected error in challenge`,e)}}}async _verify({challengeId:e,factorId:t,webauthn:n}){return this.client.mfa.verify({factorId:t,challengeId:e,webauthn:n})}async _authenticate({factorId:e,webauthn:{rpId:t=typeof window<`u`?window.location.hostname:void 0,rpOrigins:n=typeof window<`u`?[window.location.origin]:void 0,signal:r}={}},i){if(!t)return{data:null,error:new Xn(`rpId is required for WebAuthn authentication`)};try{if(!Ii())return{data:null,error:new F(`Browser does not support WebAuthn`,null)};let{data:a,error:o}=await this.challenge({factorId:e,webauthn:{rpId:t,rpOrigins:n},signal:r},{request:i});if(!a)return{data:null,error:o};let{webauthn:s}=a;return this._verify({factorId:e,challengeId:a.challengeId,webauthn:{type:s.type,rpId:t,rpOrigins:n,credential_response:s.credential_response}})}catch(e){return P(e)?{data:null,error:e}:{data:null,error:new F(`Unexpected error in authenticate`,e)}}}async _register({friendlyName:e,webauthn:{rpId:t=typeof window<`u`?window.location.hostname:void 0,rpOrigins:n=typeof window<`u`?[window.location.origin]:void 0,signal:r}={}},i){if(!t)return{data:null,error:new Xn(`rpId is required for WebAuthn registration`)};try{if(!Ii())return{data:null,error:new F(`Browser does not support WebAuthn`,null)};let{data:a,error:o}=await this._enroll({friendlyName:e});if(!a)return await this.client.mfa.listFactors().then(t=>t.data?.all.find(t=>t.factor_type===`webauthn`&&t.friendly_name===e&&t.status===`unverified`)).then(e=>e?this.client.mfa.unenroll({factorId:e?.id}):void 0),{data:null,error:o};let{data:s,error:c}=await this._challenge({factorId:a.id,friendlyName:a.friendly_name,webauthn:{rpId:t,rpOrigins:n},signal:r},{create:i});return s?this._verify({factorId:a.id,challengeId:s.challengeId,webauthn:{rpId:t,rpOrigins:n,type:s.webauthn.type,credential_response:s.webauthn.credential_response}}):{data:null,error:c}}catch(e){return P(e)?{data:null,error:e}:{data:null,error:new F(`Unexpected error in register`,e)}}}};Si();let Gi={url:`http://localhost:9999`,storageKey:`supabase.auth.token`,autoRefreshToken:!0,persistSession:!0,detectSessionInUrl:!0,headers:Kn,flowType:`implicit`,debug:!1,hasCustomAuthorizationHeader:!1,throwOnError:!1,lockAcquireTimeout:5e3,skipAutoInitialize:!1,experimental:{}},$={},Ki=!1;var qi=class e{get jwks(){return $[this.storageKey]?.jwks??{keys:[]}}set jwks(e){$[this.storageKey]=Object.assign(Object.assign({},$[this.storageKey]),{jwks:e})}get jwks_cached_at(){return $[this.storageKey]?.cachedAt??-(2**53-1)}set jwks_cached_at(e){$[this.storageKey]=Object.assign(Object.assign({},$[this.storageKey]),{cachedAt:e})}constructor(t){var n;this.userStorage=null,this.memoryStorage=null,this.stateChangeEmitters=new Map,this.autoRefreshTicker=null,this.autoRefreshTickTimeout=null,this.visibilityChangedCallback=null,this.refreshingDeferred=null,this.lastRefreshFailure=null,this._sessionRemovalEpoch=0,this.initializePromise=null,this._pendingInitNotifications=null,this.detectSessionInUrl=!0,this.hasCustomAuthorizationHeader=!1,this.suppressGetSessionWarning=!1,this.lock=null,this.lockAcquired=!1,this.pendingInLock=[],this.broadcastChannel=null,this.logger=console.log;let r=Object.assign(Object.assign({},Gi),t);if(this.storageKey=r.storageKey,this.instanceID=e.nextInstanceID[this.storageKey]??0,e.nextInstanceID[this.storageKey]=this.instanceID+1,this.logDebugMessages=!!r.debug,typeof r.debug==`function`&&(this.logger=r.debug),this.instanceID>0&&B()){let e=`${this._logPrefix()} Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.`;console.warn(e),this.logDebugMessages&&console.trace(e)}if(this.persistSession=r.persistSession,this.autoRefreshToken=r.autoRefreshToken,this.experimental=r.experimental??{},this.admin=new mi({url:r.url,headers:r.headers,fetch:r.fetch,experimental:this.experimental}),this.url=r.url,this.headers=r.headers,this.fetch=Or(r.fetch),this.detectSessionInUrl=r.detectSessionInUrl,this.flowType=r.flowType,this.hasCustomAuthorizationHeader=r.hasCustomAuthorizationHeader,this.throwOnError=r.throwOnError,this.lockAcquireTimeout=r.lockAcquireTimeout,r.lock!=null&&(this.lock=r.lock,Ki||(Ki=!0,console.warn(`${this._logPrefix()} The "lock" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md`))),this.jwks||(this.jwks={keys:[]},this.jwks_cached_at=-(2**53-1)),this.mfa={verify:this._verify.bind(this),enroll:this._enroll.bind(this),unenroll:this._unenroll.bind(this),challenge:this._challenge.bind(this),listFactors:this._listFactors.bind(this),challengeAndVerify:this._challengeAndVerify.bind(this),getAuthenticatorAssuranceLevel:this._getAuthenticatorAssuranceLevel.bind(this),webauthn:new Wi(this),recoveryCodes:{getStatus:this._getRecoveryCodesStatus.bind(this),generate:this._generateRecoveryCodes.bind(this),verify:this._verifyRecoveryCode.bind(this),regenerate:this._regenerateRecoveryCodes.bind(this),unenroll:this._unenrollRecoveryCodes.bind(this)}},this.oauth={getAuthorizationDetails:this._getAuthorizationDetails.bind(this),approveAuthorization:this._approveAuthorization.bind(this),denyAuthorization:this._denyAuthorization.bind(this),listGrants:this._listOAuthGrants.bind(this),revokeGrant:this._revokeOAuthGrant.bind(this)},this.passkey={startRegistration:this._startPasskeyRegistration.bind(this),verifyRegistration:this._verifyPasskeyRegistration.bind(this),startAuthentication:this._startPasskeyAuthentication.bind(this),verifyAuthentication:this._verifyPasskeyAuthentication.bind(this),list:this._listPasskeys.bind(this),update:this._updatePasskey.bind(this),delete:this._deletePasskey.bind(this)},this.persistSession?(r.storage?this.storage=r.storage:Er()?this.storage=globalThis.localStorage:(this.memoryStorage={},this.storage=hi(this.memoryStorage)),r.userStorage&&(this.userStorage=r.userStorage)):(this.memoryStorage={},this.storage=hi(this.memoryStorage)),B()&&globalThis.BroadcastChannel&&this.persistSession&&this.storageKey){try{this.broadcastChannel=new globalThis.BroadcastChannel(this.storageKey)}catch(e){console.error(`Failed to create a new BroadcastChannel, multi-tab state changes will not be available`,e)}(n=this.broadcastChannel)==null||n.addEventListener(`message`,async e=>{this._debug(`received broadcast notification from other tab or client`,e),(e.data.event===`TOKEN_REFRESHED`||e.data.event===`SIGNED_IN`)&&(this.lastRefreshFailure=null);try{await this._notifyAllSubscribers(e.data.event,e.data.session,!1)}catch(e){this._debug(`#broadcastChannel`,`error`,e)}})}r.skipAutoInitialize||this.initialize().catch(e=>{this._debug(`#initialize()`,`error`,e)})}isThrowOnErrorEnabled(){return this.throwOnError}_returnResult(e){if(this.throwOnError&&e&&e.error)throw e.error;return e}_logPrefix(){return`GoTrueClient@${this.storageKey}:${this.instanceID} (${Wn}) ${new Date().toISOString()}`}_debug(...e){return this.logDebugMessages&&this.logger(this._logPrefix(),...e),this}async initialize(){if(this.initializePromise)return await this.initializePromise;this._pendingInitNotifications=[],this.initializePromise=(async()=>this.lock==null?await this._initialize():await this._acquireLock(this.lockAcquireTimeout,async()=>await this._initialize()))();let e=await this.initializePromise,t=this._pendingInitNotifications??[];this._pendingInitNotifications=null;for(let e of t)await this._notifyAllSubscribers(e.event,e.session,e.broadcast);return e}async _initialize(){try{let e={},t=`none`;if(B()&&(e=Dr(window.location.href),this._isImplicitGrantCallback(e)?t=`implicit`:await this._isPKCECallback(e)&&(t=`pkce`)),B()&&this.detectSessionInUrl&&t!==`none`){let{data:n,error:r}=await this._getSessionFromURL(e,t);if(r){if(this._debug(`#_initialize()`,`error detecting session from URL`,r),nr(r)){let e=r.details?.code;if(e===`identity_already_exists`||e===`identity_not_found`||e===`single_identity_not_deletable`)return{error:r}}return{error:r}}let{session:i,redirectType:a}=n;return this._debug(`#_initialize()`,`detected session in URL`,i,`redirect type`,a),await this._saveSession(i),setTimeout(async()=>{a===`recovery`?await this._notifyAllSubscribers(`PASSWORD_RECOVERY`,i):await this._notifyAllSubscribers(`SIGNED_IN`,i)},0),{error:null}}return await this._recoverAndRefresh(),{error:null}}catch(e){return P(e)?this._returnResult({error:e}):this._returnResult({error:new F(`Unexpected error during initialization`,e)})}finally{await this._handleVisibilityChange(),this._debug(`#_initialize()`,`end`)}}async signInAnonymously(e){try{let{data:t,error:n}=await J(this.fetch,`POST`,`${this.url}/signup`,{headers:this.headers,body:{data:e?.options?.data??{},gotrue_meta_security:{captcha_token:e?.options?.captchaToken}},xform:Y});if(n||!t)return this._returnResult({data:{user:null,session:null},error:n});let r=t.session,i=t.user;return t.session&&(await this._saveSession(t.session),await this._notifyAllSubscribers(`SIGNED_IN`,r)),this._returnResult({data:{user:i,session:r},error:null})}catch(e){if(P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signUp(e){let t=null;try{let n;if(`email`in e){let{email:r,password:i,options:a}=e,o=null,s=null;this.flowType===`pkce`&&([o,s,t]=await this._getCodeChallengeAndMethod()),n=await J(this.fetch,`POST`,`${this.url}/signup`,{headers:this.headers,redirectTo:this._maybeAppendFlowIdToRedirect(a?.emailRedirectTo,t),body:{email:r,password:i,data:a?.data??{},gotrue_meta_security:{captcha_token:a?.captchaToken},code_challenge:o,code_challenge_method:s},xform:Y})}else if(`phone`in e){let{phone:t,password:r,options:i}=e;n=await J(this.fetch,`POST`,`${this.url}/signup`,{headers:this.headers,body:{phone:t,password:r,data:i?.data??{},channel:i?.channel??`sms`,gotrue_meta_security:{captcha_token:i?.captchaToken}},xform:Y})}else throw new er(`You must provide either an email or phone number and a password`);let{data:r,error:i}=n;if(i||!r)return await G(this.storage,this.storageKey,t),this._returnResult({data:{user:null,session:null},error:i});let a=r.session,o=r.user;return r.session&&(await this._saveSession(r.session),await this._notifyAllSubscribers(`SIGNED_IN`,a)),this._returnResult({data:{user:o,session:a},error:null})}catch(e){if(await G(this.storage,this.storageKey,t),P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithPassword(e){try{let t;if(`email`in e){let{email:n,password:r,options:i}=e;t=await J(this.fetch,`POST`,`${this.url}/token?grant_type=password`,{headers:this.headers,body:{email:n,password:r,gotrue_meta_security:{captcha_token:i?.captchaToken}},xform:ci})}else if(`phone`in e){let{phone:n,password:r,options:i}=e;t=await J(this.fetch,`POST`,`${this.url}/token?grant_type=password`,{headers:this.headers,body:{phone:n,password:r,gotrue_meta_security:{captcha_token:i?.captchaToken}},xform:ci})}else throw new er(`You must provide either an email or phone number and a password`);let{data:n,error:r}=t;if(r)return this._returnResult({data:{user:null,session:null},error:r});if(!n||!n.session||!n.user){let e=new R;return this._returnResult({data:{user:null,session:null},error:e})}return n.session&&(await this._saveSession(n.session),await this._notifyAllSubscribers(`SIGNED_IN`,n.session)),this._returnResult({data:Object.assign({user:n.user,session:n.session},n.weak_password?{weakPassword:n.weak_password}:null),error:r})}catch(e){if(P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithOAuth(e){return await this._handleProviderSignIn(e.provider,{redirectTo:e.options?.redirectTo,scopes:e.options?.scopes,queryParams:e.options?.queryParams,skipBrowserRedirect:e.options?.skipBrowserRedirect})}async exchangeCodeForSession(e,t){return await this.initializePromise,this.lock==null?this._exchangeCodeForSession(e,t):this._acquireLock(this.lockAcquireTimeout,async()=>this._exchangeCodeForSession(e,t))}async signInWithWeb3(e){let{chain:t}=e;switch(t){case`ethereum`:return await this.signInWithEthereum(e);case`solana`:return await this.signInWithSolana(e);default:throw Error(`@supabase/auth-js: Unsupported chain "${t}"`)}}async signInWithEthereum(e){let t,n;if(`message`in e)t=e.message,n=e.signature;else{let{chain:r,wallet:i,statement:a,options:o}=e,s;if(B())if(typeof i==`object`)s=i;else{let e=window;if(`ethereum`in e&&typeof e.ethereum==`object`&&`request`in e.ethereum&&typeof e.ethereum.request==`function`)s=e.ethereum;else throw Error(`@supabase/auth-js: No compatible Ethereum wallet interface on the window object (window.ethereum) detected. Make sure the user already has a wallet installed and connected for this app. Prefer passing the wallet interface object directly to signInWithWeb3({ chain: 'ethereum', wallet: resolvedUserWallet }) instead.`)}else{if(typeof i!=`object`||!o?.url)throw Error(`@supabase/auth-js: Both wallet and url must be specified in non-browser environments.`);s=i}let c=new URL(o?.url??window.location.href),l=await s.request({method:`eth_requestAccounts`}).then(e=>e).catch(()=>{throw Error(`@supabase/auth-js: Wallet method eth_requestAccounts is missing or invalid`)});if(!l||l.length===0)throw Error(`@supabase/auth-js: No accounts available. Please ensure the wallet is connected.`);let u=Ci(l[0]),d=o?.signInWithEthereum?.chainId;d||=wi(await s.request({method:`eth_chainId`})),t=Ei({domain:c.host,address:u,statement:a,uri:c.href,version:`1`,chainId:d,nonce:o?.signInWithEthereum?.nonce,issuedAt:o?.signInWithEthereum?.issuedAt??new Date,expirationTime:o?.signInWithEthereum?.expirationTime,notBefore:o?.signInWithEthereum?.notBefore,requestId:o?.signInWithEthereum?.requestId,resources:o?.signInWithEthereum?.resources}),n=await s.request({method:`personal_sign`,params:[Ti(t),u]})}try{let{data:r,error:i}=await J(this.fetch,`POST`,`${this.url}/token?grant_type=web3`,{headers:this.headers,body:Object.assign({chain:`ethereum`,message:t,signature:n},e.options?.captchaToken?{gotrue_meta_security:{captcha_token:e.options?.captchaToken}}:null),xform:Y});if(i)throw i;if(!r||!r.session||!r.user){let e=new R;return this._returnResult({data:{user:null,session:null},error:e})}return r.session&&(await this._saveSession(r.session),await this._notifyAllSubscribers(`SIGNED_IN`,r.session)),this._returnResult({data:Object.assign({},r),error:i})}catch(e){if(P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithSolana(e){let t,n;if(`message`in e)t=e.message,n=e.signature;else{let{chain:r,wallet:i,statement:a,options:o}=e,s;if(B())if(typeof i==`object`)s=i;else{let e=window;if(`solana`in e&&typeof e.solana==`object`&&(`signIn`in e.solana&&typeof e.solana.signIn==`function`||`signMessage`in e.solana&&typeof e.solana.signMessage==`function`))s=e.solana;else throw Error(`@supabase/auth-js: No compatible Solana wallet interface on the window object (window.solana) detected. Make sure the user already has a wallet installed and connected for this app. Prefer passing the wallet interface object directly to signInWithWeb3({ chain: 'solana', wallet: resolvedUserWallet }) instead.`)}else{if(typeof i!=`object`||!o?.url)throw Error(`@supabase/auth-js: Both wallet and url must be specified in non-browser environments.`);s=i}let c=new URL(o?.url??window.location.href);if(`signIn`in s&&s.signIn){let e=await s.signIn(Object.assign(Object.assign(Object.assign({issuedAt:new Date().toISOString()},o?.signInWithSolana),{version:`1`,domain:c.host,uri:c.href}),a?{statement:a}:null)),r;if(Array.isArray(e)&&e[0]&&typeof e[0]==`object`)r=e[0];else if(e&&typeof e==`object`&&`signedMessage`in e&&`signature`in e)r=e;else throw Error(`@supabase/auth-js: Wallet method signIn() returned unrecognized value`);if(`signedMessage`in r&&`signature`in r&&(typeof r.signedMessage==`string`||r.signedMessage instanceof Uint8Array)&&r.signature instanceof Uint8Array)t=typeof r.signedMessage==`string`?r.signedMessage:new TextDecoder().decode(r.signedMessage),n=r.signature;else throw Error(`@supabase/auth-js: Wallet method signIn() API returned object without signedMessage and signature fields`)}else{if(!(`signMessage`in s)||typeof s.signMessage!=`function`||!(`publicKey`in s)||typeof s!=`object`||!s.publicKey||!(`toBase58`in s.publicKey)||typeof s.publicKey.toBase58!=`function`)throw Error(`@supabase/auth-js: Wallet does not have a compatible signMessage() and publicKey.toBase58() API`);t=[`${c.host} wants you to sign in with your Solana account:`,s.publicKey.toBase58(),...a?[``,a,``]:[``],`Version: 1`,`URI: ${c.href}`,`Issued At: ${o?.signInWithSolana?.issuedAt??new Date().toISOString()}`,...o?.signInWithSolana?.notBefore?[`Not Before: ${o.signInWithSolana.notBefore}`]:[],...o?.signInWithSolana?.expirationTime?[`Expiration Time: ${o.signInWithSolana.expirationTime}`]:[],...o?.signInWithSolana?.chainId?[`Chain ID: ${o.signInWithSolana.chainId}`]:[],...o?.signInWithSolana?.nonce?[`Nonce: ${o.signInWithSolana.nonce}`]:[],...o?.signInWithSolana?.requestId?[`Request ID: ${o.signInWithSolana.requestId}`]:[],...o?.signInWithSolana?.resources?.length?[`Resources`,...o.signInWithSolana.resources.map(e=>`- ${e}`)]:[]].join(`
 `);let e=await s.signMessage(new TextEncoder().encode(t),`utf8`);if(!e||!(e instanceof Uint8Array))throw Error(`@supabase/auth-js: Wallet signMessage() API returned an recognized value`);n=e}}try{let{data:r,error:i}=await J(this.fetch,`POST`,`${this.url}/token?grant_type=web3`,{headers:this.headers,body:Object.assign({chain:`solana`,message:t,signature:z(n)},e.options?.captchaToken?{gotrue_meta_security:{captcha_token:e.options?.captchaToken}}:null),xform:Y});if(i)throw i;if(!r||!r.session||!r.user){let e=new R;return this._returnResult({data:{user:null,session:null},error:e})}return r.session&&(await this._saveSession(r.session),await this._notifyAllSubscribers(`SIGNED_IN`,r.session)),this._returnResult({data:Object.assign({},r),error:i})}catch(e){if(P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async _exchangeCodeForSession(e,t){let n=t?.flowId!=null,r=n?zr(t?.flowId):B()?zr(Dr(window.location.href)[N]):null;n&&!r&&this._debug(`#_exchangeCodeForSession()`,`provided flowId is not a valid flow id`,t?.flowId);let{verifier:i,flowId:a}=n&&!r?{verifier:null,flowId:null}:await Gr(this.storage,this.storageKey,r),[o,s]=(i??``).split(`/`);try{if(!o&&this.flowType===`pkce`)throw new ir;let{data:t,error:n}=await J(this.fetch,`POST`,`${this.url}/token?grant_type=pkce`,{headers:this.headers,body:{auth_code:e,code_verifier:o},xform:Y});if(await G(this.storage,this.storageKey,a),n)throw n;if(!t||!t.session||!t.user){let e=new R;return this._returnResult({data:{user:null,session:null,redirectType:null},error:e})}return t.session&&(await this._saveSession(t.session),await this._notifyAllSubscribers(s===`recovery`?`PASSWORD_RECOVERY`:`SIGNED_IN`,t.session)),this._returnResult({data:Object.assign(Object.assign({},t),{redirectType:s??null}),error:n})}catch(e){if(await G(this.storage,this.storageKey,a),P(e))return this._returnResult({data:{user:null,session:null,redirectType:null},error:e});throw e}}async signInWithIdToken(e){try{let{options:t,provider:n,token:r,access_token:i,nonce:a}=e,{data:o,error:s}=await J(this.fetch,`POST`,`${this.url}/token?grant_type=id_token`,{headers:this.headers,body:{provider:n,id_token:r,access_token:i,nonce:a,gotrue_meta_security:{captcha_token:t?.captchaToken}},xform:Y});if(s)return this._returnResult({data:{user:null,session:null},error:s});if(!o||!o.session||!o.user){let e=new R;return this._returnResult({data:{user:null,session:null},error:e})}return o.session&&(await this._saveSession(o.session),await this._notifyAllSubscribers(`SIGNED_IN`,o.session)),this._returnResult({data:o,error:s})}catch(e){if(P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithOtp(e){let t=null;try{if(`email`in e){let{email:n,options:r}=e,i=null,a=null;this.flowType===`pkce`&&([i,a,t]=await this._getCodeChallengeAndMethod());let{error:o}=await J(this.fetch,`POST`,`${this.url}/otp`,{headers:this.headers,body:{email:n,data:r?.data??{},create_user:r?.shouldCreateUser??!0,gotrue_meta_security:{captcha_token:r?.captchaToken},code_challenge:i,code_challenge_method:a},redirectTo:this._maybeAppendFlowIdToRedirect(r?.emailRedirectTo,t)});return this._returnResult({data:{user:null,session:null},error:o})}if(`phone`in e){let{phone:t,options:n}=e,{data:r,error:i}=await J(this.fetch,`POST`,`${this.url}/otp`,{headers:this.headers,body:{phone:t,data:n?.data??{},create_user:n?.shouldCreateUser??!0,gotrue_meta_security:{captcha_token:n?.captchaToken},channel:n?.channel??`sms`}});return this._returnResult({data:{user:null,session:null,messageId:r?.message_id},error:i})}throw new er(`You must provide either an email or phone number.`)}catch(e){if(await G(this.storage,this.storageKey,t),P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async verifyOtp(e){try{let t,n;`options`in e&&(t=e.options?.redirectTo,n=e.options?.captchaToken);let{data:r,error:i}=await J(this.fetch,`POST`,`${this.url}/verify`,{headers:this.headers,body:Object.assign(Object.assign({},e),{gotrue_meta_security:{captcha_token:n}}),redirectTo:t,xform:Y});if(i)throw i;if(!r)throw Error(`An error occurred on token verification.`);let a=r.session,o=r.user;return a?.access_token&&(await this._saveSession(a),await this._notifyAllSubscribers(e.type==`recovery`?`PASSWORD_RECOVERY`:`SIGNED_IN`,a)),this._returnResult({data:{user:o,session:a},error:null})}catch(e){if(P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithSSO(e){let t=null;try{let n=null,r=null;this.flowType===`pkce`&&([n,r,t]=await this._getCodeChallengeAndMethod());let i=await J(this.fetch,`POST`,`${this.url}/sso`,{body:Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({},`providerId`in e?{provider_id:e.providerId}:null),`domain`in e?{domain:e.domain}:null),{redirect_to:this._maybeAppendFlowIdToRedirect(e.options?.redirectTo,t)}),e?.options?.captchaToken?{gotrue_meta_security:{captcha_token:e.options.captchaToken}}:null),{skip_http_redirect:!0,code_challenge:n,code_challenge_method:r}),headers:this.headers,xform:li});return i.data?.url&&B()&&!e.options?.skipBrowserRedirect&&window.location.assign(i.data.url),this._returnResult(i)}catch(e){if(await G(this.storage,this.storageKey,t),P(e))return this._returnResult({data:null,error:e});throw e}}async reauthenticate(){return await this.initializePromise,this.lock==null?await this._reauthenticate():await this._acquireLock(this.lockAcquireTimeout,async()=>await this._reauthenticate())}async _reauthenticate(){try{return await this._useSession(async e=>{let{data:{session:t},error:n}=e;if(n)throw n;if(!t)throw new L;let{error:r}=await J(this.fetch,`GET`,`${this.url}/reauthenticate`,{headers:this.headers,jwt:t.access_token});return this._returnResult({data:{user:null,session:null},error:r})})}catch(e){if(P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async resend(e){let t=null;try{let n=`${this.url}/resend`;if(`email`in e){let{email:r,type:i,options:a}=e,o=null,s=null;this.flowType===`pkce`&&([o,s,t]=await this._getCodeChallengeAndMethod());let{error:c}=await J(this.fetch,`POST`,n,{headers:this.headers,body:{email:r,type:i,gotrue_meta_security:{captcha_token:a?.captchaToken},code_challenge:o,code_challenge_method:s},redirectTo:this._maybeAppendFlowIdToRedirect(a?.emailRedirectTo,t)});return c&&await G(this.storage,this.storageKey,t),this._returnResult({data:{user:null,session:null},error:c})}else if(`phone`in e){let{phone:t,type:r,options:i}=e,{data:a,error:o}=await J(this.fetch,`POST`,n,{headers:this.headers,body:{phone:t,type:r,gotrue_meta_security:{captcha_token:i?.captchaToken}}});return this._returnResult({data:{user:null,session:null,messageId:a?.message_id},error:o})}throw new er(`You must provide either an email or phone number and a type`)}catch(e){if(await G(this.storage,this.storageKey,t),P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async getSession(){return await this.initializePromise,this.lock==null?await this._useSession(async e=>e):await this._acquireLock(this.lockAcquireTimeout,async()=>this._useSession(async e=>e))}async _acquireLock(e,t){this._debug(`#_acquireLock`,`begin`,e);try{if(this.lockAcquired){let e=this.pendingInLock.length?this.pendingInLock[this.pendingInLock.length-1]:Promise.resolve(),n=(async()=>(await e,await t()))();return this.pendingInLock.push((async()=>{try{await n}catch{}})()),n}return await this.lock(`lock:${this.storageKey}`,e,async()=>{this._debug(`#_acquireLock`,`lock acquired for storage key`,this.storageKey);try{this.lockAcquired=!0;let e=t();for(this.pendingInLock.push((async()=>{try{await e}catch{}})()),await e;this.pendingInLock.length;){let e=[...this.pendingInLock];await Promise.all(e),this.pendingInLock.splice(0,e.length)}return await e}finally{this._debug(`#_acquireLock`,`lock released for storage key`,this.storageKey),this.lockAcquired=!1}})}finally{this._debug(`#_acquireLock`,`end`)}}async _useSession(e){this._debug(`#_useSession`,`begin`);try{return await e(await this.__loadSession())}finally{this._debug(`#_useSession`,`end`)}}async __loadSession(){this._debug(`#__loadSession()`,`begin`),this.lock!=null&&!this.lockAcquired&&this._debug(`#__loadSession()`,`used outside of an acquired lock!`,Error().stack);try{let e=null,t=await U(this.storage,this.storageKey);if(this._debug(`#getSession()`,`session from storage`,t),t!==null&&(this._isValidSession(t)?e=t:(this._debug(`#getSession()`,`session from storage is not valid`),await this._removeSession())),!e)return{data:{session:null},error:null};let n=e.expires_at?e.expires_at*1e3-Date.now()<Gn:!1;if(this._debug(`#__loadSession()`,`session has${n?``:` not`} expired`,`expires_at`,e.expires_at),!n){if(this.userStorage){let t=await U(this.userStorage,this.storageKey+`-user`);t?.user?e.user=t.user:e.user=ti()}if(this.storage.isServer&&e.user&&!e.user.__isUserNotAvailableProxy){let t={value:this.suppressGetSessionWarning};e.user=ni(e.user,t),t.value&&(this.suppressGetSessionWarning=!0)}return{data:{session:e},error:null}}let{data:r,error:i}=await this._callRefreshToken(e.refresh_token);if(i){if(e.expires_at&&e.expires_at*1e3>Date.now()){let t=await U(this.storage,this.storageKey);if(t&&t.refresh_token===e.refresh_token)return this._returnResult({data:{session:e},error:null})}return this._returnResult({data:{session:null},error:i})}return this._returnResult({data:{session:r},error:null})}finally{this._debug(`#__loadSession()`,`end`)}}async getUser(e){if(e)return await this._getUser(e);await this.initializePromise;let t;return t=this.lock==null?await this._getUser():await this._acquireLock(this.lockAcquireTimeout,async()=>await this._getUser()),t.data.user&&(this.suppressGetSessionWarning=!0),t}async _getUser(e){try{return e?await J(this.fetch,`GET`,`${this.url}/user`,{headers:this.headers,jwt:e,xform:X}):await this._useSession(async e=>{let{data:t,error:n}=e;if(n)throw n;return!t.session?.access_token&&!this.hasCustomAuthorizationHeader?{data:{user:null},error:new L}:await J(this.fetch,`GET`,`${this.url}/user`,{headers:this.headers,jwt:t.session?.access_token??void 0,xform:X})})}catch(e){if(P(e))return $n(e)&&await this._removeSession(),this._returnResult({data:{user:null},error:e});throw e}}async updateUser(e,t={}){return await this.initializePromise,this.lock==null?await this._updateUser(e,t):await this._acquireLock(this.lockAcquireTimeout,async()=>await this._updateUser(e,t))}async _updateUser(e,t={}){let n=null;try{return await this._useSession(async r=>{let{data:i,error:a}=r;if(a)throw a;if(!i.session)throw new L;let o=i.session,s=null,c=null;this.flowType===`pkce`&&e.email!=null&&([s,c,n]=await this._getCodeChallengeAndMethod());let{data:l,error:u}=await J(this.fetch,`PUT`,`${this.url}/user`,{headers:this.headers,redirectTo:this._maybeAppendFlowIdToRedirect(t?.emailRedirectTo,n),body:Object.assign(Object.assign({},e),{code_challenge:s,code_challenge_method:c}),jwt:o.access_token,xform:X});if(u)throw u;return o.user=l.user,await this._saveSession(o),await this._notifyAllSubscribers(`USER_UPDATED`,o),this._returnResult({data:{user:o.user},error:null})})}catch(e){if(await G(this.storage,this.storageKey,n),P(e))return this._returnResult({data:{user:null},error:e});throw e}}async setSession(e){return await this.initializePromise,this.lock==null?await this._setSession(e):await this._acquireLock(this.lockAcquireTimeout,async()=>await this._setSession(e))}async _setSession(e){try{if(!e.access_token||!e.refresh_token)throw new L;let t=Date.now()/1e3,n=t,r=!0,i=null,{payload:a}=jr(e.access_token);if(a.exp&&(n=a.exp,r=n<=t),r){let{data:t,error:n}=await this._callRefreshToken(e.refresh_token);if(n)return this._returnResult({data:{user:null,session:null},error:n});if(!t)return{data:{user:null,session:null},error:null};i=t}else{let{data:r,error:a}=await this._getUser(e.access_token);if(a)return this._returnResult({data:{user:null,session:null},error:a});i={access_token:e.access_token,refresh_token:e.refresh_token,user:r.user,token_type:`bearer`,expires_in:n-t,expires_at:n},await this._saveSession(i),await this._notifyAllSubscribers(`SIGNED_IN`,i)}return this._returnResult({data:{user:i.user,session:i},error:null})}catch(e){if(P(e))return this._returnResult({data:{session:null,user:null},error:e});throw e}}async refreshSession(e){return await this.initializePromise,this.lock==null?await this._refreshSession(e):await this._acquireLock(this.lockAcquireTimeout,async()=>await this._refreshSession(e))}async _refreshSession(e){try{return await this._useSession(async t=>{if(!e){let{data:n,error:r}=t;if(r)throw r;e=n.session??void 0}if(!e?.refresh_token)throw new L;let{data:n,error:r}=await this._callRefreshToken(e.refresh_token);return r?this._returnResult({data:{user:null,session:null},error:r}):n?this._returnResult({data:{user:n.user,session:n},error:null}):this._returnResult({data:{user:null,session:null},error:null})})}catch(e){if(P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async _getSessionFromURL(e,t){try{if(!B())throw new tr(`No browser detected.`);if(e.error||e.error_description||e.error_code)throw new tr(e.error_description||`Error in URL with unspecified error_description`,{error:e.error||`unspecified_error`,code:e.error_code||`unspecified_code`});switch(t){case`implicit`:if(this.flowType===`pkce`)throw new rr(`Not a valid PKCE flow url.`);break;case`pkce`:if(this.flowType===`implicit`)throw new tr(`Not a valid implicit grant flow url.`);break;default:}if(t===`pkce`){if(this._debug(`#_initialize()`,`begin`,`is PKCE flow`,!0),!e.code)throw new rr(`No code detected.`);let{data:t,error:n}=await this._exchangeCodeForSession(e.code,{flowId:e[N]});if(n)throw n;let r=new URL(window.location.href);return r.searchParams.delete(`code`),r.searchParams.delete(N),window.history.replaceState(window.history.state,``,r.toString()),{data:{session:t.session,redirectType:t.redirectType??null},error:null}}let{provider_token:n,provider_refresh_token:r,access_token:i,refresh_token:a,expires_in:o,expires_at:s,token_type:c}=e;if(!i||!o||!a||!c)throw new tr(`No session defined in URL`);let l=Math.round(Date.now()/1e3),u=parseInt(o),d=l+u;s&&(d=parseInt(s));let f=d-l;f*1e3<=M&&console.warn(`@supabase/gotrue-js: Session as retrieved from URL expires in ${f}s, should have been closer to ${u}s`);let p=d-u;l-p>=120?console.warn(`@supabase/gotrue-js: Session as retrieved from URL was issued over 120s ago, URL could be stale`,p,d,l):l-p<0&&console.warn(`@supabase/gotrue-js: Session as retrieved from URL was issued in the future? Check the device clock for skew`,p,d,l);let{data:m,error:h}=await this._getUser(i);if(h)throw h;let g={provider_token:n,provider_refresh_token:r,access_token:i,expires_in:u,expires_at:d,refresh_token:a,token_type:c,user:m.user};return window.location.hash=``,this._debug(`#_getSessionFromURL()`,`clearing window.location.hash`),this._returnResult({data:{session:g,redirectType:e.type},error:null})}catch(e){if(P(e))return this._returnResult({data:{session:null,redirectType:null},error:e});throw e}}_isImplicitGrantCallback(e){return typeof this.detectSessionInUrl==`function`?this.detectSessionInUrl(new URL(window.location.href),e):!!(e.access_token||e.error||e.error_description||e.error_code)}async _isPKCECallback(e){if(!e.code)return!1;let t=zr(e[N]);return t&&await U(this.storage,Vr(this.storageKey,t))?!0:!!await U(this.storage,`${this.storageKey}-code-verifier`)}async signOut(e={scope:`global`}){return await this.initializePromise,this.lock==null?await this._signOut(e):await this._acquireLock(this.lockAcquireTimeout,async()=>await this._signOut(e))}async _signOut({scope:e}={scope:`global`}){return await this._useSession(async t=>{let n=async()=>{await this._removeSession()},{data:r,error:i}=t;if(i&&!$n(i))return this._returnResult({error:i});let a=r.session?.access_token;if(a){let{error:t}=await this.admin.signOut(a,e);if(t&&!(Qn(t)&&(t.status===404||t.status===401||t.status===403)||$n(t)))return e!==`others`&&await n(),this._returnResult({error:t})}return e!==`others`&&await n(),this._returnResult({error:null})})}onAuthStateChange(e){let t=Tr(),n={id:t,callback:e,unsubscribe:()=>{this._debug(`#unsubscribe()`,`state change callback with id removed`,t),this.stateChangeEmitters.delete(t)}};return this._debug(`#onAuthStateChange()`,`registered callback with id`,t),this.stateChangeEmitters.set(t,n),(async()=>{await this.initializePromise,this.lock==null?await this._emitInitialSession(t):await this._acquireLock(this.lockAcquireTimeout,async()=>{this._emitInitialSession(t)})})(),{data:{subscription:n}}}async _emitInitialSession(e){return await this._useSession(async t=>{try{let{data:{session:n},error:r}=t;if(r)throw r;await this.stateChangeEmitters.get(e)?.callback(`INITIAL_SESSION`,n),this._debug(`INITIAL_SESSION`,`callback id`,e,`session`,n)}catch(t){if(await this.stateChangeEmitters.get(e)?.callback(`INITIAL_SESSION`,null),this._debug(`INITIAL_SESSION`,`callback id`,e,`error`,t),lr(t))return;$n(t)||sr(t)||Qn(t)&&(t.code===`refresh_token_not_found`||t.code===`refresh_token_already_used`||t.code===`session_expired`)?console.warn(t):console.error(t)}})}async resetPasswordForEmail(e,t={}){let n=null,r=null,i=null;this.flowType===`pkce`&&([n,r,i]=await this._getCodeChallengeAndMethod(!0));try{return await J(this.fetch,`POST`,`${this.url}/recover`,{body:{email:e,code_challenge:n,code_challenge_method:r,gotrue_meta_security:{captcha_token:t.captchaToken}},headers:this.headers,redirectTo:this._maybeAppendFlowIdToRedirect(t.redirectTo,i)})}catch(e){if(await G(this.storage,this.storageKey,i),P(e))return this._returnResult({data:null,error:e});throw e}}async getUserIdentities(){try{let{data:e,error:t}=await this.getUser();if(t)throw t;return this._returnResult({data:{identities:e.user.identities??[]},error:null})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async linkIdentity(e){return`token`in e?this.linkIdentityIdToken(e):this.linkIdentityOAuth(e)}async linkIdentityOAuth(e){let t=null;try{let{data:n,error:r}=await this._useSession(async n=>{let{data:r,error:i}=n;if(i)throw i;let{url:a,flowId:o}=await this._getUrlForProvider(`${this.url}/user/identities/authorize`,e.provider,{redirectTo:e.options?.redirectTo,scopes:e.options?.scopes,queryParams:e.options?.queryParams,skipBrowserRedirect:!0});return t=o,await J(this.fetch,`GET`,a,{headers:this.headers,jwt:r.session?.access_token??void 0})});if(r)throw r;return B()&&!e.options?.skipBrowserRedirect&&window.location.assign(n?.url),this._returnResult({data:{provider:e.provider,url:n?.url,flowId:t},error:null})}catch(n){if(P(n))return this._returnResult({data:{provider:e.provider,url:null,flowId:t},error:n});throw n}}async linkIdentityIdToken(e){return await this._useSession(async t=>{try{let{error:n,data:{session:r}}=t;if(n)throw n;let{options:i,provider:a,token:o,access_token:s,nonce:c}=e,{data:l,error:u}=await J(this.fetch,`POST`,`${this.url}/token?grant_type=id_token`,{headers:this.headers,jwt:r?.access_token??void 0,body:{provider:a,id_token:o,access_token:s,nonce:c,link_identity:!0,gotrue_meta_security:{captcha_token:i?.captchaToken}},xform:Y});return u?this._returnResult({data:{user:null,session:null},error:u}):!l||!l.session||!l.user?this._returnResult({data:{user:null,session:null},error:new R}):(l.session&&(await this._saveSession(l.session),await this._notifyAllSubscribers(`USER_UPDATED`,l.session)),this._returnResult({data:l,error:u}))}catch(e){if(await G(this.storage,this.storageKey,null),P(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}})}async unlinkIdentity(e){try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)throw r;return await J(this.fetch,`DELETE`,`${this.url}/user/identities/${e.identity_id}`,{headers:this.headers,jwt:n.session?.access_token??void 0})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _refreshAccessToken(e){let t=`#_refreshAccessToken()`;this._debug(t,`begin`);try{let n=Date.now();return await Nr(async n=>(n>0&&await Mr(200*2**(n-1)),this._debug(t,`refreshing attempt`,n),await J(this.fetch,`POST`,`${this.url}/token?grant_type=refresh_token`,{body:{refresh_token:e},headers:this.headers,xform:Y})),(e,t)=>{let r=200*2**e;return t&&sr(t)&&Date.now()+r-n<M})}catch(e){if(this._debug(t,`error`,e),P(e))return this._returnResult({data:{session:null,user:null},error:e});throw e}finally{this._debug(t,`end`)}}_isValidSession(e){return typeof e==`object`&&!!e&&`access_token`in e&&`refresh_token`in e&&`expires_at`in e}async _handleProviderSignIn(e,t){let{url:n,flowId:r}=await this._getUrlForProvider(`${this.url}/authorize`,e,{redirectTo:t.redirectTo,scopes:t.scopes,queryParams:t.queryParams});return this._debug(`#_handleProviderSignIn()`,`provider`,e,`options`,t,`url`,n),B()&&!t.skipBrowserRedirect&&window.location.assign(n),{data:{provider:e,url:n,flowId:r},error:null}}async _recoverAndRefresh(){let e=`#_recoverAndRefresh()`;this._debug(e,`begin`);try{let t=await U(this.storage,this.storageKey);if(t&&this.userStorage){let e=await U(this.userStorage,this.storageKey+`-user`);!this.storage.isServer&&Object.is(this.storage,this.userStorage)&&!e&&(e={user:t.user},await H(this.userStorage,this.storageKey+`-user`,e)),t.user=e?.user??ti()}else if(t&&!t.user&&!t.user){let e=await U(this.storage,this.storageKey+`-user`);e&&e?.user?(t.user=e.user,await W(this.storage,this.storageKey+`-user`),await H(this.storage,this.storageKey,t)):t.user=ti()}if(this._debug(e,`session from storage`,t),!this._isValidSession(t)){this._debug(e,`session is not valid`),t!==null&&await this._removeSession();return}let n=(t.expires_at??1/0)*1e3-Date.now()<Gn;if(this._debug(e,`session has${n?``:` not`} expired with margin of ${Gn}s`),n){if(this.autoRefreshToken&&t.refresh_token){let{error:n}=await this._callRefreshToken(t.refresh_token);n&&(lr(n)?this._debug(e,`refresh discarded by commit guard`,n):this._debug(e,`refresh failed`,n))}}else if(t.user&&t.user.__isUserNotAvailableProxy===!0)try{let{data:n,error:r}=await this._getUser(t.access_token);!r&&n?.user?(t.user=n.user,await this._saveSession(t),await this._notifyAllSubscribers(`SIGNED_IN`,t)):this._debug(e,`could not get user data, skipping SIGNED_IN notification`)}catch(t){console.error(`Error getting user data:`,t),this._debug(e,`error getting user data, skipping SIGNED_IN notification`,t)}else await this._notifyAllSubscribers(`SIGNED_IN`,t)}catch(t){this._debug(e,`error`,t),sr(t)?console.warn(t):console.error(t);return}finally{this._debug(e,`end`)}}async _callRefreshToken(e){var t,n;if(!e)throw new L;if(this.refreshingDeferred)return this.refreshingDeferred.promise;if(this.lastRefreshFailure&&this.lastRefreshFailure.refreshToken===e&&Date.now()<this.lastRefreshFailure.expiresAt)return this._debug(`#_callRefreshToken()`,`returning cached failure (cooldown active)`),this.lastRefreshFailure.result;let r=`#_callRefreshToken()`;this._debug(r,`begin`);try{this.refreshingDeferred=new Ar,this.refreshingDeferred.promise.then(void 0,()=>{});let t=await U(this.storage,this.storageKey),{data:n,error:i}=await this._refreshAccessToken(e);if(i)throw i;if(!n.session)throw new L;let a=await U(this.storage,this.storageKey);if(t!==null&&(a===null||a.refresh_token!==t.refresh_token)){this._debug(r,`commit guard: storage changed since refresh started, discarding rotated tokens`,{startedWith:`present`,nowHolds:a?`replaced`:`cleared`});let e={data:null,error:new cr};return this.refreshingDeferred.resolve(e),e}let o=this._sessionRemovalEpoch;if(await this._saveSession(n.session),this._sessionRemovalEpoch!==o){this._debug(r,`commit guard (post-save): _removeSession ran during _saveSession, undoing write`),await W(this.storage,this.storageKey),this.userStorage&&await W(this.userStorage,this.storageKey+`-user`);let e={data:null,error:new cr};return this.refreshingDeferred.resolve(e),e}await this._notifyAllSubscribers(`TOKEN_REFRESHED`,n.session);let s={data:n.session,error:null};return this.lastRefreshFailure=null,this.refreshingDeferred.resolve(s),s}catch(i){if(this._debug(r,`error`,i),P(i)){let n={data:null,error:i};if(!sr(i)){let e=await U(this.storage,this.storageKey);e?.expires_at&&e.expires_at*1e3>Date.now()?this._debug(r,`proactive refresh failed, access token still valid — preserving session`):await this._removeSession()}return this.lastRefreshFailure={refreshToken:e,result:n,expiresAt:Date.now()+6e4},(t=this.refreshingDeferred)==null||t.resolve(n),n}throw(n=this.refreshingDeferred)==null||n.reject(i),i}finally{this.refreshingDeferred=null,this._debug(r,`end`)}}async _notifyAllSubscribers(e,t,n=!0){if(this._pendingInitNotifications!==null&&n){this._pendingInitNotifications.push({event:e,session:t,broadcast:n});return}let r=`#_notifyAllSubscribers(${e})`;this._debug(r,`begin`,t,`broadcast = ${n}`);try{this.broadcastChannel&&n&&this.broadcastChannel.postMessage({event:e,session:t});let r=[],i=Array.from(this.stateChangeEmitters.values()).map(async n=>{try{await n.callback(e,t)}catch(e){r.push(e)}});if(await Promise.all(i),r.length>0){for(let e=0;e<r.length;e+=1)console.error(r[e]);throw r[0]}}finally{this._debug(r,`end`)}}async _saveSession(e){this._debug(`#_saveSession()`,e),this.suppressGetSessionWarning=!0;let t=Object.assign({},e),n=t.user&&t.user.__isUserNotAvailableProxy===!0;if(this.userStorage){!n&&t.user&&await H(this.userStorage,this.storageKey+`-user`,{user:t.user});let e=Object.assign({},t);delete e.user;let r=ri(e);await H(this.storage,this.storageKey,r)}else{let e=ri(t);await H(this.storage,this.storageKey,e)}}async _removeSession(){this._sessionRemovalEpoch+=1,this._debug(`#_removeSession()`),this.lastRefreshFailure=null,this.suppressGetSessionWarning=!1,await W(this.storage,this.storageKey),await Kr(this.storage,this.storageKey),await W(this.storage,this.storageKey+`-user`),this.userStorage&&await W(this.userStorage,this.storageKey+`-user`),await this._notifyAllSubscribers(`SIGNED_OUT`,null)}_removeVisibilityChangedCallback(){this._debug(`#_removeVisibilityChangedCallback()`);let e=this.visibilityChangedCallback;this.visibilityChangedCallback=null;try{e&&B()&&window!=null&&window.removeEventListener&&window.removeEventListener(`visibilitychange`,e)}catch(e){console.error(`removing visibilitychange callback failed`,e)}}async _startAutoRefresh(){await this._stopAutoRefresh(),this._debug(`#_startAutoRefresh()`);let e=setInterval(()=>this._autoRefreshTokenTick(),M);this.autoRefreshTicker=e,e&&typeof e==`object`&&typeof e.unref==`function`?e.unref():typeof Deno<`u`&&typeof Deno.unrefTimer==`function`&&Deno.unrefTimer(e);let t=setTimeout(async()=>{await this.initializePromise,await this._autoRefreshTokenTick()},0);this.autoRefreshTickTimeout=t,t&&typeof t==`object`&&typeof t.unref==`function`?t.unref():typeof Deno<`u`&&typeof Deno.unrefTimer==`function`&&Deno.unrefTimer(t)}async _stopAutoRefresh(){this._debug(`#_stopAutoRefresh()`);let e=this.autoRefreshTicker;this.autoRefreshTicker=null,e&&clearInterval(e);let t=this.autoRefreshTickTimeout;this.autoRefreshTickTimeout=null,t&&clearTimeout(t)}async startAutoRefresh(){this._removeVisibilityChangedCallback(),await this._startAutoRefresh()}async stopAutoRefresh(){this._removeVisibilityChangedCallback(),await this._stopAutoRefresh()}async dispose(){var e;this._removeVisibilityChangedCallback(),await this._stopAutoRefresh(),(e=this.broadcastChannel)==null||e.close(),this.broadcastChannel=null,this.stateChangeEmitters.clear()}async _autoRefreshTokenTick(){if(this._debug(`#_autoRefreshTokenTick()`,`begin`),this.lock!=null){try{await this._acquireLock(0,async()=>{try{let e=Date.now();try{return await this._useSession(async t=>{let{data:{session:n}}=t;if(!n||!n.refresh_token||!n.expires_at){this._debug(`#_autoRefreshTokenTick()`,`no session`);return}let r=Math.floor((n.expires_at*1e3-e)/M);this._debug(`#_autoRefreshTokenTick()`,`access token expires in ${r} ticks, a tick lasts ${M}ms, refresh threshold is 3 ticks`),r<=3&&await this._callRefreshToken(n.refresh_token)})}catch(e){console.error(`Auto refresh tick failed with error. This is likely a transient error.`,e)}}finally{this._debug(`#_autoRefreshTokenTick()`,`end`)}})}catch(e){if(e instanceof gi)this._debug(`auto refresh token tick lock not available`);else throw e}return}if(this.refreshingDeferred!==null){this._debug(`#_autoRefreshTokenTick()`,`refresh already in flight, skipping`);return}try{let e=Date.now();try{await this._useSession(async t=>{let{data:{session:n}}=t;if(!n||!n.refresh_token||!n.expires_at){this._debug(`#_autoRefreshTokenTick()`,`no session`);return}let r=Math.floor((n.expires_at*1e3-e)/M);this._debug(`#_autoRefreshTokenTick()`,`access token expires in ${r} ticks, a tick lasts ${M}ms, refresh threshold is 3 ticks`),r<=3&&await this._callRefreshToken(n.refresh_token)})}catch(e){console.error(`Auto refresh tick failed with error. This is likely a transient error.`,e)}}finally{this._debug(`#_autoRefreshTokenTick()`,`end`)}}async _handleVisibilityChange(){if(this._debug(`#_handleVisibilityChange()`),!B()||!(window!=null&&window.addEventListener))return this.autoRefreshToken&&this.startAutoRefresh(),!1;try{this.visibilityChangedCallback=async()=>{try{await this._onVisibilityChanged(!1)}catch(e){this._debug(`#visibilityChangedCallback`,`error`,e)}},window==null||window.addEventListener(`visibilitychange`,this.visibilityChangedCallback),await this._onVisibilityChanged(!0)}catch(e){console.error(`_handleVisibilityChange`,e)}}async _onVisibilityChanged(e){let t=`#_onVisibilityChanged(${e})`;if(this._debug(t,`visibilityState`,document.visibilityState),document.visibilityState===`visible`){if(this.autoRefreshToken&&this._startAutoRefresh(),!e)if(await this.initializePromise,this.lock!=null)await this._acquireLock(this.lockAcquireTimeout,async()=>{if(document.visibilityState!==`visible`){this._debug(t,`acquired the lock to recover the session, but the browser visibilityState is no longer visible, aborting`);return}await this._recoverAndRefresh()});else{if(document.visibilityState!==`visible`){this._debug(t,`visibilityState is no longer visible, skipping recovery`);return}await this._recoverAndRefresh()}}else document.visibilityState===`hidden`&&this.autoRefreshToken&&this._stopAutoRefresh()}async _getUrlForProvider(e,t,n){let r=n?.redirectTo,i=null,a=null,o=null;this.flowType===`pkce`&&([i,a,o]=await this._getCodeChallengeAndMethod(),r=this._maybeAppendFlowIdToRedirect(r,o));let s=[`provider=${encodeURIComponent(t)}`];if(r&&s.push(`redirect_to=${encodeURIComponent(r)}`),n?.scopes&&s.push(`scopes=${encodeURIComponent(n.scopes)}`),i!=null&&a!=null){let e=new URLSearchParams({code_challenge:`${encodeURIComponent(i)}`,code_challenge_method:`${encodeURIComponent(a)}`});s.push(e.toString())}if(n?.queryParams){let e=new URLSearchParams(n.queryParams);s.push(e.toString())}return n?.skipBrowserRedirect&&s.push(`skip_http_redirect=${n.skipBrowserRedirect}`),{url:`${e}?${s.join(`&`)}`,flowId:o}}_maybeAppendFlowIdToRedirect(e,t){return!e||!t||!this.experimental.appendPkceFlowIdToRedirects?e??void 0:qr(e,t)}async _getCodeChallengeAndMethod(e=!1){return Jr(this.storage,this.storageKey,e,e=>this._debug(`#_getCodeChallengeAndMethod()`,`evicted oldest pending PKCE verifier slot`,e))}async _unenroll(e){try{return await this._useSession(async t=>{let{data:n,error:r}=t;return r?this._returnResult({data:null,error:r}):await J(this.fetch,`DELETE`,`${this.url}/factors/${e.factorId}`,{headers:this.headers,jwt:n?.session?.access_token})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _enroll(e){try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)return this._returnResult({data:null,error:r});let i=Object.assign({friendly_name:e.friendlyName,factor_type:e.factorType},e.factorType===`phone`?{phone:e.phone}:e.factorType===`totp`?{issuer:e.issuer}:{}),{data:a,error:o}=await J(this.fetch,`POST`,`${this.url}/factors`,{body:i,headers:this.headers,jwt:n?.session?.access_token});return o?this._returnResult({data:null,error:o}):(e.factorType===`totp`&&a.type===`totp`&&a?.totp?.qr_code&&(a.totp.qr_code=`data:image/svg+xml;utf-8,${a.totp.qr_code}`),this._returnResult({data:a,error:null}))})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _verify(e){let t=async()=>{try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)return this._returnResult({data:null,error:r});let i=Object.assign({challenge_id:e.challengeId},`webauthn`in e?{webauthn:Object.assign(Object.assign({},e.webauthn),{credential_response:e.webauthn.type===`create`?Ni(e.webauthn.credential_response):Pi(e.webauthn.credential_response)})}:{code:e.code}),{data:a,error:o}=await J(this.fetch,`POST`,`${this.url}/factors/${e.factorId}/verify`,{body:i,headers:this.headers,jwt:n?.session?.access_token});return o?this._returnResult({data:null,error:o}):(await this._saveSession(Object.assign({expires_at:Math.round(Date.now()/1e3)+a.expires_in},a)),await this._notifyAllSubscribers(`MFA_CHALLENGE_VERIFIED`,a),this._returnResult({data:a,error:o}))})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}};return this.lock==null?t():this._acquireLock(this.lockAcquireTimeout,t)}async _challenge(e){let t=async()=>{try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)return this._returnResult({data:null,error:r});let i=await J(this.fetch,`POST`,`${this.url}/factors/${e.factorId}/challenge`,{body:e,headers:this.headers,jwt:n?.session?.access_token});if(i.error)return i;let{data:a}=i;if(a.type!==`webauthn`)return{data:a,error:null};switch(a.webauthn.type){case`create`:return{data:Object.assign(Object.assign({},a),{webauthn:Object.assign(Object.assign({},a.webauthn),{credential_options:Object.assign(Object.assign({},a.webauthn.credential_options),{publicKey:ji(a.webauthn.credential_options.publicKey)})})}),error:null};case`request`:return{data:Object.assign(Object.assign({},a),{webauthn:Object.assign(Object.assign({},a.webauthn),{credential_options:Object.assign(Object.assign({},a.webauthn.credential_options),{publicKey:Mi(a.webauthn.credential_options.publicKey)})})}),error:null}}})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}};return this.lock==null?t():this._acquireLock(this.lockAcquireTimeout,t)}async _challengeAndVerify(e){let{data:t,error:n}=await this._challenge({factorId:e.factorId});return n?this._returnResult({data:null,error:n}):await this._verify({factorId:e.factorId,challengeId:t.id,code:e.code})}async _listFactors(){let{data:{user:e},error:t}=await this.getUser();if(t)return{data:null,error:t};let n={all:[],phone:[],totp:[],webauthn:[],recovery_code:[]};for(let t of e?.factors??[])n.all.push(t),t.status===`verified`&&t.factor_type in n&&Array.isArray(n[t.factor_type])&&n[t.factor_type].push(t);return{data:n,error:null}}async _getAuthenticatorAssuranceLevel(e){if(e)try{let{payload:t}=jr(e),n=null;t.aal&&(n=t.aal);let r=n,{data:{user:i},error:a}=await this.getUser(e);if(a)return this._returnResult({data:null,error:a});((i?.factors)?.filter(e=>e.status===`verified`)??[]).length>0&&(r=`aal2`);let o=t.amr||[];return{data:{currentLevel:n,nextLevel:r,currentAuthenticationMethods:o},error:null}}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}let{data:{session:t},error:n}=await this.getSession();if(n)return this._returnResult({data:null,error:n});if(!t)return{data:{currentLevel:null,nextLevel:null,currentAuthenticationMethods:[]},error:null};let{payload:r}=jr(t.access_token),i=null;r.aal&&(i=r.aal);let a=i;(t.user.factors?.filter(e=>e.status===`verified`)??[]).length>0&&(a=`aal2`);let o=r.amr||[];return{data:{currentLevel:i,nextLevel:a,currentAuthenticationMethods:o},error:null}}async _getRecoveryCodesStatus(){ei(this.experimental);try{return await this._useSession(async e=>{let{data:t,error:n}=e;if(n)return this._returnResult({data:null,error:n});let{data:r,error:i}=await J(this.fetch,`GET`,`${this.url}/factors/recovery-codes`,{headers:this.headers,jwt:t?.session?.access_token});return i?this._returnResult({data:null,error:i}):this._returnResult({data:r,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _generateRecoveryCodes(e){ei(this.experimental);try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)return this._returnResult({data:null,error:r});let{data:i,error:a}=await J(this.fetch,`POST`,`${this.url}/factors/recovery-codes`,{body:e?.friendlyName?{friendly_name:e.friendlyName}:void 0,headers:this.headers,jwt:n?.session?.access_token});return a?this._returnResult({data:null,error:a}):this._returnResult({data:i,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _verifyRecoveryCode(e){ei(this.experimental);let t=async()=>{try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)return this._returnResult({data:null,error:r});let{data:i,error:a}=await J(this.fetch,`POST`,`${this.url}/factors/recovery-codes/verify`,{body:{code:e.code},headers:this.headers,jwt:n?.session?.access_token});if(a)return this._returnResult({data:null,error:a});let o=Object.assign({expires_at:wr(i.expires_in)},i);return await this._saveSession(o),await this._notifyAllSubscribers(`MFA_CHALLENGE_VERIFIED`,o),this._returnResult({data:i,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}};return this.lock==null?t():this._acquireLock(this.lockAcquireTimeout,t)}async _regenerateRecoveryCodes(){ei(this.experimental);try{return await this._useSession(async e=>{let{data:t,error:n}=e;if(n)return this._returnResult({data:null,error:n});let{data:r,error:i}=await J(this.fetch,`POST`,`${this.url}/factors/recovery-codes/regenerate`,{headers:this.headers,jwt:t?.session?.access_token});return i?this._returnResult({data:null,error:i}):this._returnResult({data:r,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _unenrollRecoveryCodes(){ei(this.experimental);try{return await this._useSession(async e=>{let{data:t,error:n}=e;if(n)return this._returnResult({data:null,error:n});let{data:r,error:i}=await J(this.fetch,`DELETE`,`${this.url}/factors/recovery-codes`,{headers:this.headers,jwt:t?.session?.access_token});return i?this._returnResult({data:null,error:i}):this._returnResult({data:r,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _getAuthorizationDetails(e){try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;return r?this._returnResult({data:null,error:r}):n?await J(this.fetch,`GET`,`${this.url}/oauth/authorizations/${e}`,{headers:this.headers,jwt:n.access_token,xform:e=>({data:e,error:null})}):this._returnResult({data:null,error:new L})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _approveAuthorization(e,t){try{return await this._useSession(async n=>{let{data:{session:r},error:i}=n;if(i)return this._returnResult({data:null,error:i});if(!r)return this._returnResult({data:null,error:new L});let a=await J(this.fetch,`POST`,`${this.url}/oauth/authorizations/${e}/consent`,{headers:this.headers,jwt:r.access_token,body:{action:`approve`},xform:e=>({data:e,error:null})});return a.data&&a.data.redirect_url&&B()&&!t?.skipBrowserRedirect&&window.location.assign(a.data.redirect_url),a})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _denyAuthorization(e,t){try{return await this._useSession(async n=>{let{data:{session:r},error:i}=n;if(i)return this._returnResult({data:null,error:i});if(!r)return this._returnResult({data:null,error:new L});let a=await J(this.fetch,`POST`,`${this.url}/oauth/authorizations/${e}/consent`,{headers:this.headers,jwt:r.access_token,body:{action:`deny`},xform:e=>({data:e,error:null})});return a.data&&a.data.redirect_url&&B()&&!t?.skipBrowserRedirect&&window.location.assign(a.data.redirect_url),a})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _listOAuthGrants(){try{return await this._useSession(async e=>{let{data:{session:t},error:n}=e;return n?this._returnResult({data:null,error:n}):t?await J(this.fetch,`GET`,`${this.url}/user/oauth/grants`,{headers:this.headers,jwt:t.access_token,xform:e=>({data:e,error:null})}):this._returnResult({data:null,error:new L})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _revokeOAuthGrant(e){try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;return r?this._returnResult({data:null,error:r}):n?(await J(this.fetch,`DELETE`,`${this.url}/user/oauth/grants`,{headers:this.headers,jwt:n.access_token,query:{client_id:e.clientId},noResolveJson:!0}),{data:{},error:null}):this._returnResult({data:null,error:new L})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async fetchJwk(e,t={keys:[]}){let n=t.keys.find(t=>t.kid===e);if(n)return n;let r=Date.now();if(n=this.jwks.keys.find(t=>t.kid===e),n&&this.jwks_cached_at+6e5>r)return n;let{data:i,error:a}=await J(this.fetch,`GET`,`${this.url}/.well-known/jwks.json`,{headers:this.headers});if(a)throw a;return!i.keys||i.keys.length===0||(this.jwks=i,this.jwks_cached_at=r,n=i.keys.find(t=>t.kid===e),!n)?null:n}async getClaims(e,t={}){try{let n=e;if(!n){let{data:e,error:t}=await this.getSession();if(t||!e.session)return this._returnResult({data:null,error:t});n=e.session.access_token}let{header:r,payload:i,signature:a,raw:{header:o,payload:s}}=jr(n);if(!t?.allowExpired)try{Zr(i.exp)}catch(e){throw new fr(e instanceof Error?e.message:`JWT validation failed`)}let c=!r.alg||r.alg.startsWith(`HS`)||!r.kid||!(`crypto`in globalThis&&`subtle`in globalThis.crypto)?null:await this.fetchJwk(r.kid,t?.keys?{keys:t.keys}:t?.jwks);if(!c){let{error:e}=await this.getUser(n);if(e)throw e;return{data:{claims:i,header:r,signature:a},error:null}}let l=Qr(r.alg),u=await crypto.subtle.importKey(`jwk`,c,l,!0,[`verify`]);if(!await crypto.subtle.verify(l,u,a,Cr(`${o}.${s}`)))throw new fr(`Invalid JWT signature`);return{data:{claims:i,header:r,signature:a},error:null}}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async signInWithPasskey(e){try{if(!Ii())return this._returnResult({data:null,error:new F(`Browser does not support WebAuthn`,null)});let{data:t,error:n}=await this._startPasskeyAuthentication({options:{captchaToken:e?.options?.captchaToken}});if(n||!t)return this._returnResult({data:null,error:n});let{data:r,error:i}=await Ri({publicKey:Mi(t.options),signal:e?.options?.signal??Ai.createNewAbortSignal(),mediation:e?.options?.mediation});if(i||!r)return this._returnResult({data:null,error:i??new F(`WebAuthn ceremony failed`,null)});let a=Pi(r);return this._verifyPasskeyAuthentication({challengeId:t.challenge_id,credential:a})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async registerPasskey(e){try{if(!Ii())return this._returnResult({data:null,error:new F(`Browser does not support WebAuthn`,null)});let{data:t,error:n}=await this._startPasskeyRegistration();if(n||!t)return this._returnResult({data:null,error:n});let{data:r,error:i}=await Li({publicKey:ji(t.options),signal:e?.options?.signal??Ai.createNewAbortSignal()});if(i||!r)return this._returnResult({data:null,error:i??new F(`WebAuthn ceremony failed`,null)});let a=Ni(r);return this._verifyPasskeyRegistration({challengeId:t.challenge_id,credential:a})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _startPasskeyRegistration(){try{return await this._useSession(async e=>{let{data:{session:t},error:n}=e;if(n)return this._returnResult({data:null,error:n});if(!t)return this._returnResult({data:null,error:new L});let{data:r,error:i}=await J(this.fetch,`POST`,`${this.url}/passkeys/registration/options`,{headers:this.headers,jwt:t.access_token,body:{}});return i?this._returnResult({data:null,error:i}):this._returnResult({data:r,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _verifyPasskeyRegistration(e){try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;if(r)return this._returnResult({data:null,error:r});if(!n)return this._returnResult({data:null,error:new L});let{data:i,error:a}=await J(this.fetch,`POST`,`${this.url}/passkeys/registration/verify`,{headers:this.headers,jwt:n.access_token,body:{challenge_id:e.challengeId,credential:e.credential}});return a?this._returnResult({data:null,error:a}):this._returnResult({data:i,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _startPasskeyAuthentication(e){try{let{data:t,error:n}=await J(this.fetch,`POST`,`${this.url}/passkeys/authentication/options`,{headers:this.headers,body:{gotrue_meta_security:{captcha_token:e?.options?.captchaToken}}});return n?this._returnResult({data:null,error:n}):this._returnResult({data:t,error:null})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _verifyPasskeyAuthentication(e){try{let{data:t,error:n}=await J(this.fetch,`POST`,`${this.url}/passkeys/authentication/verify`,{headers:this.headers,body:{challenge_id:e.challengeId,credential:e.credential},xform:Y});return n?this._returnResult({data:null,error:n}):(t.session&&(await this._saveSession(t.session),await this._notifyAllSubscribers(`SIGNED_IN`,t.session)),this._returnResult({data:t,error:null}))}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _listPasskeys(){try{return await this._useSession(async e=>{let{data:{session:t},error:n}=e;if(n)return this._returnResult({data:null,error:n});if(!t)return this._returnResult({data:null,error:new L});let{data:r,error:i}=await J(this.fetch,`GET`,`${this.url}/passkeys`,{headers:this.headers,jwt:t.access_token,xform:e=>({data:e,error:null})});return i?this._returnResult({data:null,error:i}):this._returnResult({data:r,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _updatePasskey(e){try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;if(r)return this._returnResult({data:null,error:r});if(!n)return this._returnResult({data:null,error:new L});let{data:i,error:a}=await J(this.fetch,`PATCH`,`${this.url}/passkeys/${e.passkeyId}`,{headers:this.headers,jwt:n.access_token,body:{friendly_name:e.friendlyName}});return a?this._returnResult({data:null,error:a}):this._returnResult({data:i,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}async _deletePasskey(e){try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;if(r)return this._returnResult({data:null,error:r});if(!n)return this._returnResult({data:null,error:new L});let{error:i}=await J(this.fetch,`DELETE`,`${this.url}/passkeys/${e.passkeyId}`,{headers:this.headers,jwt:n.access_token,noResolveJson:!0});return i?this._returnResult({data:null,error:i}):this._returnResult({data:null,error:null})})}catch(e){if(P(e))return this._returnResult({data:null,error:e});throw e}}};qi.nextInstanceID={};var Ji=qi,Yi=mi,Xi=Ji,Zi=class extends Xi{constructor(e){super(e)}},Qi=class{constructor(e,t,n){this.supabaseUrl=e,this.supabaseKey=t;let r=Un(e);if(!t)throw Error(`supabaseKey is required.`);Nn(t),Vn(n),this.realtimeUrl=new URL(`realtime/v1`,r),this.realtimeUrl.protocol=this.realtimeUrl.protocol.replace(`http`,`ws`),this.authUrl=new URL(`auth/v1`,r),this.storageUrl=new URL(`storage/v1`,r),this.functionsUrl=new URL(`functions/v1`,r);let i=`sb-${r.hostname.split(`.`)[0]}-auth-token`,a={db:yn,realtime:xn,auth:{...bn,storageKey:i},global:vn,tracePropagation:Sn},o=Hn(n??{},a);this.settings=o,this.storageKey=o.auth.storageKey??``,this.headers=o.global.headers??{},o.accessToken?(this.accessToken=o.accessToken,this.auth=new Proxy({},{get:(e,t)=>{throw Error(`@supabase/supabase-js: Supabase Client is configured with the accessToken option, accessing supabase.auth.${String(t)} is not possible`)}})):this.auth=this._initSupabaseAuthClient(o.auth??{},this.headers,o.global.fetch),this.fetch=Pn(t,e,this._getSessionToken.bind(this),o.global.fetch,o.tracePropagation),this.functionsFetch=Pn(t,e,this._getSessionToken.bind(this),o.global.fetch,o.tracePropagation,{omitApiKeyAsBearer:!0}),this.realtime=this._initRealtimeClient({headers:this.headers,accessToken:this._getAccessToken.bind(this),fetch:this.fetch,...o.realtime}),this.accessToken&&Promise.resolve(this.accessToken()).then(e=>this.realtime.setAuth(e)).catch(e=>console.warn(`Failed to set initial Realtime auth token:`,e)),this.rest=new fe(new URL(`rest/v1`,r).href,{headers:this.headers,schema:o.db.schema,fetch:this.fetch,timeout:o.db.timeout,urlLengthLimit:o.db.urlLengthLimit,retry:o.db.retry}),this.storage=new mn(this.storageUrl.href,this.headers,this.fetch,n?.storage),o.accessToken||this._listenForAuthEvents()}get functions(){return new l(this.functionsUrl.href,{headers:this.headers,customFetch:this.functionsFetch})}from(e){return this.rest.from(e)}schema(e){return this.rest.schema(e)}getOpenApiSpec(){return this.rest.getOpenApiSpec()}rpc(e,t={},n={head:!1,get:!1,count:void 0}){return this.rest.rpc(e,t,n)}channel(e,t={config:{}}){return this.realtime.channel(e,t)}getChannels(){return this.realtime.getChannels()}removeChannel(e){return this.realtime.removeChannel(e)}removeAllChannels(){return this.realtime.removeAllChannels()}async _getSessionToken(){if(this.accessToken)return await this.accessToken();let{data:e}=await this.auth.getSession();return e.session?.access_token??null}async _getAccessToken(){return await this._getSessionToken()??this.supabaseKey}_initSupabaseAuthClient({autoRefreshToken:e,persistSession:t,detectSessionInUrl:n,storage:r,userStorage:i,storageKey:a,flowType:o,lock:s,debug:c,throwOnError:l,experimental:u,lockAcquireTimeout:d,skipAutoInitialize:f},p,m){let h={Authorization:`Bearer ${this.supabaseKey}`,apikey:`${this.supabaseKey}`};return new Zi({url:this.authUrl.href,headers:{...h,...p},storageKey:a,autoRefreshToken:e,persistSession:t,detectSessionInUrl:n,storage:r,userStorage:i,flowType:o,lock:s,debug:c,throwOnError:l,experimental:u,fetch:m,lockAcquireTimeout:d,skipAutoInitialize:f,hasCustomAuthorizationHeader:Object.keys(this.headers).some(e=>e.toLowerCase()===`authorization`)})}_initRealtimeClient(e){return new _t(this.realtimeUrl.href,{...e,params:{apikey:this.supabaseKey,...e?.params}})}_listenForAuthEvents(){return this.auth.onAuthStateChange((e,t)=>{this._handleTokenChanged(e,`CLIENT`,t?.access_token)})}_handleTokenChanged(e,t,n){(e===`TOKEN_REFRESHED`||e===`SIGNED_IN`||e===`INITIAL_SESSION`)&&this.changedAccessToken!==n?(this.changedAccessToken=n,this.realtime.setAuth(n)):e===`SIGNED_OUT`&&(this.realtime.setAuth(),t==`STORAGE`&&this.auth.signOut(),this.changedAccessToken=void 0)}};let $i=(e,t,n)=>new Qi(e,t,n);function ea(){if(typeof window<`u`||globalThis.Deno!==void 0)return!1;let e=globalThis.process;if(!e)return!1;let t=e.version;if(t==null)return!1;let n=t.match(/^v(\d+)\./);return n?parseInt(n[1],10)<=20:!1}return ea()&&console.warn(`⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715`),e.AuthAdminApi=Yi,e.AuthApiError=Zn,e.AuthClient=Xi,e.AuthError=Xn,e.AuthImplicitGrantRedirectError=tr,e.AuthInvalidCredentialsError=er,e.AuthInvalidJwtError=fr,e.AuthInvalidTokenResponseError=R,e.AuthPKCECodeVerifierMissingError=ir,e.AuthPKCEGrantCodeExchangeError=rr,e.AuthRefreshDiscardedError=cr,e.AuthRetryableFetchError=or,e.AuthSessionMissingError=L,e.AuthUnknownError=F,e.AuthWeakPasswordError=ur,e.CustomAuthError=I,Object.defineProperty(e,`FunctionRegion`,{enumerable:!0,get:function(){return c}}),e.FunctionsError=i,e.FunctionsFetchError=a,e.FunctionsHttpError=s,e.FunctionsRelayError=o,e.GoTrueAdminApi=mi,e.GoTrueClient=Ji,e.NavigatorLockAcquireTimeoutError=_i,e.PostgrestError=u,e.REALTIME_CHANNEL_STATES=ut,Object.defineProperty(e,`REALTIME_LISTEN_TYPES`,{enumerable:!0,get:function(){return T}}),Object.defineProperty(e,`REALTIME_POSTGRES_CHANGES_LISTEN_EVENT`,{enumerable:!0,get:function(){return lt}}),Object.defineProperty(e,`REALTIME_PRESENCE_LISTEN_EVENTS`,{enumerable:!0,get:function(){return Xe}}),Object.defineProperty(e,`REALTIME_SUBSCRIBE_STATES`,{enumerable:!0,get:function(){return E}}),e.RealtimeChannel=dt,e.RealtimeClient=_t,e.RealtimePostgresFilterBuilder=st,e.RealtimePresence=Ze,e.SIGN_OUT_SCOPES=pi,e.StorageApiError=Pt,e.SupabaseClient=Qi,e.WebSocketFactory=pe,e.createClient=$i,e.isAuthApiError=Qn,e.isAuthError=P,e.isAuthImplicitGrantRedirectError=nr,e.isAuthPKCECodeVerifierMissingError=ar,e.isAuthRefreshDiscardedError=lr,e.isAuthRetryableFetchError=sr,e.isAuthSessionMissingError=$n,e.isAuthWeakPasswordError=dr,e.lockInternals=Z,e.navigatorLock=yi,e.postgresChangesFilter=ct,e.processLock=xi,e})({});
 </script>
+<script>
+/*!
+ * chartjs-plugin-datalabels v2.2.0
+ * https://chartjs-plugin-datalabels.netlify.app
+ * (c) 2017-2022 chartjs-plugin-datalabels contributors
+ * Released under the MIT license
+ */
+!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e(require("chart.js/helpers"),require("chart.js")):"function"==typeof define&&define.amd?define(["chart.js/helpers","chart.js"],e):(t="undefined"!=typeof globalThis?globalThis:t||self).ChartDataLabels=e(t.Chart.helpers,t.Chart)}(this,(function(t,e){"use strict";var r=function(){if("undefined"!=typeof window){if(window.devicePixelRatio)return window.devicePixelRatio;var t=window.screen;if(t)return(t.deviceXDPI||1)/(t.logicalXDPI||1)}return 1}(),a=function(e){var r,a=[];for(e=[].concat(e);e.length;)"string"==typeof(r=e.pop())?a.unshift.apply(a,r.split("\n")):Array.isArray(r)?e.push.apply(e,r):t.isNullOrUndef(e)||a.unshift(""+r);return a},o=function(t,e,r){var a,o=[].concat(e),n=o.length,i=t.font,l=0;for(t.font=r.string,a=0;a<n;++a)l=Math.max(t.measureText(o[a]).width,l);return t.font=i,{height:n*r.lineHeight,width:l}},n=function(t,e,r){return Math.max(t,Math.min(e,r))},i=function(t,e){var r,a,o,n,i=t.slice(),l=[];for(r=0,o=e.length;r<o;++r)n=e[r],-1===(a=i.indexOf(n))?l.push([n,1]):i.splice(a,1);for(r=0,o=i.length;r<o;++r)l.push([i[r],-1]);return l};function l(t,e){var r=e.x,a=e.y;if(null===r)return{x:0,y:-1};if(null===a)return{x:1,y:0};var o=t.x-r,n=t.y-a,i=Math.sqrt(o*o+n*n);return{x:i?o/i:0,y:i?n/i:-1}}function s(t,e,r){var a=0;return t<r.left?a|=1:t>r.right&&(a|=2),e<r.top?a|=8:e>r.bottom&&(a|=4),a}function u(t,e){var r,a,o=e.anchor,n=t;return e.clamp&&(n=function(t,e){for(var r,a,o,n=t.x0,i=t.y0,l=t.x1,u=t.y1,d=s(n,i,e),c=s(l,u,e);d|c&&!(d&c);)8&(r=d||c)?(a=n+(l-n)*(e.top-i)/(u-i),o=e.top):4&r?(a=n+(l-n)*(e.bottom-i)/(u-i),o=e.bottom):2&r?(o=i+(u-i)*(e.right-n)/(l-n),a=e.right):1&r&&(o=i+(u-i)*(e.left-n)/(l-n),a=e.left),r===d?d=s(n=a,i=o,e):c=s(l=a,u=o,e);return{x0:n,x1:l,y0:i,y1:u}}(n,e.area)),"start"===o?(r=n.x0,a=n.y0):"end"===o?(r=n.x1,a=n.y1):(r=(n.x0+n.x1)/2,a=(n.y0+n.y1)/2),function(t,e,r,a,o){switch(o){case"center":r=a=0;break;case"bottom":r=0,a=1;break;case"right":r=1,a=0;break;case"left":r=-1,a=0;break;case"top":r=0,a=-1;break;case"start":r=-r,a=-a;break;case"end":break;default:o*=Math.PI/180,r=Math.cos(o),a=Math.sin(o)}return{x:t,y:e,vx:r,vy:a}}(r,a,t.vx,t.vy,e.align)}var d=function(t,e){var r=(t.startAngle+t.endAngle)/2,a=Math.cos(r),o=Math.sin(r),n=t.innerRadius,i=t.outerRadius;return u({x0:t.x+a*n,y0:t.y+o*n,x1:t.x+a*i,y1:t.y+o*i,vx:a,vy:o},e)},c=function(t,e){var r=l(t,e.origin),a=r.x*t.options.radius,o=r.y*t.options.radius;return u({x0:t.x-a,y0:t.y-o,x1:t.x+a,y1:t.y+o,vx:r.x,vy:r.y},e)},h=function(t,e){var r=l(t,e.origin),a=t.x,o=t.y,n=0,i=0;return t.horizontal?(a=Math.min(t.x,t.base),n=Math.abs(t.base-t.x)):(o=Math.min(t.y,t.base),i=Math.abs(t.base-t.y)),u({x0:a,y0:o+i,x1:a+n,y1:o,vx:r.x,vy:r.y},e)},f=function(t,e){var r=l(t,e.origin);return u({x0:t.x,y0:t.y,x1:t.x+(t.width||0),y1:t.y+(t.height||0),vx:r.x,vy:r.y},e)},x=function(t){return Math.round(t*r)/r};function y(t,e){var r=e.chart.getDatasetMeta(e.datasetIndex).vScale;if(!r)return null;if(void 0!==r.xCenter&&void 0!==r.yCenter)return{x:r.xCenter,y:r.yCenter};var a=r.getBasePixel();return t.horizontal?{x:a,y:null}:{x:null,y:a}}function v(t,e,r){var a=r.backgroundColor,o=r.borderColor,n=r.borderWidth;(a||o&&n)&&(t.beginPath(),function(t,e,r,a,o,n){var i=Math.PI/2;if(n){var l=Math.min(n,o/2,a/2),s=e+l,u=r+l,d=e+a-l,c=r+o-l;t.moveTo(e,u),s<d&&u<c?(t.arc(s,u,l,-Math.PI,-i),t.arc(d,u,l,-i,0),t.arc(d,c,l,0,i),t.arc(s,c,l,i,Math.PI)):s<d?(t.moveTo(s,r),t.arc(d,u,l,-i,i),t.arc(s,u,l,i,Math.PI+i)):u<c?(t.arc(s,u,l,-Math.PI,0),t.arc(s,c,l,0,Math.PI)):t.arc(s,u,l,-Math.PI,Math.PI),t.closePath(),t.moveTo(e,r)}else t.rect(e,r,a,o)}(t,x(e.x)+n/2,x(e.y)+n/2,x(e.w)-n,x(e.h)-n,r.borderRadius),t.closePath(),a&&(t.fillStyle=a,t.fill()),o&&n&&(t.strokeStyle=o,t.lineWidth=n,t.lineJoin="miter",t.stroke()))}function b(t,e,r){var a=t.shadowBlur,o=r.stroked,n=x(r.x),i=x(r.y),l=x(r.w);o&&t.strokeText(e,n,i,l),r.filled&&(a&&o&&(t.shadowBlur=0),t.fillText(e,n,i,l),a&&o&&(t.shadowBlur=a))}var _=function(t,e,r,a){var o=this;o._config=t,o._index=a,o._model=null,o._rects=null,o._ctx=e,o._el=r};t.merge(_.prototype,{_modelize:function(r,a,n,i){var l,s=this,u=s._index,x=t.toFont(t.resolve([n.font,{}],i,u)),v=t.resolve([n.color,e.defaults.color],i,u);return{align:t.resolve([n.align,"center"],i,u),anchor:t.resolve([n.anchor,"center"],i,u),area:i.chart.chartArea,backgroundColor:t.resolve([n.backgroundColor,null],i,u),borderColor:t.resolve([n.borderColor,null],i,u),borderRadius:t.resolve([n.borderRadius,0],i,u),borderWidth:t.resolve([n.borderWidth,0],i,u),clamp:t.resolve([n.clamp,!1],i,u),clip:t.resolve([n.clip,!1],i,u),color:v,display:r,font:x,lines:a,offset:t.resolve([n.offset,4],i,u),opacity:t.resolve([n.opacity,1],i,u),origin:y(s._el,i),padding:t.toPadding(t.resolve([n.padding,4],i,u)),positioner:(l=s._el,l instanceof e.ArcElement?d:l instanceof e.PointElement?c:l instanceof e.BarElement?h:f),rotation:t.resolve([n.rotation,0],i,u)*(Math.PI/180),size:o(s._ctx,a,x),textAlign:t.resolve([n.textAlign,"start"],i,u),textShadowBlur:t.resolve([n.textShadowBlur,0],i,u),textShadowColor:t.resolve([n.textShadowColor,v],i,u),textStrokeColor:t.resolve([n.textStrokeColor,v],i,u),textStrokeWidth:t.resolve([n.textStrokeWidth,0],i,u)}},update:function(e){var r,o,n,i=this,l=null,s=null,u=i._index,d=i._config,c=t.resolve([d.display,!0],e,u);c&&(r=e.dataset.data[u],o=t.valueOrDefault(t.callback(d.formatter,[r,e]),r),(n=t.isNullOrUndef(o)?[]:a(o)).length&&(s=function(t){var e=t.borderWidth||0,r=t.padding,a=t.size.height,o=t.size.width,n=-o/2,i=-a/2;return{frame:{x:n-r.left-e,y:i-r.top-e,w:o+r.width+2*e,h:a+r.height+2*e},text:{x:n,y:i,w:o,h:a}}}(l=i._modelize(c,n,d,e)))),i._model=l,i._rects=s},geometry:function(){return this._rects?this._rects.frame:{}},rotation:function(){return this._model?this._model.rotation:0},visible:function(){return this._model&&this._model.opacity},model:function(){return this._model},draw:function(t,e){var r,a=t.ctx,o=this._model,i=this._rects;this.visible()&&(a.save(),o.clip&&(r=o.area,a.beginPath(),a.rect(r.left,r.top,r.right-r.left,r.bottom-r.top),a.clip()),a.globalAlpha=n(0,o.opacity,1),a.translate(x(e.x),x(e.y)),a.rotate(o.rotation),v(a,i.frame,o),function(t,e,r,a){var o,n=a.textAlign,i=a.color,l=!!i,s=a.font,u=e.length,d=a.textStrokeColor,c=a.textStrokeWidth,h=d&&c;if(u&&(l||h))for(r=function(t,e,r){var a=r.lineHeight,o=t.w,n=t.x;return"center"===e?n+=o/2:"end"!==e&&"right"!==e||(n+=o),{h:a,w:o,x:n,y:t.y+a/2}}(r,n,s),t.font=s.string,t.textAlign=n,t.textBaseline="middle",t.shadowBlur=a.textShadowBlur,t.shadowColor=a.textShadowColor,l&&(t.fillStyle=i),h&&(t.lineJoin="round",t.lineWidth=c,t.strokeStyle=d),o=0,u=e.length;o<u;++o)b(t,e[o],{stroked:h,filled:l,w:r.w,x:r.x,y:r.y+r.h*o})}(a,o.lines,i.text,o),a.restore())}});var p=Number.MIN_SAFE_INTEGER||-9007199254740991,g=Number.MAX_SAFE_INTEGER||9007199254740991;function m(t,e,r){var a=Math.cos(r),o=Math.sin(r),n=e.x,i=e.y;return{x:n+a*(t.x-n)-o*(t.y-i),y:i+o*(t.x-n)+a*(t.y-i)}}function w(t,e){var r,a,o,n,i,l=g,s=p,u=e.origin;for(r=0;r<t.length;++r)o=(a=t[r]).x-u.x,n=a.y-u.y,i=e.vx*o+e.vy*n,l=Math.min(l,i),s=Math.max(s,i);return{min:l,max:s}}function M(t,e){var r=e.x-t.x,a=e.y-t.y,o=Math.sqrt(r*r+a*a);return{vx:(e.x-t.x)/o,vy:(e.y-t.y)/o,origin:t,ln:o}}var k=function(){this._rotation=0,this._rect={x:0,y:0,w:0,h:0}};function $(t,e,r){var a=e.positioner(t,e),o=a.vx,n=a.vy;if(!o&&!n)return{x:a.x,y:a.y};var i=r.w,l=r.h,s=e.rotation,u=Math.abs(i/2*Math.cos(s))+Math.abs(l/2*Math.sin(s)),d=Math.abs(i/2*Math.sin(s))+Math.abs(l/2*Math.cos(s)),c=1/Math.max(Math.abs(o),Math.abs(n));return u*=o*c,d*=n*c,u+=e.offset*o,d+=e.offset*n,{x:a.x+u,y:a.y+d}}t.merge(k.prototype,{center:function(){var t=this._rect;return{x:t.x+t.w/2,y:t.y+t.h/2}},update:function(t,e,r){this._rotation=r,this._rect={x:e.x+t.x,y:e.y+t.y,w:e.w,h:e.h}},contains:function(t){var e=this,r=e._rect;return!((t=m(t,e.center(),-e._rotation)).x<r.x-1||t.y<r.y-1||t.x>r.x+r.w+2||t.y>r.y+r.h+2)},intersects:function(t){var e,r,a,o=this._points(),n=t._points(),i=[M(o[0],o[1]),M(o[0],o[3])];for(this._rotation!==t._rotation&&i.push(M(n[0],n[1]),M(n[0],n[3])),e=0;e<i.length;++e)if(r=w(o,i[e]),a=w(n,i[e]),r.max<a.min||a.max<r.min)return!1;return!0},_points:function(){var t=this,e=t._rect,r=t._rotation,a=t.center();return[m({x:e.x,y:e.y},a,r),m({x:e.x+e.w,y:e.y},a,r),m({x:e.x+e.w,y:e.y+e.h},a,r),m({x:e.x,y:e.y+e.h},a,r)]}});var C={prepare:function(t){var e,r,a,o,n,i=[];for(e=0,a=t.length;e<a;++e)for(r=0,o=t[e].length;r<o;++r)n=t[e][r],i.push(n),n.$layout={_box:new k,_hidable:!1,_visible:!0,_set:e,_idx:n._index};return i.sort((function(t,e){var r=t.$layout,a=e.$layout;return r._idx===a._idx?a._set-r._set:a._idx-r._idx})),this.update(i),i},update:function(t){var e,r,a,o,n,i=!1;for(e=0,r=t.length;e<r;++e)o=(a=t[e]).model(),(n=a.$layout)._hidable=o&&"auto"===o.display,n._visible=a.visible(),i|=n._hidable;i&&function(t){var e,r,a,o,n,i,l;for(e=0,r=t.length;e<r;++e)(o=(a=t[e]).$layout)._visible&&(l=new Proxy(a._el,{get:(t,e)=>t.getProps([e],!0)[e]}),n=a.geometry(),i=$(l,a.model(),n),o._box.update(i,n,a.rotation()));(function(t,e){var r,a,o,n;for(r=t.length-1;r>=0;--r)for(o=t[r].$layout,a=r-1;a>=0&&o._visible;--a)(n=t[a].$layout)._visible&&o._box.intersects(n._box)&&e(o,n)})(t,(function(t,e){var r=t._hidable,a=e._hidable;r&&a||a?e._visible=!1:r&&(t._visible=!1)}))}(t)},lookup:function(t,e){var r,a;for(r=t.length-1;r>=0;--r)if((a=t[r].$layout)&&a._visible&&a._box.contains(e))return t[r];return null},draw:function(t,e){var r,a,o,n,i,l;for(r=0,a=e.length;r<a;++r)(n=(o=e[r]).$layout)._visible&&(i=o.geometry(),l=$(o._el,o.model(),i),n._box.update(l,i,o.rotation()),o.draw(t,l))}},P="$default";function S(e,r,a,o){if(r){var n,i=a.$context,l=a.$groups;r[l._set]&&(n=r[l._set][l._key])&&!0===t.callback(n,[i,o])&&(e.$datalabels._dirty=!0,a.update(i))}}function I(t,e){var r,a,o=t.$datalabels,n=o._listeners;if(n.enter||n.leave){if("mousemove"===e.type)a=C.lookup(o._labels,e);else if("mouseout"!==e.type)return;r=o._hovered,o._hovered=a,function(t,e,r,a,o){var n,i;(r||a)&&(r?a?r!==a&&(i=n=!0):i=!0:n=!0,i&&S(t,e.leave,r,o),n&&S(t,e.enter,a,o))}(t,n,r,a,e)}}return{id:"datalabels",defaults:{align:"center",anchor:"center",backgroundColor:null,borderColor:null,borderRadius:0,borderWidth:0,clamp:!1,clip:!1,color:void 0,display:!0,font:{family:void 0,lineHeight:1.2,size:void 0,style:void 0,weight:null},formatter:function(e){if(t.isNullOrUndef(e))return null;var r,a,o,n=e;if(t.isObject(e))if(t.isNullOrUndef(e.label))if(t.isNullOrUndef(e.r))for(n="",o=0,a=(r=Object.keys(e)).length;o<a;++o)n+=(0!==o?", ":"")+r[o]+": "+e[r[o]];else n=e.r;else n=e.label;return""+n},labels:void 0,listeners:{},offset:4,opacity:1,padding:{top:4,right:4,bottom:4,left:4},rotation:0,textAlign:"start",textStrokeColor:void 0,textStrokeWidth:0,textShadowBlur:0,textShadowColor:void 0},beforeInit:function(t){t.$datalabels={_actives:[]}},beforeUpdate:function(t){var e=t.$datalabels;e._listened=!1,e._listeners={},e._datasets=[],e._labels=[]},afterDatasetUpdate:function(e,r,a){var o,n,i,l,s,u,d,c,h=r.index,f=e.$datalabels,x=f._datasets[h]=[],y=e.isDatasetVisible(h),v=e.data.datasets[h],b=function(e,r){var a,o,n,i=e.datalabels,l=[];return!1===i?null:(!0===i&&(i={}),r=t.merge({},[r,i]),o=r.labels||{},n=Object.keys(o),delete r.labels,n.length?n.forEach((function(e){o[e]&&l.push(t.merge({},[r,o[e],{_key:e}]))})):l.push(r),a=l.reduce((function(e,r){return t.each(r.listeners||{},(function(t,a){e[a]=e[a]||{},e[a][r._key||P]=t})),delete r.listeners,e}),{}),{labels:l,listeners:a})}(v,a),p=r.meta.data||[],g=e.ctx;for(g.save(),o=0,i=p.length;o<i;++o)if((d=p[o]).$datalabels=[],y&&d&&e.getDataVisibility(o)&&!d.skip)for(n=0,l=b.labels.length;n<l;++n)u=(s=b.labels[n])._key,(c=new _(s,g,d,o)).$groups={_set:h,_key:u||P},c.$context={active:!1,chart:e,dataIndex:o,dataset:v,datasetIndex:h},c.update(c.$context),d.$datalabels.push(c),x.push(c);g.restore(),t.merge(f._listeners,b.listeners,{merger:function(t,e,a){e[t]=e[t]||{},e[t][r.index]=a[t],f._listened=!0}})},afterUpdate:function(t){t.$datalabels._labels=C.prepare(t.$datalabels._datasets)},afterDatasetsDraw:function(t){C.draw(t,t.$datalabels._labels)},beforeEvent:function(t,e){if(t.$datalabels._listened){var r=e.event;switch(r.type){case"mousemove":case"mouseout":I(t,r);break;case"click":!function(t,e){var r=t.$datalabels,a=r._listeners.click,o=a&&C.lookup(r._labels,e);o&&S(t,a,o,e)}(t,r)}}},afterEvent:function(t){var e,r,a,o,n,l,s,u=t.$datalabels,d=u._actives,c=u._actives=t.getActiveElements(),h=i(d,c);for(e=0,r=h.length;e<r;++e)if((n=h[e])[1])for(a=0,o=(s=n[0].element.$datalabels||[]).length;a<o;++a)(l=s[a]).$context.active=1===n[1],l.update(l.$context);(u._dirty||h.length)&&(C.update(u._labels),t.render()),delete u._dirty}}}));
+
+</script>
 <style>
 :root{
   --bg:#ffffff;
@@ -206,7 +216,11 @@ table.data{ width:100%; border-collapse:collapse; font-size:0.86rem; }
 table.data th{
   text-align:left; padding:9px 10px; border-bottom:1px solid var(--line);
   color:var(--text-secondary); font-weight:600; font-size:0.76rem;
+  position:sticky; top:0; background:var(--card); cursor:pointer; user-select:none; white-space:nowrap;
 }
+table.data th:hover{ color:var(--text); }
+table.data th.sort-asc::after{ content:' ▲'; font-size:0.7em; }
+table.data th.sort-desc::after{ content:' ▼'; font-size:0.7em; }
 table.data td{
   padding:9px 10px; border-bottom:1px solid var(--line-soft); color:var(--text);
   font-family:ui-monospace, 'SF Mono', Menlo, monospace; font-variant-numeric:tabular-nums;
@@ -257,6 +271,12 @@ table.data tr:hover td{ background:var(--surface-2); }
 }
 .view-toggle button.on{ background:var(--turf); color:#fff; font-weight:600; }
 
+.sticky-controls{
+  position:sticky; top:112px; z-index:5; background:var(--bg);
+  padding-top:4px; padding-bottom:4px;
+}
+@media (max-width: 760px){ .sticky-controls{ top:96px; } }
+
 .config-banner{
   background:var(--amber-light); color:#7a5209; padding:10px 20px; font-size:0.85rem;
   text-align:center; display:none; border-radius:10px; margin:12px 20px 0;
@@ -286,7 +306,7 @@ table.data tr:hover td{ background:var(--surface-2); }
       <div style="display:flex; align-items:center; gap:10px;">
         <div class="filter-field" style="min-width:110px;">
           <label>Animation speed</label>
-          <input type="range" id="animSpeedSlider" min="0" max="30" value="8">
+          <input type="range" id="animSpeedSlider" min="0" max="30" value="3">
         </div>
         <button id="logoutBtn">Sign out</button>
       </div>
@@ -297,6 +317,7 @@ table.data tr:hover td{ background:var(--surface-2); }
       <button class="tab-btn" data-tab="weather">Weather</button>
       <button class="tab-btn" data-tab="irrigation">Irrigation</button>
       <button class="tab-btn" data-tab="explorer">Explorer</button>
+      <button class="tab-btn" data-tab="records">Records</button>
       <button class="tab-btn" data-tab="reference">Reference</button>
     </nav>
   </header>
@@ -311,20 +332,49 @@ table.data tr:hover td{ background:var(--surface-2); }
 
       <div class="panel">
         <h2>How this compares to average</h2>
-        <div class="panel-sub">Today, this week, and this month vs. the historical average for the same period</div>
-        <div class="kpi-row" id="compareKpis"></div>
+        <div class="panel-sub">High temps</div>
+        <div class="kpi-row" id="compareHighKpis"></div>
+        <div class="panel-sub" style="margin-top:14px;">Low temps</div>
+        <div class="kpi-row" id="compareLowKpis"></div>
+        <div class="panel-sub" style="margin-top:14px;">Rainfall</div>
+        <div class="kpi-row" id="compareRainKpis"></div>
       </div>
 
-      <div class="panel">
-        <h2>Temperature — last 3 months &amp; next 3 months</h2>
-        <div class="panel-sub">Recorded highs/lows for recent months; historical monthly averages projected forward</div>
-        <div class="chart-wrap tall"><canvas id="chartSeasonal"></canvas></div>
-      </div>
-
-      <div class="panel">
+      <div class="panel sticky-controls">
         <h2>Trend charts</h2>
-        <div class="panel-sub">One shared date-range slider drives every chart below in Series view. Charts in Stacked view compare years directly, so they use their own day-of-year range instead.</div>
+        <div class="panel-sub">One shared set of year chips controls every chart below. Drag the slider to zoom into part of the year — both axes rescale to fit what's visible.</div>
+        <div class="year-controls" id="yc-shared"></div>
         <div class="slider-row" id="sl-shared-x" style="grid-template-columns:1fr 1fr;"></div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h2>Daily highs (°F)</h2>
+          <div class="year-controls" id="yc-high"></div>
+          <div class="slider-row" id="sl-high" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap tall"><canvas id="chartTrendHigh"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2>Daily lows (°F)</h2>
+          <div class="year-controls" id="yc-low"></div>
+          <div class="slider-row" id="sl-low" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap tall"><canvas id="chartTrendLow"></canvas></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h2>Feels-like highs (°F)</h2>
+          <div class="year-controls" id="yc-feels-high"></div>
+          <div class="slider-row" id="sl-feels-high" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap tall"><canvas id="chartTrendFeelsHigh"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2>Feels-like lows (°F)</h2>
+          <div class="year-controls" id="yc-feels-low"></div>
+          <div class="slider-row" id="sl-feels-low" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap tall"><canvas id="chartTrendFeelsLow"></canvas></div>
+        </div>
       </div>
 
       <div class="panel">
@@ -333,21 +383,6 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="year-controls" id="yc-rain"></div>
         <div class="slider-row" id="sl-rain" style="grid-template-columns:1fr 1fr;"></div>
         <div class="chart-wrap tall"><canvas id="chartTrendRain"></canvas></div>
-      </div>
-
-      <div class="two-col">
-        <div class="panel">
-          <h2>Daily highs (°F)</h2>
-          <div class="year-controls" id="yc-high"></div>
-          <div class="slider-row" id="sl-high" style="grid-template-columns:1fr 1fr;"></div>
-          <div class="chart-wrap"><canvas id="chartTrendHigh"></canvas></div>
-        </div>
-        <div class="panel">
-          <h2>Daily lows (°F)</h2>
-          <div class="year-controls" id="yc-low"></div>
-          <div class="slider-row" id="sl-low" style="grid-template-columns:1fr 1fr;"></div>
-          <div class="chart-wrap"><canvas id="chartTrendLow"></canvas></div>
-        </div>
       </div>
 
       <div class="two-col">
@@ -367,12 +402,21 @@ table.data tr:hover td{ background:var(--surface-2); }
         </div>
       </div>
 
-      <div class="panel">
-        <h2>Water needed — 7-day rolling average</h2>
-        <div class="panel-sub">Inches per week, by grass type</div>
-        <div class="year-controls" id="yc-etweekly"></div>
-        <div class="slider-row" id="sl-etweekly" style="grid-template-columns:1fr 1fr;"></div>
-        <div class="chart-wrap tall"><canvas id="chartEtWeekly"></canvas></div>
+      <div class="two-col">
+        <div class="panel">
+          <h2>Water needed — 7-day rolling average — Bermuda</h2>
+          <div class="panel-sub">Inches per week</div>
+          <div class="year-controls" id="yc-etweekly-bermuda"></div>
+          <div class="slider-row" id="sl-etweekly-bermuda" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap tall"><canvas id="chartEtWeeklyBermuda"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2>Water needed — 7-day rolling average — Fescue</h2>
+          <div class="panel-sub">Inches per week</div>
+          <div class="year-controls" id="yc-etweekly-fescue"></div>
+          <div class="slider-row" id="sl-etweekly-fescue" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap tall"><canvas id="chartEtWeeklyFescue"></canvas></div>
+        </div>
       </div>
     </section>
 
@@ -400,9 +444,31 @@ table.data tr:hover td{ background:var(--surface-2); }
 
       <div class="kpi-row" id="mowerKpis"></div>
 
+      <div class="view-toggle" id="mwAvgToggle" style="margin-bottom:14px; width:fit-content;">
+        <button data-m="avg" class="on">Average per day</button>
+        <button data-m="total">Total</button>
+      </div>
+
       <div class="panel">
         <h2>Mowing minutes by zone</h2>
         <div class="chart-wrap tall"><canvas id="chartMowZone"></canvas></div>
+      </div>
+
+      <div class="panel">
+        <h2>Mower efficiency</h2>
+        <div class="panel-sub">Mowing time vs. other active codes, as a share of a 24-hour day. Idle (unscheduled/parked) time is excluded from the efficiency ratio entirely — it's not "downtime," it's just off-hours.</div>
+        <div class="two-col">
+          <div>
+            <h3 style="font-size:0.95rem; margin-bottom:8px;">Mowtilda</h3>
+            <div class="chart-wrap"><canvas id="chartEfficiencyMowtilda"></canvas></div>
+            <div class="kpi-row" id="effKpiMowtilda" style="margin-top:12px;"></div>
+          </div>
+          <div>
+            <h3 style="font-size:0.95rem; margin-bottom:8px;">Eskimow Joe</h3>
+            <div class="chart-wrap"><canvas id="chartEfficiencyEskimow"></canvas></div>
+            <div class="kpi-row" id="effKpiEskimow" style="margin-top:12px;"></div>
+          </div>
+        </div>
       </div>
 
       <div class="panel">
@@ -445,6 +511,7 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="filter-field">
           <label>Quick range</label>
           <select id="wxQuick">
+            <option value="7">Last 7 days</option>
             <option value="30">Last 30 days</option>
             <option value="90">Last 90 days</option>
             <option value="365" selected>Last 12 months</option>
@@ -463,10 +530,12 @@ table.data tr:hover td{ background:var(--surface-2); }
       <div class="two-col">
         <div class="panel">
           <h2>Rainfall</h2>
+          <div class="slider-row" id="sl-wx-rain" style="grid-template-columns:1fr 1fr;"></div>
           <div class="chart-wrap"><canvas id="chartWxRain"></canvas></div>
         </div>
         <div class="panel">
           <h2>Water lost to evaporation</h2>
+          <div class="slider-row" id="sl-wx-et0" style="grid-template-columns:1fr 1fr;"></div>
           <div class="chart-wrap"><canvas id="chartWxEt0"></canvas></div>
         </div>
       </div>
@@ -500,6 +569,7 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="filter-field">
           <label>Quick range</label>
           <select id="irQuick">
+            <option value="7">Last 7 days</option>
             <option value="30" selected>Last 30 days</option>
             <option value="90">Last 90 days</option>
             <option value="365">Last 12 months</option>
@@ -512,7 +582,8 @@ table.data tr:hover td{ background:var(--surface-2); }
 
       <div class="panel">
         <h2>What the grass needed vs. what it got</h2>
-        <div class="panel-sub">Rain and sprinkler water are shown separately</div>
+        <div class="panel-sub">Gray area: water needed. Wide bar: irrigation + rain combined. Narrow bar in front: rain's share of that.</div>
+        <div class="slider-row" id="sl-ir-balance" style="grid-template-columns:1fr 1fr;"></div>
         <div class="chart-wrap tall"><canvas id="chartIrBalance"></canvas></div>
       </div>
 
@@ -569,6 +640,40 @@ table.data tr:hover td{ background:var(--surface-2); }
       <div class="panel">
         <div class="table-wrap">
           <table class="data" id="exTable"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RECORDS ================= -->
+    <section class="tab-panel" id="tab-records">
+      <div class="panel">
+        <h2>Days at or above 100°F</h2>
+        <div class="panel-sub">Ambient high temperature, by year</div>
+        <div class="slider-row" id="sl-rec-high100" style="grid-template-columns:1fr 1fr;"></div>
+        <div class="chart-wrap tall"><canvas id="chartRecHigh100"></canvas></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <h2>Days with a feels-like high ≥ 100°F</h2>
+          <div class="slider-row" id="sl-rec-feelshigh" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap"><canvas id="chartRecFeelsHigh"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2>Days with a feels-like low ≤ 32°F</h2>
+          <div class="slider-row" id="sl-rec-feelslow" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap"><canvas id="chartRecFeelsLow"></canvas></div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <h2>Freeze days (low ≤ 32°F)</h2>
+          <div class="slider-row" id="sl-rec-freeze" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap"><canvas id="chartRecFreeze"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2>Total rainfall by year</h2>
+          <div class="slider-row" id="sl-rec-rain" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap"><canvas id="chartRecRain"></canvas></div>
         </div>
       </div>
     </section>
@@ -711,6 +816,10 @@ const supa = (function initSupabase(){
       'Could not load the Supabase library — check your internet connection.';
     return null;
   }
+  if (typeof window.ChartDataLabels !== 'undefined') {
+    Chart.register(window.ChartDataLabels);
+    Chart.defaults.set('plugins.datalabels', { display: false }); // opt-in per chart, not global
+  }
   return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 })();
 
@@ -724,6 +833,48 @@ const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate()-n); return 
 const startOfYear = () => new Date(new Date().getFullYear(), 0, 1);
 const monthName = (i) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i];
 const num = (v, d=1) => (v === null || v === undefined || isNaN(v)) ? '—' : Number(v).toFixed(d);
+
+/* Supabase's API caps any single response at a server-side row limit
+   (commonly 1000) -- a client-side .limit() can only ask for FEWER rows
+   than that cap, never more. This pages through in chunks so full
+   multi-year history actually comes back instead of silently truncating. */
+async function fetchAllRows(buildQuery, pageSize=1000){
+  let allRows = []; let from = 0;
+  while (true) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+    if (error) { console.error('fetchAllRows error:', error); break; }
+    if (!data || data.length === 0) break;
+    allRows = allRows.concat(data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return allRows;
+}
+
+/* ---- sortable tables ---- */
+function attachSort(theadSelector, stateRef, accessors, rerenderFn){
+  const ths = document.querySelectorAll(theadSelector + ' th');
+  ths.forEach((th, idx) => {
+    if (th.dataset.sortBound) return; // avoid double-binding on a reused thead
+    th.dataset.sortBound = '1';
+    th.addEventListener('click', () => {
+      if (stateRef.idx === idx) stateRef.dir *= -1; else { stateRef.idx = idx; stateRef.dir = 1; }
+      ths.forEach(t => t.classList.remove('sort-asc','sort-desc'));
+      th.classList.add(stateRef.dir===1 ? 'sort-asc' : 'sort-desc');
+      const getter = accessors[idx];
+      if (!getter) return;
+      stateRef.rows.sort((a,b) => {
+        const va = getter(a), vb = getter(b);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        if (typeof va === 'number' && typeof vb === 'number') return (va-vb) * stateRef.dir;
+        return String(va).localeCompare(String(vb)) * stateRef.dir;
+      });
+      rerenderFn(stateRef.rows);
+    });
+  });
+}
 const yearOf = (dateStr) => dateStr.slice(0,4);
 function dayOfYear(dateStr){
   const d = new Date(dateStr+'T00:00:00Z');
@@ -749,6 +900,16 @@ const CHART_COLORS = {
   irrigation:'#2f6b47', et0:'#c67f14', applied:'#2f6b47', need:'#d6432b', historical:'#a1a1a6'
 };
 const YEAR_COLORS = ['#2f6b47','#d6432b','#c67f14','#0a84ff','#8b5cf6','#a1a1a6','#1d9bf0'];
+const DOY_MONTH_STARTS = [1,32,60,91,121,152,182,213,244,274,305,335]; // non-leap reference
+const DOY_MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function doyToLabel(doy){
+  doy = Math.round(doy);
+  let m = 11;
+  for (let i=0;i<12;i++){ if (doy < DOY_MONTH_STARTS[i]) { m = i-1; break; } }
+  if (m < 0) m = 0;
+  const dayInMonth = doy - DOY_MONTH_STARTS[m] + 1;
+  return `${DOY_MONTH_ABBR[m]} ${dayInMonth}`;
+}
 
 function emptyState(canvasId, msg){
   const c = $('#'+canvasId);
@@ -759,7 +920,7 @@ function emptyState(canvasId, msg){
 
 /* ---- chart registry + global progressive-animation speed ---- */
 const charts = {};
-let ANIMATION_SPEED_MS = 8; // ms of stagger per data point, 0 = instant. Controlled by the header slider.
+let ANIMATION_SPEED_MS = 3; // ms of stagger per data point, 0 = instant. Controlled by the header slider.
 
 function makeChart(id, config){
   if (charts[id]) charts[id].destroy();
@@ -836,14 +997,38 @@ function initApp(){
   initIrrigationTab();
   initExplorerTab();
   renderReferenceKc();
+  initRecordsTab();
 }
 
 /* ============================================================
    TRENDS TAB — KPI strip + compare-to-average strip + seasonal chart
    (multi-year trend charts themselves are in part 4)
    ============================================================ */
+function compareCard(label, actual, base, unit, decimals=0){
+  if (actual == null || base == null) return {label, value:'—'};
+  const diff = actual - base;
+  const arrow = diff > 0 ? '▲' : (diff < 0 ? '▼' : '—');
+  return { label, value:num(actual,decimals), unit,
+    sub:`${arrow} ${diff>0?'+':''}${num(diff,decimals)} vs avg`,
+    subClass: diff===0 ? '' : (diff>0 ? 'neg' : 'pos') };
+}
+function renderKpiCards(containerId, cards){
+  const el = $('#'+containerId);
+  if (!el) return;
+  el.innerHTML = cards.map(k => `
+    <div class="kpi-card ${k.subClass==='neg'?'alert':''}">
+      <div class="label">${k.label}</div>
+      <div class="value ${k.subClass==='neg'?'alert':''}">${k.value}${k.unit ? ` <span class="unit">${k.unit}</span>`:''}</div>
+      ${k.sub ? `<div class="sub ${k.subClass}">${k.sub}</div>` : ''}
+    </div>`).join('');
+}
+
 async function renderOverviewKpis(){
   const from = fmtDate(daysAgo(30));
+  const now = new Date();
+  const month = now.getMonth();
+  const daysInMonth = new Date(now.getFullYear(), month+1, 0).getDate();
+
   const { data: wx } = await supa.from('weather_daily')
     .select('temp_high_f,temp_low_f,rain_in,et0_in')
     .gte('weather_date', from);
@@ -854,18 +1039,23 @@ async function renderOverviewKpis(){
     .select('feels_low_f,feels_high_f')
     .gte('weather_date', from);
 
+  const baseHigh = HISTORICAL_MONTHLY.avgHighF[month];
+  const baseLow = HISTORICAL_MONTHLY.avgLowF[month];
+  const baseRain30 = HISTORICAL_MONTHLY.avgRainIn[month] / daysInMonth * 30;
+  const baseFeels = (HISTORICAL_MONTHLY.avgFeelsHighF[month] + HISTORICAL_MONTHLY.avgFeelsLowF[month]) / 2;
+
   const kpis = [];
   if (wx && wx.length){
-    kpis.push({label:'Avg high (30d)', value:num(avg(wx.map(r=>r.temp_high_f).filter(v=>v!=null)),0), unit:'°F'});
-    kpis.push({label:'Avg low (30d)', value:num(avg(wx.map(r=>r.temp_low_f).filter(v=>v!=null)),0), unit:'°F'});
-    kpis.push({label:'Total rain (30d)', value:num(wx.reduce((s,r)=>s+(r.rain_in||0),0),2), unit:'in'});
+    kpis.push(compareCard('Avg high (30d)', avg(wx.map(r=>r.temp_high_f).filter(v=>v!=null)), baseHigh, '°F'));
+    kpis.push(compareCard('Avg low (30d)', avg(wx.map(r=>r.temp_low_f).filter(v=>v!=null)), baseLow, '°F'));
+    kpis.push(compareCard('Total rain (30d)', wx.reduce((s,r)=>s+(r.rain_in||0),0), baseRain30, 'in', 2));
     kpis.push({label:'Water lost (30d)', value:num(wx.reduce((s,r)=>s+(r.et0_in||0),0),2), unit:'in'});
   } else {
     ['Avg high (30d)','Avg low (30d)','Total rain (30d)','Water lost (30d)'].forEach(l=>kpis.push({label:l,value:'—'}));
   }
   if (feelsRows && feelsRows.length){
     const avgFeels = avg(feelsRows.map(r=>((r.feels_low_f||0)+(r.feels_high_f||0))/2));
-    kpis.push({label:'Avg feels-like (30d)', value:num(avgFeels,0), unit:'°F'});
+    kpis.push(compareCard('Avg feels-like (30d)', avgFeels, baseFeels, '°F'));
   } else kpis.push({label:'Avg feels-like (30d)', value:'—'});
   if (bal && bal.length){
     kpis.push({label:'Irrigation applied (30d)', value:num(bal.reduce((s,r)=>s+(r.irrigation_applied_in||0),0),2), unit:'in'});
@@ -876,111 +1066,74 @@ async function renderOverviewKpis(){
     kpis.push({label:'Irrigation applied (30d)', value:'—'});
     kpis.push({label:'Watering shortfall (30d)', value:'—'});
   }
-
-  $('#overviewKpis').innerHTML = kpis.map(k => `
-    <div class="kpi-card ${k.subClass==='neg'?'alert':''}">
-      <div class="label">${k.label}</div>
-      <div class="value ${k.subClass==='neg'?'alert':''}">${k.value}${k.unit ? ` <span class="unit">${k.unit}</span>`:''}</div>
-      ${k.sub ? `<div class="sub ${k.subClass}">${k.sub}</div>` : ''}
-    </div>`).join('');
+  renderKpiCards('overviewKpis', kpis);
 }
 
-async function renderCompareKpis(){
-  const now = new Date();
-  const month = now.getMonth();
-  const daysInMonth = new Date(now.getFullYear(), month+1, 0).getDate();
-  const monthStart = fmtDate(new Date(now.getFullYear(), month, 1));
-  const weekStart = fmtDate(daysAgo(6));
-  const todayStr = fmtDate(now);
-
-  const { data: monthRows } = await supa.from('weather_daily')
-    .select('weather_date,temp_high_f,temp_low_f,rain_in,wind_avg_mph,feels_high_f,feels_low_f')
-    .gte('weather_date', monthStart).order('weather_date');
-
-  if (!monthRows || !monthRows.length){ $('#compareKpis').innerHTML = '<div class="empty-state">No weather data yet.</div>'; return; }
-
-  const todayRow = monthRows.find(r => r.weather_date === todayStr);
-  const weekRows = monthRows.filter(r => r.weather_date >= weekStart);
-
-  const baseHigh = HISTORICAL_MONTHLY.avgHighF[month];
-  const baseLow = HISTORICAL_MONTHLY.avgLowF[month];
-  const baseRainMonth = HISTORICAL_MONTHLY.avgRainIn[month];
-  const baseRainDay = baseRainMonth / daysInMonth;
-  const baseWind = HISTORICAL_MONTHLY.avgWindMph[month];
-  const baseFeelsHigh = HISTORICAL_MONTHLY.avgFeelsHighF[month];
-
-  function compareCard(label, actual, base, unit, decimals=0){
-    if (actual == null || base == null) return {label, value:'—'};
-    const diff = actual - base;
-    const arrow = diff > 0 ? '▲' : (diff < 0 ? '▼' : '—');
-    return { label, value:num(actual,decimals), unit,
-      sub:`${arrow} ${diff>0?'+':''}${num(diff,decimals)} vs avg`,
-      subClass: diff===0 ? '' : (diff>0 ? 'neg' : 'pos') };
+async function renderCompareKpiGroups(){
+  const rows = await fetchAllRows(() => supa.from('weather_daily')
+    .select('weather_date,temp_high_f,temp_low_f,feels_high_f,feels_low_f,rain_in')
+    .order('weather_date'));
+  if (!rows.length){
+    ['compareHighKpis','compareLowKpis','compareRainKpis'].forEach(id => {
+      $('#'+id).innerHTML = '<div class="empty-state">No weather data yet.</div>';
+    });
+    return;
   }
 
-  const cards = [
-    compareCard('High today', todayRow ? todayRow.temp_high_f : null, baseHigh, '°F'),
-    compareCard('Rain today', todayRow ? todayRow.rain_in : null, baseRainDay, 'in', 2),
-    compareCard('Rain this week', weekRows.reduce((s,r)=>s+(r.rain_in||0),0), baseRainDay*7, 'in', 2),
-    compareCard('Rain this month', monthRows.reduce((s,r)=>s+(r.rain_in||0),0), baseRainMonth, 'in', 2),
-    compareCard('Avg high this week', avg(weekRows.map(r=>r.temp_high_f).filter(v=>v!=null)), baseHigh, '°F'),
-    compareCard('Avg low this week', avg(weekRows.map(r=>r.temp_low_f).filter(v=>v!=null)), baseLow, '°F'),
-    compareCard('Avg wind this week', avg(weekRows.map(r=>r.wind_avg_mph).filter(v=>v!=null)), baseWind, 'mph', 1),
-    compareCard('Avg feels-like high, this week', avg(weekRows.map(r=>r.feels_high_f).filter(v=>v!=null)), baseFeelsHigh, '°F'),
-  ];
+  const today = rows[rows.length-1]; // latest row present, treated as "today"
+  const todayStr = today.weather_date;
+  const nowY = Number(yearOf(todayStr));
+  const weekStart = fmtDate(new Date(new Date(todayStr).getTime() - 6*86400000));
+  const monthStart = todayStr.slice(0,7)+'-01';
+  const yearStart = nowY+'-01-01';
 
-  $('#compareKpis').innerHTML = cards.map(k => `
-    <div class="kpi-card">
-      <div class="label">${k.label}</div>
-      <div class="value">${k.value}${k.unit ? ` <span class="unit">${k.unit}</span>`:''}</div>
-      ${k.sub ? `<div class="sub ${k.subClass}">${k.sub}</div>` : ''}
-    </div>`).join('');
-}
+  const weekRows = rows.filter(r => r.weather_date >= weekStart);
+  const monthRows = rows.filter(r => r.weather_date >= monthStart);
+  const yearRows = rows.filter(r => r.weather_date >= yearStart);
 
-async function renderSeasonalChart(){
-  const start = new Date(); start.setMonth(start.getMonth()-3); start.setDate(1);
-  const { data } = await supa.from('weather_daily')
-    .select('weather_date,temp_high_f,temp_low_f')
-    .gte('weather_date', fmtDate(start))
-    .order('weather_date');
+  const avgOf = (arr, key) => avg(arr.map(r=>r[key]).filter(v=>v!=null));
+  const sumOf = (arr, key) => arr.reduce((s,r)=>s+(r[key]||0),0);
 
-  const byMonth = {};
-  (data||[]).forEach(r => {
-    const m = new Date(r.weather_date).getMonth();
-    byMonth[m] = byMonth[m] || {highs:[],lows:[]};
-    if (r.temp_high_f!=null) byMonth[m].highs.push(r.temp_high_f);
-    if (r.temp_low_f!=null) byMonth[m].lows.push(r.temp_low_f);
-  });
+  renderKpiCards('compareHighKpis', [
+    {label:'High today', value:num(today.temp_high_f,0), unit:'°F'},
+    {label:'High this week', value:num(avgOf(weekRows,'temp_high_f'),0), unit:'°F'},
+    {label:'High this month', value:num(avgOf(monthRows,'temp_high_f'),0), unit:'°F'},
+    {label:'High this year', value:num(avgOf(yearRows,'temp_high_f'),0), unit:'°F'},
+    {label:'Feels-like high today', value:num(today.feels_high_f,0), unit:'°F'},
+    {label:'Feels-like high this month', value:num(avgOf(monthRows,'feels_high_f'),0), unit:'°F'},
+    {label:'Feels-like high this year', value:num(avgOf(yearRows,'feels_high_f'),0), unit:'°F'},
+  ]);
 
-  const labels = []; const actualHigh = []; const actualLow = [];
-  const climoHigh = []; const climoLow = [];
-  const now = new Date();
-  for (let offset=-3; offset<=3; offset++){
-    const d = new Date(now.getFullYear(), now.getMonth()+offset, 1);
-    const m = d.getMonth();
-    labels.push(monthName(m) + " '" + String(d.getFullYear()).slice(2));
-    if (offset <= 0 && byMonth[m] && byMonth[m].highs.length){
-      actualHigh.push(avg(byMonth[m].highs)); actualLow.push(avg(byMonth[m].lows));
-      climoHigh.push(null); climoLow.push(null);
-    } else {
-      actualHigh.push(null); actualLow.push(null);
-      climoHigh.push(HISTORICAL_MONTHLY.avgHighF[m]); climoLow.push(HISTORICAL_MONTHLY.avgLowF[m]);
-    }
-  }
+  renderKpiCards('compareLowKpis', [
+    {label:'Low today', value:num(today.temp_low_f,0), unit:'°F'},
+    {label:'Low this week', value:num(avgOf(weekRows,'temp_low_f'),0), unit:'°F'},
+    {label:'Low this month', value:num(avgOf(monthRows,'temp_low_f'),0), unit:'°F'},
+    {label:'Low this year', value:num(avgOf(yearRows,'temp_low_f'),0), unit:'°F'},
+    {label:'Feels-like low today', value:num(today.feels_low_f,0), unit:'°F'},
+    {label:'Feels-like low this month', value:num(avgOf(monthRows,'feels_low_f'),0), unit:'°F'},
+    {label:'Feels-like low this year', value:num(avgOf(yearRows,'feels_low_f'),0), unit:'°F'},
+  ]);
 
-  makeChart('chartSeasonal', {
-    type:'line',
-    data:{ labels, datasets:[
-      { label:'Recorded high', data:actualHigh, borderColor:CHART_COLORS.high, backgroundColor:CHART_COLORS.high, spanGaps:false, tension:.3 },
-      { label:'Recorded low', data:actualLow, borderColor:CHART_COLORS.low, backgroundColor:CHART_COLORS.low, spanGaps:false, tension:.3 },
-      { label:'Historical avg high', data:climoHigh, borderColor:CHART_COLORS.high, borderDash:[6,4], spanGaps:false, tension:.3, pointStyle:false },
-      { label:'Historical avg low', data:climoLow, borderColor:CHART_COLORS.low, borderDash:[6,4], spanGaps:false, tension:.3, pointStyle:false },
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{position:'bottom'} },
-      scales:{ y:{ title:{display:true, text:'°F'} } }
-    }
-  });
+  // real yearly rain totals from actual history, for last-year/5yr/10yr averages
+  const rainByYear = {};
+  rows.forEach(r => { const y = Number(yearOf(r.weather_date)); rainByYear[y] = (rainByYear[y]||0) + (r.rain_in||0); });
+  const lastYearTotal = rainByYear[nowY-1];
+  const completeYears = Object.keys(rainByYear).map(Number).filter(y => y < nowY).sort((a,b)=>b-a);
+  const avgOverYears = (n) => {
+    const ys = completeYears.slice(0, n);
+    if (!ys.length) return null;
+    return avg(ys.map(y=>rainByYear[y]));
+  };
+
+  renderKpiCards('compareRainKpis', [
+    {label:'Rain today', value:num(today.rain_in,2), unit:'in'},
+    {label:'Rain this week', value:num(sumOf(weekRows,'rain_in'),2), unit:'in'},
+    {label:'Rain this month', value:num(sumOf(monthRows,'rain_in'),2), unit:'in'},
+    {label:'Rain this year', value:num(sumOf(yearRows,'rain_in'),2), unit:'in'},
+    {label:'Rain last year', value: lastYearTotal!=null ? num(lastYearTotal,2) : '—', unit: lastYearTotal!=null ? 'in' : ''},
+    {label:'5-year average', value: num(avgOverYears(5),2), unit:'in'},
+    {label:'10-year average', value: num(avgOverYears(10),2), unit:'in'},
+  ]);
 }
 
 async function renderReferenceKc(){
@@ -1017,6 +1170,11 @@ function quickRangeDates(value){
   return [daysAgo(Number(value)), new Date()];
 }
 
+/* ---- mutable row state for each sortable table ---- */
+const wxState = { rows:[], idx:null, dir:1 };
+const irState = { rows:[], idx:null, dir:1 };
+const mwState = { rows:[], idx:null, dir:1 };
+
 /* ============================================================
    MOWERS TAB (incl. non-working-time report)
    ============================================================ */
@@ -1050,34 +1208,68 @@ async function renderMowersTab(){
     $('#mwTable tbody').innerHTML = '';
   } else {
     const totalMinutes = data.reduce((s,r)=>s+(r.est_minutes||0),0);
+    const dayCount = new Set(data.map(r=>r.day)).size || 1;
     const byZoneTotal = {};
     data.forEach(r => { byZoneTotal[r.zone_name||'Unassigned'] = (byZoneTotal[r.zone_name||'Unassigned']||0) + (r.est_minutes||0); });
     const topZone = Object.entries(byZoneTotal).sort((a,b)=>b[1]-a[1])[0];
 
     $('#mowerKpis').innerHTML = [
       {label:'Total mow time', value:num(totalMinutes/60,1), unit:'hrs'},
-      {label:'Days with activity', value:new Set(data.map(r=>r.day)).size},
+      {label:'Days with activity', value:dayCount},
       {label:'Busiest zone', value: topZone ? topZone[0] : '—'},
     ].map(k => `<div class="kpi-card"><div class="label">${k.label}</div><div class="value">${k.value}${k.unit?` <span class="unit">${k.unit}</span>`:''}</div></div>`).join('');
 
-    const zones = Object.keys(byZoneTotal).sort((a,b)=>byZoneTotal[b]-byZoneTotal[a]).slice(0,12);
-    makeChart('chartMowZone', {
-      type:'bar',
-      data:{ labels:zones, datasets:[{ label:'Minutes', data:zones.map(z=>Math.round(byZoneTotal[z])), backgroundColor:CHART_COLORS.applied }]},
-      options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}} }
-    });
+    drawMowZoneChart(byZoneTotal, dayCount);
 
-    $('#mwTable tbody').innerHTML = data.slice().reverse().slice(0,300).map(r => `
-      <tr><td>${r.day ? r.day.slice(0,10) : ''}</td><td>${r.mower_name}</td><td>${r.zone_name||'Unassigned'}</td><td>${num(r.est_minutes,1)}</td></tr>
-    `).join('');
+    const mwRenderRows = (rows) => {
+      $('#mwTable tbody').innerHTML = rows.map(r => `
+        <tr><td>${r.day ? r.day.slice(0,10) : ''}</td><td>${r.mower_name}</td><td>${r.zone_name||'Unassigned'}</td><td>${num(r.est_minutes,1)}</td></tr>
+      `).join('');
+    };
+    mwState.rows = data.slice().reverse().slice(0,300);
+    mwRenderRows(mwState.rows);
+    attachSort('#mwTable thead', mwState,
+      [r=>r.day, r=>r.mower_name, r=>r.zone_name, r=>r.est_minutes],
+      mwRenderRows);
   }
 
   await renderNonWorkingReport(from, to);
 }
 
+let mwAvgMode = true; // true = average per day, false = total
+let lastZoneTotals = null, lastZoneDayCount = 1;
+let lastNonWorkStates = { Mowtilda:null, 'Eskimow Joe':null }, lastNonWorkDays = { Mowtilda:1, 'Eskimow Joe':1 };
+
+function drawMowZoneChart(byZoneTotal, dayCount){
+  lastZoneTotals = byZoneTotal; lastZoneDayCount = dayCount;
+  const zones = Object.keys(byZoneTotal).sort((a,b)=>byZoneTotal[b]-byZoneTotal[a]).slice(0,12);
+  const divisor = mwAvgMode ? dayCount : 1;
+  makeChart('chartMowZone', {
+    type:'bar',
+    data:{ labels:zones, datasets:[{ label: mwAvgMode?'Hours/day':'Total hours',
+      data:zones.map(z=>Math.round((byZoneTotal[z]/60/divisor)*10)/10), backgroundColor:CHART_COLORS.applied }]},
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false},
+      datalabels:{ display:true, color:'#1d1d1f', anchor:'end', align:'right', formatter:(v)=>num(v,1) } } }
+  });
+}
+
+$('#mwAvgToggle').querySelectorAll('button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    mwAvgMode = btn.dataset.m === 'avg';
+    $('#mwAvgToggle').querySelectorAll('button').forEach(b => b.classList.toggle('on', b===btn));
+    if (lastZoneTotals) drawMowZoneChart(lastZoneTotals, lastZoneDayCount);
+    if (lastNonWorkStates.Mowtilda) drawNonWorkChart('Mowtilda', 'chartNonWorkMowtilda', lastNonWorkStates.Mowtilda, lastNonWorkDays.Mowtilda);
+    if (lastNonWorkStates['Eskimow Joe']) drawNonWorkChart('Eskimow Joe', 'chartNonWorkEskimow', lastNonWorkStates['Eskimow Joe'], lastNonWorkDays['Eskimow Joe']);
+    if (lastEffMinutes.Mowtilda) drawEfficiencyDonut('Mowtilda', 'chartEfficiencyMowtilda', 'effKpiMowtilda', lastEffMinutes.Mowtilda, lastNonWorkDays.Mowtilda);
+    if (lastEffMinutes['Eskimow Joe']) drawEfficiencyDonut('Eskimow Joe', 'chartEfficiencyEskimow', 'effKpiEskimow', lastEffMinutes['Eskimow Joe'], lastNonWorkDays['Eskimow Joe']);
+  });
+});
+
+let lastEffMinutes = { Mowtilda:null, 'Eskimow Joe':null };
+
 async function renderNonWorkingReport(from, to){
   const { data } = await supa.from('mower_activity')
-    .select('mower_name,timestamp_utc,ls_code')
+    .select('mower_name,timestamp_utc,ls_code,battery_pct')
     .gte('timestamp_utc', from).lte('timestamp_utc', to+'T23:59:59')
     .order('timestamp_utc')
     .limit(10000);
@@ -1085,34 +1277,82 @@ async function renderNonWorkingReport(from, to){
   if (!data || !data.length){
     emptyState('chartNonWorkMowtilda', 'No data yet.');
     emptyState('chartNonWorkEskimow', 'No data yet.');
+    emptyState('chartEfficiencyMowtilda', 'No data yet.');
+    emptyState('chartEfficiencyEskimow', 'No data yet.');
     return;
   }
 
   const byMower = {};
   data.forEach(r => { (byMower[r.mower_name] = byMower[r.mower_name] || []).push(r); });
 
-  function buildFor(mowerName, chartId){
+  function buildFor(mowerName, chartId, effChartId, effKpiId){
     const rows = byMower[mowerName];
-    if (!rows || rows.length < 2){ emptyState(chartId, 'No data yet.'); return; }
+    if (!rows || rows.length < 2){ emptyState(chartId, 'No data yet.'); emptyState(effChartId, 'No data yet.'); return; }
     const stateMinutes = {};
+    // Battery isn't a stored "charging" boolean -- this is a heuristic:
+    // >=95% while parked reads as sitting fully charged ("idle"), anything
+    // lower while parked reads as actively topping up ("charging").
+    const eff = { mowing:0, charging:0, idle:0, other:0 };
+    const daySet = new Set();
     for (let i = 0; i < rows.length - 1; i++){
       const r = rows[i];
-      if (MOWING_CODES.has(r.ls_code)) continue; // only non-working states
+      daySet.add(r.timestamp_utc.slice(0,10));
       const gapMin = (new Date(rows[i+1].timestamp_utc) - new Date(r.timestamp_utc)) / 60000;
       if (gapMin <= 0 || gapMin > 180) continue; // skip bogus/overnight gaps
+      if (MOWING_CODES.has(r.ls_code)){ eff.mowing += gapMin; continue; }
       const label = NON_WORKING_LABELS[r.ls_code] || `code ${r.ls_code}`;
       stateMinutes[label] = (stateMinutes[label] || 0) + gapMin;
+      if (r.ls_code === 1){
+        if ((r.battery_pct ?? 100) >= 95) eff.idle += gapMin; else eff.charging += gapMin;
+      } else {
+        eff.other += gapMin;
+      }
     }
-    const entries = Object.entries(stateMinutes).sort((a,b)=>b[1]-a[1]);
-    if (!entries.length){ emptyState(chartId, 'No non-working time recorded.'); return; }
-    makeChart(chartId, {
-      type:'bar',
-      data:{ labels:entries.map(e=>e[0]), datasets:[{ label:'Minutes', data:entries.map(e=>Math.round(e[1])), backgroundColor:CHART_COLORS.high }]},
-      options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}} }
-    });
+    lastNonWorkStates[mowerName] = stateMinutes;
+    lastNonWorkDays[mowerName] = daySet.size || 1;
+    lastEffMinutes[mowerName] = eff;
+    drawNonWorkChart(mowerName, chartId, stateMinutes, daySet.size || 1);
+    drawEfficiencyDonut(mowerName, effChartId, effKpiId, eff, daySet.size || 1);
   }
-  buildFor('Mowtilda', 'chartNonWorkMowtilda');
-  buildFor('Eskimow Joe', 'chartNonWorkEskimow');
+  buildFor('Mowtilda', 'chartNonWorkMowtilda', 'chartEfficiencyMowtilda', 'effKpiMowtilda');
+  buildFor('Eskimow Joe', 'chartNonWorkEskimow', 'chartEfficiencyEskimow', 'effKpiEskimow');
+}
+
+function drawEfficiencyDonut(mowerName, chartId, kpiId, eff, dayCount){
+  const divisor = mwAvgMode ? dayCount : 1;
+  const mowHrs = eff.mowing/60/divisor;
+  const chargeHrs = eff.charging/60/divisor;
+  const otherHrs = eff.other/60/divisor;
+  const idleHrs = eff.idle/60/divisor;
+  const workableHrs = mowHrs + chargeHrs + otherHrs; // idle excluded from the denominator entirely
+  const efficiencyPct = workableHrs > 0 ? (mowHrs/workableHrs*100) : 0;
+
+  makeChart(chartId, {
+    type:'doughnut',
+    data:{ labels:['Mowing','Other active codes','Idle (unscheduled)'],
+      datasets:[{ data:[Number(mowHrs.toFixed(1)), Number((chargeHrs+otherHrs).toFixed(1)), Number(idleHrs.toFixed(1))],
+        backgroundColor:[CHART_COLORS.applied, CHART_COLORS.high, '#d2d2d7'] }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:10}},
+        datalabels:{ color:'#fff', font:{weight:'bold'}, formatter:(v)=> v>0 ? num(v,1)+'h' : '' } } }
+  });
+  $('#'+kpiId).innerHTML = `
+    <div class="kpi-card"><div class="label">Efficiency (mowing ÷ workable)</div><div class="value">${num(efficiencyPct,1)}<span class="unit">%</span></div></div>
+    <div class="kpi-card"><div class="label">${mwAvgMode?'Workable hrs/day':'Total workable hrs'}</div><div class="value">${num(workableHrs,1)}<span class="unit">hrs</span></div></div>
+  `;
+}
+
+function drawNonWorkChart(mowerName, chartId, stateMinutes, dayCount){
+  const entries = Object.entries(stateMinutes).sort((a,b)=>b[1]-a[1]);
+  if (!entries.length){ emptyState(chartId, 'No non-working time recorded.'); return; }
+  const divisor = mwAvgMode ? dayCount : 1;
+  makeChart(chartId, {
+    type:'bar',
+    data:{ labels:entries.map(e=>e[0]), datasets:[{ label: mwAvgMode?'Hours/day':'Total hours',
+      data:entries.map(e=>Math.round((e[1]/60/divisor)*10)/10), backgroundColor:CHART_COLORS.high }]},
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false},
+      datalabels:{ display:true, color:'#1d1d1f', anchor:'end', align:'right', formatter:(v)=>num(v,1) } } }
+  });
 }
 
 /* ============================================================
@@ -1160,18 +1400,34 @@ async function renderWeatherTab(){
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
       scales:{ x:{type:'time', time:{unit: data.length>120?'month':'week'}} } }
   });
+  {
+    const rainVals = data.map(r=>r.rain_in).filter(v=>v!=null);
+    wireYAxisSlider('sl-wx-rain', charts['chartWxRain'], Math.min(0,...rainVals), Math.max(...rainVals,0), {zeroFloor:true});
+  }
   makeChart('chartWxEt0', {
     type:'line',
     data:{ labels, datasets:[{ label:'Water lost (in)', data:data.map(r=>r.et0_in), borderColor:CHART_COLORS.et0, pointRadius:0, tension:.2 }]},
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
       scales:{ x:{type:'time', time:{unit: data.length>120?'month':'week'}} } }
   });
+  {
+    const et0Vals = data.map(r=>r.et0_in).filter(v=>v!=null);
+    wireYAxisSlider('sl-wx-et0', charts['chartWxEt0'], Math.min(0,...et0Vals), Math.max(...et0Vals,0), {zeroFloor:true});
+  }
 
-  $('#wxTable tbody').innerHTML = data.slice().reverse().map(r => `
-    <tr><td>${r.weather_date}</td><td>${num(r.temp_high_f,0)}</td><td>${num(r.temp_low_f,0)}</td>
-    <td>${num(r.temp_mean_f,0)}</td><td>${num(r.rh_mean_pct,0)}</td><td>${num(r.wind_avg_mph,1)}</td>
-    <td>${num(r.rain_in,2)}</td><td>${num(r.solar_rad_avg_wm2,1)}</td><td>${num(r.et0_in,3)}</td></tr>
-  `).join('');
+  const wxRenderRows = (rows) => {
+    $('#wxTable tbody').innerHTML = rows.map(r => `
+      <tr><td>${r.weather_date}</td><td>${num(r.temp_high_f,0)}</td><td>${num(r.temp_low_f,0)}</td>
+      <td>${num(r.temp_mean_f,0)}</td><td>${num(r.rh_mean_pct,0)}</td><td>${num(r.wind_avg_mph,1)}</td>
+      <td>${num(r.rain_in,2)}</td><td>${num(r.solar_rad_avg_wm2,1)}</td><td>${num(r.et0_in,3)}</td></tr>
+    `).join('');
+  };
+  wxState.rows = data.slice().reverse();
+  wxRenderRows(wxState.rows);
+  attachSort('#wxTable thead', wxState,
+    [r=>r.weather_date, r=>r.temp_high_f, r=>r.temp_low_f, r=>r.temp_mean_f, r=>r.rh_mean_pct,
+     r=>r.wind_avg_mph, r=>r.rain_in, r=>r.solar_rad_avg_wm2, r=>r.et0_in],
+    wxRenderRows);
 }
 
 /* ============================================================
@@ -1226,30 +1482,44 @@ async function renderIrrigationTab(){
     byDate[r.weather_date].rain += (r.rain_in||0);
   });
   const dates = Object.keys(byDate).sort();
-  makeChart('chartIrBalance', {
+  const irChart = makeChart('chartIrBalance', {
     type:'bar',
     data:{ labels:dates, datasets:[
-      { label:'Water needed', data:dates.map(d=>byDate[d].etc), backgroundColor:CHART_COLORS.need },
-      { label:'Rain', data:dates.map(d=>byDate[d].rain), backgroundColor:CHART_COLORS.rain },
-      { label:'Irrigation applied', data:dates.map(d=>byDate[d].applied), backgroundColor:CHART_COLORS.irrigation },
+      { type:'line', label:'Water needed', data:dates.map(d=>byDate[d].etc),
+        borderColor:'#a1a1a6', backgroundColor:'rgba(161,161,166,0.28)', fill:true,
+        pointRadius:0, tension:.15, order:0 },
+      { type:'bar', label:'Rain', data:dates.map(d=>byDate[d].rain),
+        backgroundColor:CHART_COLORS.rain, stack:'water', order:1 },
+      { type:'bar', label:'Irrigation applied', data:dates.map(d=>byDate[d].applied),
+        backgroundColor:CHART_COLORS.irrigation, stack:'water', order:1 },
     ]},
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
-      scales:{ x:{type:'time', time:{unit:'week'}}, y:{title:{display:true,text:'inches'}} } }
+      scales:{ x:{type:'time', time:{unit:'week'}, stacked:true},
+               y:{title:{display:true,text:'inches'}, stacked:true} } }
   });
+  const allIrY = dates.flatMap(d => [byDate[d].etc, byDate[d].applied + byDate[d].rain]);
+  wireYAxisSlider('sl-ir-balance', irChart, Math.min(0,...allIrY), Math.max(...allIrY), {zeroFloor:true});
 
   const byZone = {};
   data.forEach(r => {
-    byZone[r.zone_number] = byZone[r.zone_number] || {name:r.zone_name, grass:r.grass_type, etc:0, rain:0, applied:0, deficit:0};
+    byZone[r.zone_number] = byZone[r.zone_number] || {zone:r.zone_number, name:r.zone_name, grass:r.grass_type, etc:0, rain:0, applied:0, deficit:0};
     byZone[r.zone_number].etc += (r.etc_in||0);
     byZone[r.zone_number].rain += (r.rain_in||0);
     byZone[r.zone_number].applied += (r.irrigation_applied_in||0);
     byZone[r.zone_number].deficit += (r.net_deficit_in||0);
   });
-  $('#irTable tbody').innerHTML = Object.entries(byZone).map(([zn,z]) => `
-    <tr><td>${zn} — ${z.name}</td><td>${z.grass||'—'}</td><td>${num(z.etc,2)}</td>
-    <td>${num(z.rain,2)}</td><td>${num(z.applied,2)}</td>
-    <td class="${z.deficit>0?'deficit-pos':'deficit-neg'}">${z.deficit>0?'+':''}${num(z.deficit,2)}</td></tr>
-  `).join('');
+  const irRenderRows = (rows) => {
+    $('#irTable tbody').innerHTML = rows.map(z => `
+      <tr><td>${z.zone} — ${z.name}</td><td>${z.grass||'—'}</td><td>${num(z.etc,2)}</td>
+      <td>${num(z.rain,2)}</td><td>${num(z.applied,2)}</td>
+      <td class="${z.deficit>0?'deficit-pos':'deficit-neg'}">${z.deficit>0?'+':''}${num(z.deficit,2)}</td></tr>
+    `).join('');
+  };
+  irState.rows = Object.values(byZone);
+  irRenderRows(irState.rows);
+  attachSort('#irTable thead', irState,
+    [z=>z.zone, z=>z.grass, z=>z.etc, z=>z.rain, z=>z.applied, z=>z.deficit],
+    irRenderRows);
 }
 
 /* ============================================================
@@ -1339,9 +1609,14 @@ async function renderExplorer(){
 
   const cols = Object.keys(data[0]);
   $('#exTable thead').innerHTML = '<tr>' + cols.map(c=>`<th>${friendlyCol(c)}</th>`).join('') + '</tr>';
-  $('#exTable tbody').innerHTML = data.slice().reverse().slice(0,300).map(r =>
-    '<tr>' + cols.map(c=>`<td>${r[c] ?? ''}</td>`).join('') + '</tr>'
-  ).join('');
+  const exState = { rows: data.slice().reverse().slice(0,300), idx:null, dir:1 };
+  const exRenderRows = (rows) => {
+    $('#exTable tbody').innerHTML = rows.map(r =>
+      '<tr>' + cols.map(c=>`<td>${r[c] ?? ''}</td>`).join('') + '</tr>'
+    ).join('');
+  };
+  exRenderRows(exState.rows);
+  attachSort('#exTable thead', exState, cols.map(c => (r) => r[c]), exRenderRows);
 }
 
 function exportExplorerCsv(){
@@ -1356,20 +1631,22 @@ function exportExplorerCsv(){
    yearly-reset cumulative, one shared X slider for Series-mode charts
    ============================================================ */
 const DEFICIT_THRESHOLD_IN = { bermuda: 0.65, fescue: 0.45 };
+const globalDateRangeMs = { min: Infinity, max: -Infinity };
 
-let seriesChartRegistry = {}; // chartId -> chart, only charts currently in "Series" view
-function registerSeriesChart(chartId, chart){ seriesChartRegistry[chartId] = chart; }
-function unregisterSeriesChart(chartId){ delete seriesChartRegistry[chartId]; }
+let stackedChartRegistry = {}; // chartId -> {chart, points} for charts currently in "Stacked by day" view
+function registerStackedChart(chartId, chart, points){ stackedChartRegistry[chartId] = {chart, points}; }
+function unregisterStackedChart(chartId){ delete stackedChartRegistry[chartId]; }
 
-function wireYAxisSlider(containerId, chart, yMinData, yMaxData){
+function wireYAxisSlider(containerId, chart, yMinData, yMaxData, opts={}){
   const el = $('#'+containerId);
   if (!el) return;
   const yPad = (yMaxData - yMinData) * 0.15 || 1;
   const yLo = yMinData - yPad, yHi = yMaxData + yPad;
   const yStep = ((yHi - yLo) / 100) || 0.1;
+  const startMin = opts.zeroFloor ? Math.max(yLo, Math.min(0, yHi)) : yLo;
   el.innerHTML = `
     <div class="slider-field"><label>Y min <span class="val" id="${containerId}-ynv"></span></label>
-      <input type="range" id="${containerId}-yn" min="${yLo}" max="${yHi}" value="${yLo}" step="${yStep}"></div>
+      <input type="range" id="${containerId}-yn" min="${yLo}" max="${yHi}" value="${startMin}" step="${yStep}"></div>
     <div class="slider-field"><label>Y max <span class="val" id="${containerId}-yxv"></span></label>
       <input type="range" id="${containerId}-yx" min="${yLo}" max="${yHi}" value="${yHi}" step="${yStep}"></div>
   `;
@@ -1386,24 +1663,35 @@ function wireYAxisSlider(containerId, chart, yMinData, yMaxData){
   apply();
 }
 
-function wireSharedXSlider(containerId, xMinTs, xMaxTs){
+// Shared slider works in day-of-year space (1-366), since Stacked-by-day
+// is the default view. This is a real zoom: both axes refit to whatever's
+// actually visible in the selected window, instead of just clipping X
+// while Y stays pinned to the full-year range (which was cutting data off
+// visually even though it was still "there").
+function wireSharedXSlider(containerId){
   const el = $('#'+containerId);
-  if (!el || !isFinite(xMinTs) || !isFinite(xMaxTs)) return;
+  if (!el) return;
   el.innerHTML = `
-    <div class="slider-field"><label>X start (all Series charts) <span class="val" id="${containerId}-xsv"></span></label>
-      <input type="range" id="${containerId}-xs" min="${xMinTs}" max="${xMaxTs}" value="${xMinTs}" step="86400000"></div>
-    <div class="slider-field"><label>X end (all Series charts) <span class="val" id="${containerId}-xev"></span></label>
-      <input type="range" id="${containerId}-xe" min="${xMinTs}" max="${xMaxTs}" value="${xMaxTs}" step="86400000"></div>
+    <div class="slider-field"><label>From <span class="val" id="${containerId}-xsv"></span></label>
+      <input type="range" id="${containerId}-xs" min="1" max="366" value="1" step="1"></div>
+    <div class="slider-field"><label>To <span class="val" id="${containerId}-xev"></span></label>
+      <input type="range" id="${containerId}-xe" min="1" max="366" value="366" step="1"></div>
   `;
   const xs = $('#'+containerId+'-xs'), xe = $('#'+containerId+'-xe');
   const xsv = $('#'+containerId+'-xsv'), xev = $('#'+containerId+'-xev');
-  const shortDate = (ts) => new Date(Number(ts)).toISOString().slice(0,10);
   function apply(){
-    xsv.textContent = shortDate(xs.value); xev.textContent = shortDate(xe.value);
-    Object.values(seriesChartRegistry).forEach(chart => {
+    const lo = Number(xs.value), hi = Number(xe.value);
+    xsv.textContent = doyToLabel(lo); xev.textContent = doyToLabel(hi);
+    Object.values(stackedChartRegistry).forEach(({chart, points}) => {
       if (!chart.options.scales.x) return;
-      chart.options.scales.x.min = Number(xs.value);
-      chart.options.scales.x.max = Number(xe.value);
+      chart.options.scales.x.min = lo;
+      chart.options.scales.x.max = hi;
+      const visible = points.filter(p => p.x >= lo && p.x <= hi).map(p=>p.y);
+      if (visible.length){
+        const pad = (Math.max(...visible) - Math.min(...visible)) * 0.1 || 1;
+        chart.options.scales.y.min = Math.min(...visible) - pad;
+        chart.options.scales.y.max = Math.max(...visible) + pad;
+      }
       chart.update('none');
     });
   }
@@ -1434,8 +1722,59 @@ function renderYearChips(container, years, selectedSet, cls, onChange){
   });
 }
 
+// One shared "which years" selection drives every multi-year chart.
+const sharedYears = { avg: new Set(), show: new Set(), initialized:false };
+const registeredTrendCharts = []; // {years, draw}
+function noteChartYears(years, draw){
+  registeredTrendCharts.push({years, draw});
+}
+function redrawAllTrendCharts(){ registeredTrendCharts.forEach(c => c.draw()); }
+function finalizeSharedYearControls(){
+  const allYears = Array.from(new Set(registeredTrendCharts.flatMap(c => c.years))).sort();
+  if (!allYears.length) return;
+  if (!sharedYears.initialized){
+    sharedYears.avg = new Set(allYears);
+    const cy = String(new Date().getFullYear());
+    sharedYears.show = new Set(allYears.includes(cy) ? [cy] : allYears.slice(-1));
+    sharedYears.initialized = true;
+  }
+  const el = $('#yc-shared');
+  el.innerHTML = `
+    <div class="year-group"><div class="yg-label">Average uses (Stacked view)</div><div class="year-chip-row" id="yc-shared-avg"></div></div>
+    <div class="year-group"><div class="yg-label">Show on chart</div><div class="year-chip-row" id="yc-shared-show"></div></div>
+  `;
+  renderYearChips($('#yc-shared-avg'), allYears, sharedYears.avg, 'avg-on', redrawAllTrendCharts);
+  renderYearChips($('#yc-shared-show'), allYears, sharedYears.show, 'on', redrawAllTrendCharts);
+}
+
+// Light-gray band showing the historical min/max FOR THAT CALENDAR DAY
+// across the years in "Average uses" -- not a single flat min/max for the
+// whole year, which isn't a useful reference line. Filled between the two
+// curves using Chart.js's native dataset-to-dataset fill.
+function dayOfYearMinMaxDatasets(doyGroups){
+  const doys = Object.keys(doyGroups).map(Number).sort((a,b)=>a-b);
+  if (!doys.length) return [];
+  const minPts = doys.map(d => ({x:d, y:Math.min(...doyGroups[d])}));
+  const maxPts = doys.map(d => ({x:d, y:Math.max(...doyGroups[d])}));
+  return [
+    { label:'Historical min', data:minPts, borderColor:'#c7c7cc', borderWidth:1, pointRadius:0, tension:.1, fill:false, order:99 },
+    { label:'Historical max', data:maxPts, borderColor:'#c7c7cc', borderWidth:1, pointRadius:0, tension:.1, order:99,
+      fill:{ target:'-1', above:'rgba(142,142,147,0.16)', below:'rgba(142,142,147,0.16)' } },
+  ];
+}
+
+function defaultYearSet(years, mode){
+  if (mode === 'currentYear') {
+    const cy = String(new Date().getFullYear());
+    return new Set(years.includes(cy) ? [cy] : years.slice(-1));
+  }
+  if (mode === 'recent3') return new Set(years.slice(-3));
+  return new Set(years);
+}
+
 async function buildMultiYearChart(opts){
-  const { chartId, ycContainerId, sliderContainerId, fetchRows, cumulative, yLabel, chartType='line' } = opts;
+  const { chartId, ycContainerId, sliderContainerId, fetchRows, cumulative, yLabel, chartType='line',
+    zeroFloorY=false } = opts;
   const rawRows = await fetchRows();
   const ycEl = $('#'+ycContainerId);
   if (!rawRows || !rawRows.length){
@@ -1445,17 +1784,21 @@ async function buildMultiYearChart(opts){
   }
 
   rawRows.sort((a,b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+  globalDateRangeMs.min = Math.min(globalDateRangeMs.min, new Date(rawRows[0].date).getTime());
+  globalDateRangeMs.max = Math.max(globalDateRangeMs.max, new Date(rawRows[rawRows.length-1].date).getTime());
   const processed = cumulative ? addCumulativeYearlyReset(rawRows) : rawRows.map(r => ({...r, cum:r.value}));
   const byYear = {};
   processed.forEach(r => { (byYear[yearOf(r.date)] = byYear[yearOf(r.date)] || []).push(r); });
   const years = Object.keys(byYear).sort();
 
-  const avgYears = new Set(years);
-  const showYears = new Set(years);
-  let viewMode = 'series';
+  let viewMode = 'stacked';
 
   function draw(){
+    const showYears = new Set([...sharedYears.show].filter(y => years.includes(y)));
+    const avgYears = new Set([...sharedYears.avg].filter(y => years.includes(y)));
+    const allY = processed.map(r=>r.cum);
     if (viewMode === 'series'){
+      unregisterStackedChart(chartId);
       const datasets = years.filter(y => showYears.has(y)).map((y, i) => ({
         label: y,
         data: byYear[y].map(r => ({x: new Date(r.date).getTime(), y: r.cum})),
@@ -1466,21 +1809,18 @@ async function buildMultiYearChart(opts){
       const chart = makeChart(chartId, {
         type: chartType, data:{ datasets },
         options:{ responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{ display: datasets.length>1, position:'bottom' } },
+          plugins:{ legend:{ display: true, position:'bottom' } },
           scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:yLabel}} } }
       });
-      registerSeriesChart(chartId, chart);
-      if (window.__applySharedX) window.__applySharedX();
-      const allY = processed.map(r=>r.cum);
-      wireYAxisSlider(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY));
+      wireYAxisSlider(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:zeroFloorY});
     } else {
-      unregisterSeriesChart(chartId);
       const datasets = years.filter(y => showYears.has(y)).map((y, i) => ({
         label: y,
         data: byYear[y].map(r => ({x: dayOfYear(r.date), y: r.cum})),
         borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
         pointRadius:0, tension:.15, fill:false,
       }));
+      const allPoints = datasets.flatMap(ds => ds.data); // for shared-slider zoom refit
       const avgByDoy = {};
       processed.forEach(r => {
         if (!avgYears.has(yearOf(r.date))) return;
@@ -1490,28 +1830,31 @@ async function buildMultiYearChart(opts){
       const avgPoints = Object.keys(avgByDoy).map(Number).sort((a,b)=>a-b).map(doy => ({
         x:doy, y:Number(avg(avgByDoy[doy]).toFixed(3))
       }));
+      datasets.push(...dayOfYearMinMaxDatasets(avgByDoy));
       if (avgPoints.length) datasets.push({ label:'Average', data:avgPoints, borderColor:'#a1a1a6', borderDash:[6,4], pointRadius:0, tension:.15, fill:false });
 
       const chart = makeChart(chartId, {
         type: chartType, data:{ datasets },
         options:{ responsive:true, maintainAspectRatio:false,
           plugins:{ legend:{ display:true, position:'bottom' } },
-          scales:{ x:{type:'linear', title:{display:true, text:'Day of year'}, min:1, max:366},
+          scales:{ x:{type:'linear', title:{display:true, text:'Month'}, min:1, max:366,
+                     ticks:{ callback:(val)=> doyToLabel(val) } },
                    y:{title:{display:true, text:yLabel}} } }
       });
-      const allY = datasets.flatMap(ds => ds.data.map(p=>p.y));
-      wireYAxisSlider(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY));
+      // Y-slider first, THEN register + reapply the shared zoom -- otherwise
+      // the Y-slider's own setup (which always runs its default full-range
+      // apply()) would run last and silently clobber whatever Y range the
+      // zoom had just computed for the current X window.
+      wireYAxisSlider(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:zeroFloorY});
+      registerStackedChart(chartId, chart, allPoints);
+      if (window.__applySharedX) window.__applySharedX();
     }
   }
 
   if (ycEl){
     ycEl.innerHTML = `
-      <div class="year-group"><div class="yg-label">Average uses (Stacked view)</div><div class="year-chip-row" id="${ycContainerId}-avg"></div></div>
-      <div class="year-group"><div class="yg-label">Show on chart</div><div class="year-chip-row" id="${ycContainerId}-show"></div></div>
-      <div class="year-group"><div class="yg-label">View</div><div class="view-toggle" id="${ycContainerId}-mode"><button data-m="series" class="on">Series</button><button data-m="stacked">Stacked by day</button></div></div>
+      <div class="year-group"><div class="yg-label">View</div><div class="view-toggle" id="${ycContainerId}-mode"><button data-m="series">Series</button><button data-m="stacked" class="on">Stacked by day</button></div></div>
     `;
-    renderYearChips($('#'+ycContainerId+'-avg'), years, avgYears, 'avg-on', draw);
-    renderYearChips($('#'+ycContainerId+'-show'), years, showYears, 'on', draw);
     $('#'+ycContainerId+'-mode').querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', () => {
         viewMode = btn.dataset.m;
@@ -1520,20 +1863,24 @@ async function buildMultiYearChart(opts){
       });
     });
   }
-  draw();
+  // Don't draw yet -- sharedYears isn't populated until every chart has
+  // registered its available years (see finalizeSharedYearControls, called
+  // once after all of these have resolved). Drawing here would render with
+  // an empty year selection and look blank until something else triggered
+  // a redraw.
+  noteChartYears(years, draw);
 }
 
 async function initTrendsTab(){
   renderOverviewKpis();
-  renderCompareKpis();
-  renderSeasonalChart();
+  renderCompareKpiGroups();
 
   await Promise.all([
     buildMultiYearChart({
       chartId:'chartTrendRain', ycContainerId:'yc-rain', sliderContainerId:'sl-rain',
-      cumulative:true, yLabel:'inches', chartType:'line',
+      cumulative:true, yLabel:'inches', chartType:'line', zeroFloorY:true,
       fetchRows: async () => {
-        const { data } = await supa.from('weather_daily').select('weather_date,rain_in').order('weather_date');
+        const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,rain_in').order('weather_date'));
         return (data||[]).map(r => ({date:r.weather_date, value:r.rain_in||0}));
       }
     }),
@@ -1541,7 +1888,7 @@ async function initTrendsTab(){
       chartId:'chartTrendHigh', ycContainerId:'yc-high', sliderContainerId:'sl-high',
       cumulative:false, yLabel:'°F',
       fetchRows: async () => {
-        const { data } = await supa.from('weather_daily').select('weather_date,temp_high_f').order('weather_date');
+        const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,temp_high_f').order('weather_date'));
         return (data||[]).filter(r=>r.temp_high_f!=null).map(r => ({date:r.weather_date, value:r.temp_high_f}));
       }
     }),
@@ -1549,15 +1896,31 @@ async function initTrendsTab(){
       chartId:'chartTrendLow', ycContainerId:'yc-low', sliderContainerId:'sl-low',
       cumulative:false, yLabel:'°F',
       fetchRows: async () => {
-        const { data } = await supa.from('weather_daily').select('weather_date,temp_low_f').order('weather_date');
+        const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,temp_low_f').order('weather_date'));
         return (data||[]).filter(r=>r.temp_low_f!=null).map(r => ({date:r.weather_date, value:r.temp_low_f}));
+      }
+    }),
+    buildMultiYearChart({
+      chartId:'chartTrendFeelsHigh', ycContainerId:'yc-feels-high', sliderContainerId:'sl-feels-high',
+      cumulative:false, yLabel:'°F',
+      fetchRows: async () => {
+        const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,feels_high_f').order('weather_date'));
+        return (data||[]).filter(r=>r.feels_high_f!=null).map(r => ({date:r.weather_date, value:r.feels_high_f}));
+      }
+    }),
+    buildMultiYearChart({
+      chartId:'chartTrendFeelsLow', ycContainerId:'yc-feels-low', sliderContainerId:'sl-feels-low',
+      cumulative:false, yLabel:'°F',
+      fetchRows: async () => {
+        const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,feels_low_f').order('weather_date'));
+        return (data||[]).filter(r=>r.feels_low_f!=null).map(r => ({date:r.weather_date, value:r.feels_low_f}));
       }
     }),
     buildMultiYearChart({
       chartId:'chartDeficitBermuda', ycContainerId:'yc-deficit-bermuda', sliderContainerId:'sl-deficit-bermuda',
       cumulative:true, yLabel:'inches',
       fetchRows: async () => {
-        const { data } = await supa.from('et_balance_by_zone').select('weather_date,grass_type,net_deficit_in').eq('grass_type','bermuda').order('weather_date');
+        const data = await fetchAllRows(() => supa.from('et_balance_by_zone').select('weather_date,grass_type,net_deficit_in').eq('grass_type','bermuda').order('weather_date'));
         const byDate = {};
         (data||[]).forEach(r => { if (r.net_deficit_in==null) return; (byDate[r.weather_date]=byDate[r.weather_date]||[]).push(r.net_deficit_in); });
         return Object.keys(byDate).sort().map(d => ({date:d, value:avg(byDate[d])}));
@@ -1567,59 +1930,101 @@ async function initTrendsTab(){
       chartId:'chartDeficitFescue', ycContainerId:'yc-deficit-fescue', sliderContainerId:'sl-deficit-fescue',
       cumulative:true, yLabel:'inches',
       fetchRows: async () => {
-        const { data } = await supa.from('et_balance_by_zone').select('weather_date,grass_type,net_deficit_in').eq('grass_type','fescue').order('weather_date');
+        const data = await fetchAllRows(() => supa.from('et_balance_by_zone').select('weather_date,grass_type,net_deficit_in').eq('grass_type','fescue').order('weather_date'));
         const byDate = {};
         (data||[]).forEach(r => { if (r.net_deficit_in==null) return; (byDate[r.weather_date]=byDate[r.weather_date]||[]).push(r.net_deficit_in); });
         return Object.keys(byDate).sort().map(d => ({date:d, value:avg(byDate[d])}));
       }
     }),
-    renderEtWeekly(),
+    buildMultiYearChart({
+      chartId:'chartEtWeeklyBermuda', ycContainerId:'yc-etweekly-bermuda', sliderContainerId:'sl-etweekly-bermuda',
+      cumulative:false, yLabel:'inches / week',
+      fetchRows: async () => rollingWeeklyRows('bermuda')
+    }),
+    buildMultiYearChart({
+      chartId:'chartEtWeeklyFescue', ycContainerId:'yc-etweekly-fescue', sliderContainerId:'sl-etweekly-fescue',
+      cumulative:false, yLabel:'inches / week',
+      fetchRows: async () => rollingWeeklyRows('fescue')
+    }),
   ]);
 
-  // wire the one shared X slider off the widest data range we saw
-  const allCharts = Object.values(seriesChartRegistry);
-  let xs = [];
-  allCharts.forEach(c => c.data.datasets.forEach(ds => ds.data.forEach(p => xs.push(p.x))));
-  if (xs.length) wireSharedXSlider('sl-shared-x', Math.min(...xs), Math.max(...xs));
+  // wire the one shared day-of-year slider -- every chart defaults to
+  // Stacked view, so this is live for all of them from the start.
+  wireSharedXSlider('sl-shared-x');
+  finalizeSharedYearControls();
+  redrawAllTrendCharts(); // first real render, now that shared years are populated
 }
 
-async function renderEtWeekly(){
-  const { data } = await supa.from('et_balance_by_zone').select('weather_date,grass_type,etc_in').order('weather_date');
-  if (!data || !data.length){ emptyState('chartEtWeekly', 'No data yet.'); $('#yc-etweekly').innerHTML=''; return; }
-
-  const byGrassDate = {};
-  data.forEach(r => {
-    if (r.etc_in == null || !r.grass_type) return;
-    byGrassDate[r.grass_type] = byGrassDate[r.grass_type] || {};
-    byGrassDate[r.grass_type][r.weather_date] = byGrassDate[r.grass_type][r.weather_date] || [];
-    byGrassDate[r.grass_type][r.weather_date].push(r.etc_in);
+async function rollingWeeklyRows(grassType){
+  const data = await fetchAllRows(() => supa.from('et_balance_by_zone')
+    .select('weather_date,grass_type,etc_in').eq('grass_type', grassType).order('weather_date'));
+  const byDate = {};
+  (data||[]).forEach(r => { if (r.etc_in==null) return; (byDate[r.weather_date]=byDate[r.weather_date]||[]).push(r.etc_in); });
+  const dates = Object.keys(byDate).sort();
+  const dailyAvg = dates.map(d => avg(byDate[d]));
+  return dates.map((d, i) => {
+    const win = dailyAvg.slice(Math.max(0, i-6), i+1);
+    return { date:d, value: Number((avg(win) * 7).toFixed(3)) };
   });
+}
 
-  const gColors = { bermuda: CHART_COLORS.need, fescue: CHART_COLORS.et0 };
-  const datasets = []; let allX = []; let allY = [];
-  Object.entries(byGrassDate).forEach(([grass, byDate]) => {
-    const dates = Object.keys(byDate).sort();
-    const dailyAvg = dates.map(d => avg(byDate[d]));
-    const points = dates.map((d, i) => {
-      const win = dailyAvg.slice(Math.max(0, i-6), i+1);
-      const weekly = avg(win) * 7;
-      const x = new Date(d).getTime();
-      allX.push(x); allY.push(weekly);
-      return { x, y:Number(weekly.toFixed(2)) };
-    });
-    datasets.push({ label:grass, data:points, borderColor:gColors[grass] || CHART_COLORS.historical, pointRadius:0, tension:.25 });
-  });
-  if (!datasets.length){ emptyState('chartEtWeekly', 'No data yet.'); return; }
+/* ============================================================
+   RECORDS — yearly extremes, count-labeled bars
+   ============================================================ */
+// For the Records tab specifically: a flat min/max reference across years
+// (that IS the right semantic there, since the x-axis is years, not days).
+function flatMinMaxDatasets(values, xLo, xHi){
+  if (!values.length) return [];
+  const lo = Math.min(...values), hi = Math.max(...values);
+  return [
+    { label:'Min', data:[{x:xLo,y:lo},{x:xHi,y:lo}],
+      borderColor:'#8e8e93', borderWidth:1.5, borderDash:[4,4], pointRadius:0, fill:false, order:99 },
+    { label:'Max', data:[{x:xLo,y:hi},{x:xHi,y:hi}],
+      borderColor:'#8e8e93', borderWidth:1.5, borderDash:[4,4], pointRadius:0, order:99,
+      fill:{ target: '-1', above:'rgba(142,142,147,0.14)', below:'rgba(142,142,147,0.14)' } },
+  ];
+}
 
-  const chart = makeChart('chartEtWeekly', {
-    type:'line', data:{ datasets },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
-      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'inches / week'}} } }
+async function buildYearlyCountChart(chartId, sliderContainerId, label, color, rows, countFn){
+  if (!rows.length){ emptyState(chartId, 'No data yet.'); return; }
+  const byYear = {};
+  rows.forEach(r => {
+    const y = yearOf(r.weather_date);
+    byYear[y] = (byYear[y] || 0) + countFn(r);
   });
-  registerSeriesChart('chartEtWeekly', chart);
-  if (window.__applySharedX) window.__applySharedX();
-  wireYAxisSlider('sl-etweekly', chart, Math.min(0,...allY), Math.max(...allY));
-  $('#yc-etweekly').innerHTML = '<div class="panel-sub">Both grass types shown together — no year comparison on this one, since it\'s already a smoothed rolling metric.</div>';
+  const years = Object.keys(byYear).sort();
+  const values = years.map(y => Math.round(byYear[y]*10)/10);
+  const maxVal = Math.max(...values, 0);
+  const chart = makeChart(chartId, {
+    data:{ labels:years, datasets:[
+      { type:'bar', label, data:values, backgroundColor:color },
+      ...flatMinMaxDatasets(values, years[0], years[years.length-1]).map(ds => ({...ds, type:'line'})),
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      layout:{ padding:{ top:22 } }, // headroom so the count label never clips
+      plugins:{ legend:{display:false},
+        datalabels:{ display:true, anchor:'end', align:'top', offset:2, color:'#1d1d1f',
+          font:{weight:'bold'}, formatter:(v,ctx)=> ctx.datasetIndex===0 ? v : '' } },
+      scales:{ y:{ beginAtZero:true, suggestedMax: maxVal*1.15 } } }
+  });
+  wireYAxisSlider(sliderContainerId, chart, 0, maxVal, {zeroFloor:true});
+}
+
+async function initRecordsTab(){
+  const rows = await fetchAllRows(() => supa.from('weather_daily')
+    .select('weather_date,temp_high_f,temp_low_f,feels_high_f,feels_low_f,rain_in')
+    .order('weather_date'));
+
+  buildYearlyCountChart('chartRecHigh100', 'sl-rec-high100', 'Days ≥100°F', CHART_COLORS.high, rows,
+    r => (r.temp_high_f != null && r.temp_high_f >= 100) ? 1 : 0);
+  buildYearlyCountChart('chartRecFeelsHigh', 'sl-rec-feelshigh', 'Days feels-like ≥100°F', CHART_COLORS.high, rows,
+    r => (r.feels_high_f != null && r.feels_high_f >= 100) ? 1 : 0);
+  buildYearlyCountChart('chartRecFeelsLow', 'sl-rec-feelslow', 'Days feels-like ≤32°F', CHART_COLORS.low, rows,
+    r => (r.feels_low_f != null && r.feels_low_f <= 32) ? 1 : 0);
+  buildYearlyCountChart('chartRecFreeze', 'sl-rec-freeze', 'Freeze days', CHART_COLORS.low, rows,
+    r => (r.temp_low_f != null && r.temp_low_f <= 32) ? 1 : 0);
+  buildYearlyCountChart('chartRecRain', 'sl-rec-rain', 'Rain (in)', CHART_COLORS.rain, rows,
+    r => r.rain_in || 0);
 }
 
 /* ============================================================
