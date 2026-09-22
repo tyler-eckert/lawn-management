@@ -219,6 +219,25 @@ table.data tr:hover td{ background:var(--surface-2); }
 .empty-state{ text-align:center; padding:36px 16px; color:var(--text-tertiary); }
 .empty-state .big{ font-size:1rem; color:var(--text-secondary); margin-bottom:6px; font-weight:600; }
 
+/* ---------- Axis sliders ---------- */
+.slider-row{ display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:14px; }
+@media (max-width: 760px){ .slider-row{ grid-template-columns:1fr 1fr; } }
+.slider-field{ display:flex; flex-direction:column; gap:4px; }
+.slider-field label{ font-size:0.72rem; color:var(--text-secondary); display:flex; justify-content:space-between; }
+.slider-field label .val{ font-family:ui-monospace, monospace; color:var(--text); font-weight:600; }
+.slider-field input[type=range]{
+  -webkit-appearance:none; width:100%; height:4px; border-radius:2px;
+  background:var(--line); outline:none; margin:6px 0;
+}
+.slider-field input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+  background:var(--turf); cursor:pointer; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.3);
+}
+.slider-field input[type=range]::-moz-range-thumb{
+  width:18px; height:18px; border-radius:50%; background:var(--turf); cursor:pointer;
+  border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.3);
+}
+
 .config-banner{
   background:var(--amber-light); color:#7a5209; padding:10px 20px; font-size:0.85rem;
   text-align:center; display:none; border-radius:10px; margin:12px 20px 0;
@@ -261,6 +280,7 @@ table.data tr:hover td{ background:var(--surface-2); }
       <button class="tab-btn" data-tab="irrigation">Irrigation</button>
       <button class="tab-btn" data-tab="mowers">Mowers</button>
       <button class="tab-btn" data-tab="explorer">Explorer</button>
+      <button class="tab-btn" data-tab="trends">Trends</button>
     </nav>
   </header>
 
@@ -474,6 +494,51 @@ table.data tr:hover td{ background:var(--surface-2); }
       </div>
     </section>
 
+    <!-- ================= TRENDS ================= -->
+    <section class="tab-panel" id="tab-trends">
+      <div class="panel">
+        <h2>Cumulative rainfall</h2>
+        <div class="panel-sub">Drag the sliders to zoom either axis — resets when you reload data</div>
+        <div class="slider-row" id="sl-rain"></div>
+        <div class="chart-wrap tall"><canvas id="chartTrendRain"></canvas></div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h2>Daily highs (°F)</h2>
+          <div class="slider-row" id="sl-high"></div>
+          <div class="chart-wrap"><canvas id="chartTrendHigh"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2>Daily lows (°F)</h2>
+          <div class="slider-row" id="sl-low"></div>
+          <div class="chart-wrap"><canvas id="chartTrendLow"></canvas></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h2>Running water deficit — Bermuda</h2>
+          <div class="panel-sub">Cumulative shortfall vs. threshold, averaged across bermuda zones</div>
+          <div class="slider-row" id="sl-deficit-bermuda"></div>
+          <div class="chart-wrap"><canvas id="chartDeficitBermuda"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2>Running water deficit — Fescue</h2>
+          <div class="panel-sub">Cumulative shortfall vs. threshold, averaged across fescue zones</div>
+          <div class="slider-row" id="sl-deficit-fescue"></div>
+          <div class="chart-wrap"><canvas id="chartDeficitFescue"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Water needed — 7-day rolling average</h2>
+        <div class="panel-sub">Inches per week, by grass type</div>
+        <div class="slider-row" id="sl-etweekly"></div>
+        <div class="chart-wrap tall"><canvas id="chartEtWeekly"></canvas></div>
+      </div>
+    </section>
+
   </main>
 </div>
 <script>
@@ -623,6 +688,7 @@ function initApp(){
   initIrrigationTab();
   initMowersTab();
   initExplorerTab();
+  initTrendsTab();
 }
 
 async function loadSyncStatus(){
@@ -1123,6 +1189,180 @@ function exportExplorerCsv(){
   const cols = Object.keys(explorerLastRows[0]);
   const csv = csvFromRows(cols, explorerLastRows.map(r => cols.map(c=>r[c])));
   downloadCsv(`${$('#exSource').value}_export.csv`, csv);
+}
+
+/* ============================================================
+   TRENDS — charts with draggable X/Y axis-range sliders
+   ============================================================ */
+
+// Cumulative-deficit "stress" threshold per grass type, in inches.
+// Tune these to whatever level you consider the point turf starts
+// showing stress for that species.
+const DEFICIT_THRESHOLD_IN = { bermuda: 0.65, fescue: 0.45 };
+
+function wireAxisSliders(containerId, chart, xValues, yMinData, yMaxData){
+  const el = $('#'+containerId);
+  if (!el || !xValues.length) return;
+  const xMinTs = Math.min(...xValues), xMaxTs = Math.max(...xValues);
+  const yPad = (yMaxData - yMinData) * 0.15 || 1;
+  const yLo = yMinData - yPad, yHi = yMaxData + yPad;
+  const yStep = ((yHi - yLo) / 100) || 0.1;
+
+  el.innerHTML = `
+    <div class="slider-field"><label>X start <span class="val" id="${containerId}-xsv"></span></label>
+      <input type="range" id="${containerId}-xs" min="${xMinTs}" max="${xMaxTs}" value="${xMinTs}" step="86400000"></div>
+    <div class="slider-field"><label>X end <span class="val" id="${containerId}-xev"></span></label>
+      <input type="range" id="${containerId}-xe" min="${xMinTs}" max="${xMaxTs}" value="${xMaxTs}" step="86400000"></div>
+    <div class="slider-field"><label>Y min <span class="val" id="${containerId}-ynv"></span></label>
+      <input type="range" id="${containerId}-yn" min="${yLo}" max="${yHi}" value="${yLo}" step="${yStep}"></div>
+    <div class="slider-field"><label>Y max <span class="val" id="${containerId}-yxv"></span></label>
+      <input type="range" id="${containerId}-yx" min="${yLo}" max="${yHi}" value="${yHi}" step="${yStep}"></div>
+  `;
+
+  const xs = $('#'+containerId+'-xs'), xe = $('#'+containerId+'-xe');
+  const yn = $('#'+containerId+'-yn'), yx = $('#'+containerId+'-yx');
+  const xsv = $('#'+containerId+'-xsv'), xev = $('#'+containerId+'-xev');
+  const ynv = $('#'+containerId+'-ynv'), yxv = $('#'+containerId+'-yxv');
+  const shortDate = (ts) => new Date(Number(ts)).toISOString().slice(0,10);
+
+  function apply(){
+    chart.options.scales.x.min = Number(xs.value);
+    chart.options.scales.x.max = Number(xe.value);
+    chart.options.scales.y.min = Number(yn.value);
+    chart.options.scales.y.max = Number(yx.value);
+    xsv.textContent = shortDate(xs.value);
+    xev.textContent = shortDate(xe.value);
+    ynv.textContent = Number(yn.value).toFixed(1);
+    yxv.textContent = Number(yx.value).toFixed(1);
+    chart.update('none');
+  }
+  [xs, xe, yn, yx].forEach(inp => inp.addEventListener('input', apply));
+  apply();
+}
+
+function initTrendsTab(){
+  renderTrendRainfall();
+  renderTrendHighLow();
+  renderDeficitChart('bermuda', 'chartDeficitBermuda', 'sl-deficit-bermuda');
+  renderDeficitChart('fescue', 'chartDeficitFescue', 'sl-deficit-fescue');
+  renderEtWeekly();
+}
+
+async function renderTrendRainfall(){
+  const { data } = await supa.from('weather_daily').select('weather_date,rain_in').order('weather_date');
+  if (!data || !data.length){ emptyState('chartTrendRain', 'No weather data yet.'); return; }
+  let running = 0;
+  const points = data.map(r => { running += (r.rain_in||0); return {x:new Date(r.weather_date).getTime(), y:Number(running.toFixed(2))}; });
+  const chart = makeChart('chartTrendRain', {
+    type:'line',
+    data:{ datasets:[{ label:'Cumulative rain (in)', data:points, borderColor:CHART_COLORS.rain,
+      backgroundColor:CHART_COLORS.rain, pointRadius:0, tension:.15, fill:false }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'inches'}} } }
+  });
+  const xs = points.map(p=>p.x), ys = points.map(p=>p.y);
+  wireAxisSliders('sl-rain', chart, xs, Math.min(0,...ys), Math.max(...ys));
+}
+
+async function renderTrendHighLow(){
+  const { data } = await supa.from('weather_daily').select('weather_date,temp_high_f,temp_low_f').order('weather_date');
+  if (!data || !data.length){ emptyState('chartTrendHigh','No weather data yet.'); emptyState('chartTrendLow','No weather data yet.'); return; }
+
+  const highPts = data.filter(r=>r.temp_high_f!=null).map(r=>({x:new Date(r.weather_date).getTime(), y:r.temp_high_f}));
+  const chartHigh = makeChart('chartTrendHigh', {
+    type:'line',
+    data:{ datasets:[{ label:'High °F', data:highPts, borderColor:CHART_COLORS.high, pointRadius:0, tension:.2 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'°F'}} } }
+  });
+  const hxs = highPts.map(p=>p.x), hys = highPts.map(p=>p.y);
+  wireAxisSliders('sl-high', chartHigh, hxs, Math.min(...hys), Math.max(...hys));
+
+  const lowPts = data.filter(r=>r.temp_low_f!=null).map(r=>({x:new Date(r.weather_date).getTime(), y:r.temp_low_f}));
+  const chartLow = makeChart('chartTrendLow', {
+    type:'line',
+    data:{ datasets:[{ label:'Low °F', data:lowPts, borderColor:CHART_COLORS.low, pointRadius:0, tension:.2 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'°F'}} } }
+  });
+  const lxs = lowPts.map(p=>p.x), lys = lowPts.map(p=>p.y);
+  wireAxisSliders('sl-low', chartLow, lxs, Math.min(...lys), Math.max(...lys));
+}
+
+async function renderDeficitChart(grassType, chartId, sliderContainerId){
+  const { data } = await supa.from('et_balance_by_zone')
+    .select('weather_date,grass_type,net_deficit_in')
+    .eq('grass_type', grassType)
+    .order('weather_date');
+  if (!data || !data.length){ emptyState(chartId, `No ${grassType} zone data yet.`); return; }
+
+  const byDate = {};
+  data.forEach(r => {
+    if (r.net_deficit_in == null) return;
+    byDate[r.weather_date] = byDate[r.weather_date] || [];
+    byDate[r.weather_date].push(r.net_deficit_in);
+  });
+  const dates = Object.keys(byDate).sort();
+  if (!dates.length){ emptyState(chartId, `No ${grassType} zone data yet.`); return; }
+
+  const threshold = DEFICIT_THRESHOLD_IN[grassType] ?? 0.5;
+  let running = 0;
+  const points = dates.map(d => {
+    const avg = byDate[d].reduce((a,b)=>a+b,0) / byDate[d].length;
+    running += avg;
+    return { x:new Date(d).getTime(), y:Number(running.toFixed(3)) };
+  });
+
+  const chart = makeChart(chartId, {
+    type:'line',
+    data:{ datasets:[
+      { label:'Cumulative deficit (in)', data:points, borderColor:CHART_COLORS.need,
+        backgroundColor:'rgba(214,67,43,0.15)', fill:'origin', pointRadius:0, tension:.15 },
+      { label:`Threshold (${threshold}")`, data:points.map(p=>({x:p.x, y:threshold})),
+        borderColor:CHART_COLORS.historical, borderDash:[6,4], pointRadius:0, fill:false }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
+      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'inches'}} } }
+  });
+  const xs = points.map(p=>p.x);
+  const ys = points.map(p=>p.y).concat([threshold, 0]);
+  wireAxisSliders(sliderContainerId, chart, xs, Math.min(...ys), Math.max(...ys));
+}
+
+async function renderEtWeekly(){
+  const { data } = await supa.from('et_balance_by_zone').select('weather_date,grass_type,etc_in').order('weather_date');
+  if (!data || !data.length){ emptyState('chartEtWeekly', 'No data yet.'); return; }
+
+  const byGrassDate = {};
+  data.forEach(r => {
+    if (r.etc_in == null || !r.grass_type) return;
+    byGrassDate[r.grass_type] = byGrassDate[r.grass_type] || {};
+    byGrassDate[r.grass_type][r.weather_date] = byGrassDate[r.grass_type][r.weather_date] || [];
+    byGrassDate[r.grass_type][r.weather_date].push(r.etc_in);
+  });
+
+  const gColors = { bermuda: CHART_COLORS.need, fescue: CHART_COLORS.et0 };
+  const datasets = []; let allX = []; let allY = [];
+  Object.entries(byGrassDate).forEach(([grass, byDate]) => {
+    const dates = Object.keys(byDate).sort();
+    const dailyAvg = dates.map(d => byDate[d].reduce((a,b)=>a+b,0) / byDate[d].length);
+    const points = dates.map((d, i) => {
+      const win = dailyAvg.slice(Math.max(0, i-6), i+1);
+      const weekly = (win.reduce((a,b)=>a+b,0) / win.length) * 7;
+      const x = new Date(d).getTime();
+      allX.push(x); allY.push(weekly);
+      return { x, y:Number(weekly.toFixed(2)) };
+    });
+    datasets.push({ label:grass, data:points, borderColor:gColors[grass] || CHART_COLORS.historical, pointRadius:0, tension:.25 });
+  });
+  if (!datasets.length){ emptyState('chartEtWeekly', 'No data yet.'); return; }
+
+  const chart = makeChart('chartEtWeekly', {
+    type:'line', data:{ datasets },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
+      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'inches / week'}} } }
+  });
+  wireAxisSliders('sl-etweekly', chart, allX, Math.min(0,...allY), Math.max(...allY));
 }
 
 /* ============================================================
