@@ -646,22 +646,22 @@ async function loadOverview(){
 async function renderOverviewKpis(){
   const from = fmtDate(daysAgo(30));
   const { data: wx } = await supa.from('weather_daily')
-    .select('temp_high_f,temp_low_f,precip_in,et0_in')
+    .select('temp_high_f,temp_low_f,rain_in,et0_in')
     .gte('weather_date', from);
 
   const { data: bal } = await supa.from('et_balance_by_zone')
     .select('irrigation_applied_in,net_deficit_in')
     .gte('weather_date', from);
 
-  const { data: readings } = await supa.from('weather_readings')
-    .select('feels_like_f')
-    .gte('reading_time', from);
+  const { data: feelsRows } = await supa.from('weather_daily')
+    .select('feels_low_f,feels_high_f')
+    .gte('weather_date', from);
 
   const kpis = [];
   if (wx && wx.length){
     const avgHigh = wx.reduce((s,r)=>s+(r.temp_high_f||0),0)/wx.length;
     const avgLow  = wx.reduce((s,r)=>s+(r.temp_low_f||0),0)/wx.length;
-    const totalRain = wx.reduce((s,r)=>s+(r.precip_in||0),0);
+    const totalRain = wx.reduce((s,r)=>s+(r.rain_in||0),0);
     const totalEt0 = wx.reduce((s,r)=>s+(r.et0_in||0),0);
     kpis.push({label:'Avg high (30d)', value:num(avgHigh,0), unit:'°F'});
     kpis.push({label:'Avg low (30d)', value:num(avgLow,0), unit:'°F'});
@@ -673,8 +673,8 @@ async function renderOverviewKpis(){
     kpis.push({label:'Total rain (30d)', value:'—'});
     kpis.push({label:'Water lost to evaporation (30d)', value:'—'});
   }
-  if (readings && readings.length){
-    const avgFeels = readings.reduce((s,r)=>s+(r.feels_like_f||0),0)/readings.length;
+  if (feelsRows && feelsRows.length){
+    const avgFeels = feelsRows.reduce((s,r)=>s+((r.feels_low_f||0)+(r.feels_high_f||0))/2,0)/feelsRows.length;
     kpis.push({label:'Avg feels-like (30d)', value:num(avgFeels,0), unit:'°F'});
   } else {
     kpis.push({label:'Avg feels-like (30d)', value:'—'});
@@ -751,7 +751,7 @@ function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
 
 async function renderRainCharts(){
   const { data } = await supa.from('weather_daily')
-    .select('weather_date,precip_in')
+    .select('weather_date,rain_in')
     .gte('weather_date', fmtDate(startOfYear()))
     .order('weather_date');
 
@@ -763,7 +763,7 @@ async function renderRainCharts(){
     const daysInMonthSoFar = {};
     data.forEach(r => {
       const d = new Date(r.weather_date);
-      runningActual += (r.precip_in || 0);
+      runningActual += (r.rain_in || 0);
       labels.push(r.weather_date);
       cumActual.push(Number(runningActual.toFixed(2)));
     });
@@ -798,7 +798,7 @@ async function renderRainCharts(){
   }
 
   const { data: last30 } = await supa.from('weather_daily')
-    .select('weather_date,precip_in')
+    .select('weather_date,rain_in')
     .gte('weather_date', fmtDate(daysAgo(30)))
     .order('weather_date');
   if (!last30 || !last30.length){
@@ -807,7 +807,7 @@ async function renderRainCharts(){
     makeChart('chartRain30', {
       type:'bar',
       data:{ labels:last30.map(r=>r.weather_date), datasets:[
-        { label:'Rain (in)', data:last30.map(r=>r.precip_in), backgroundColor:CHART_COLORS.rain }
+        { label:'Rain (in)', data:last30.map(r=>r.rain_in), backgroundColor:CHART_COLORS.rain }
       ]},
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false} },
@@ -856,7 +856,7 @@ function initWeatherTab(){
 async function renderWeatherTab(){
   const from = $('#wxFrom').value, to = $('#wxTo').value;
   const { data } = await supa.from('weather_daily')
-    .select('weather_date,temp_high_f,temp_low_f,temp_mean_f,rh_mean_pct,wind_avg_mph,precip_in,solar_rad_mj_m2,et0_in')
+    .select('weather_date,temp_high_f,temp_low_f,temp_mean_f,rh_mean_pct,wind_avg_mph,rain_in,solar_rad_avg_wm2,et0_in')
     .gte('weather_date', from).lte('weather_date', to)
     .order('weather_date');
 
@@ -880,7 +880,7 @@ async function renderWeatherTab(){
   });
   makeChart('chartWxRain', {
     type:'bar',
-    data:{ labels, datasets:[{ label:'Rain (in)', data:data.map(r=>r.precip_in), backgroundColor:CHART_COLORS.rain }]},
+    data:{ labels, datasets:[{ label:'Rain (in)', data:data.map(r=>r.rain_in), backgroundColor:CHART_COLORS.rain }]},
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
       scales:{ x:{type:'time', time:{unit: data.length>120?'month':'week'}} } }
   });
@@ -894,7 +894,7 @@ async function renderWeatherTab(){
   $('#wxTable tbody').innerHTML = data.slice().reverse().map(r => `
     <tr><td>${r.weather_date}</td><td>${num(r.temp_high_f,0)}</td><td>${num(r.temp_low_f,0)}</td>
     <td>${num(r.temp_mean_f,0)}</td><td>${num(r.rh_mean_pct,0)}</td><td>${num(r.wind_avg_mph,1)}</td>
-    <td>${num(r.precip_in,2)}</td><td>${num(r.solar_rad_mj_m2,1)}</td><td>${num(r.et0_in,3)}</td></tr>
+    <td>${num(r.rain_in,2)}</td><td>${num(r.solar_rad_avg_wm2,1)}</td><td>${num(r.et0_in,3)}</td></tr>
   `).join('');
 }
 
@@ -915,7 +915,7 @@ function initIrrigationTab(){
 async function renderIrrigationTab(){
   const from = $('#irFrom').value, to = $('#irTo').value, zone = $('#irZone').value;
   let q = supa.from('et_balance_by_zone')
-    .select('zone_number,zone_name,grass_type,weather_date,etc_in,precip_in,irrigation_applied_in,net_deficit_in')
+    .select('zone_number,zone_name,grass_type,weather_date,etc_in,rain_in,irrigation_applied_in,net_deficit_in')
     .gte('weather_date', from).lte('weather_date', to)
     .order('weather_date');
   if (zone !== 'all') q = q.eq('zone_number', Number(zone));
@@ -930,7 +930,7 @@ async function renderIrrigationTab(){
 
   const totalEtc = data.reduce((s,r)=>s+(r.etc_in||0),0);
   const totalApplied = data.reduce((s,r)=>s+(r.irrigation_applied_in||0),0);
-  const totalRain = data.reduce((s,r)=>s+(r.precip_in||0),0);
+  const totalRain = data.reduce((s,r)=>s+(r.rain_in||0),0);
   const totalDeficit = data.reduce((s,r)=>s+(r.net_deficit_in||0),0);
   $('#irrigationKpis').innerHTML = [
     {label:'Water needed', value:num(totalEtc,2), unit:'in'},
@@ -948,7 +948,7 @@ async function renderIrrigationTab(){
     byDate[r.weather_date] = byDate[r.weather_date] || {etc:0, applied:0, rain:0};
     byDate[r.weather_date].etc += (r.etc_in||0);
     byDate[r.weather_date].applied += (r.irrigation_applied_in||0);
-    byDate[r.weather_date].rain += (r.precip_in||0);
+    byDate[r.weather_date].rain += (r.rain_in||0);
   });
   const dates = Object.keys(byDate).sort();
   makeChart('chartIrBalance', {
@@ -966,7 +966,7 @@ async function renderIrrigationTab(){
   data.forEach(r => {
     byZone[r.zone_number] = byZone[r.zone_number] || {name:r.zone_name, grass:r.grass_type, etc:0, rain:0, applied:0, deficit:0};
     byZone[r.zone_number].etc += (r.etc_in||0);
-    byZone[r.zone_number].rain += (r.precip_in||0);
+    byZone[r.zone_number].rain += (r.rain_in||0);
     byZone[r.zone_number].applied += (r.irrigation_applied_in||0);
     byZone[r.zone_number].deficit += (r.net_deficit_in||0);
   });
@@ -1032,8 +1032,8 @@ const COLUMN_LABELS = {
   weather_date:'Date', run_date:'Date', day:'Date',
   zone_number:'Zone #', zone_id:'Zone #', zone_name:'Zone', grass_type:'Grass type',
   temp_high_f:'High (°F)', temp_low_f:'Low (°F)', temp_mean_f:'Average (°F)',
-  rh_mean_pct:'Humidity (%)', wind_avg_mph:'Wind (mph)', precip_in:'Rain (in)',
-  solar_rad_mj_m2:'Sunlight', et0_in:'Water lost (in)', etc_in:'Water needed (in)',
+  rh_mean_pct:'Humidity (%)', wind_avg_mph:'Wind (mph)', rain_in:'Rain (in)',
+  solar_rad_avg_wm2:'Sunlight', et0_in:'Water lost (in)', etc_in:'Water needed (in)',
   irrigation_applied_in:'Water applied (in)', net_deficit_in:'Shortfall (in)',
   mower_name:'Mower', est_minutes:'Minutes mowed', runtime_minutes:'Minutes run',
   program_name:'Program', source:'Source', created_at:'Logged at',
@@ -1044,12 +1044,12 @@ const EXPLORER_SOURCES = {
   weather_daily: {
     dateCol:'weather_date',
     metrics:{ temp_high_f:'High temp (°F)', temp_low_f:'Low temp (°F)', temp_mean_f:'Mean temp (°F)',
-      rh_mean_pct:'Mean humidity (%)', wind_avg_mph:'Avg wind (mph)', precip_in:'Rain (in)',
-      solar_rad_mj_m2:'Sunlight', et0_in:'Water lost to evaporation (in)' }
+      rh_mean_pct:'Mean humidity (%)', wind_avg_mph:'Avg wind (mph)', rain_in:'Rain (in)',
+      solar_rad_avg_wm2:'Sunlight', et0_in:'Water lost to evaporation (in)' }
   },
   et_balance_by_zone: {
     dateCol:'weather_date',
-    metrics:{ etc_in:'Water needed (in)', precip_in:'Rain (in)', irrigation_applied_in:'Water applied (in)', net_deficit_in:'Shortfall (in)' }
+    metrics:{ etc_in:'Water needed (in)', rain_in:'Rain (in)', irrigation_applied_in:'Water applied (in)', net_deficit_in:'Shortfall (in)' }
   },
   mower_zone_daily: {
     dateCol:'day',
