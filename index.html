@@ -238,6 +238,25 @@ table.data tr:hover td{ background:var(--surface-2); }
   border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.3);
 }
 
+/* ---------- Year controls (multi-select years + view mode) ---------- */
+.year-controls{ display:flex; flex-wrap:wrap; gap:14px; align-items:flex-start; margin-bottom:10px; }
+.year-group{ display:flex; flex-direction:column; gap:5px; }
+.year-group .yg-label{ font-size:0.72rem; color:var(--text-secondary); font-weight:500; }
+.year-chip-row{ display:flex; flex-wrap:wrap; gap:5px; }
+.year-chip{
+  border:1px solid var(--line); background:var(--surface-2); color:var(--text-secondary);
+  border-radius:14px; padding:4px 11px; font-size:0.78rem; cursor:pointer; user-select:none;
+  font-family:ui-monospace, monospace;
+}
+.year-chip.on{ background:var(--turf); border-color:var(--turf); color:#fff; font-weight:600; }
+.year-chip.avg-on{ background:var(--amber-light); border-color:var(--amber); color:#7a5209; font-weight:600; }
+.view-toggle{ display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+.view-toggle button{
+  background:var(--surface-2); border:none; padding:6px 12px; font-size:0.78rem; color:var(--text-secondary);
+  cursor:pointer; font-family:inherit;
+}
+.view-toggle button.on{ background:var(--turf); color:#fff; font-weight:600; }
+
 .config-banner{
   background:var(--amber-light); color:#7a5209; padding:10px 20px; font-size:0.85rem;
   text-align:center; display:none; border-radius:10px; margin:12px 20px 0;
@@ -259,28 +278,26 @@ table.data tr:hover td{ background:var(--surface-2); }
 </div>
 
 <div id="app" style="display:none;">
-  <div class="stripes"></div>
   <header class="top">
     <div class="header-row">
       <div>
         <h1>Arbor Valley</h1>
-        <div class="place">Mowers · Irrigation · Weather</div>
       </div>
-      <div style="display:flex; align-items:center;">
-        <div class="sync-status">
-          <div><span class="dot"></span>Weather: <span id="syncWeather">—</span></div>
-          <div><span class="dot"></span>Irrigation: <span id="syncIrrigation">—</span></div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="filter-field" style="min-width:110px;">
+          <label>Animation speed</label>
+          <input type="range" id="animSpeedSlider" min="0" max="30" value="8">
         </div>
         <button id="logoutBtn">Sign out</button>
       </div>
     </div>
     <nav class="tabs">
-      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn active" data-tab="trends">Trends</button>
+      <button class="tab-btn" data-tab="mowers">Mowers</button>
       <button class="tab-btn" data-tab="weather">Weather</button>
       <button class="tab-btn" data-tab="irrigation">Irrigation</button>
-      <button class="tab-btn" data-tab="mowers">Mowers</button>
       <button class="tab-btn" data-tab="explorer">Explorer</button>
-      <button class="tab-btn" data-tab="trends">Trends</button>
+      <button class="tab-btn" data-tab="reference">Reference</button>
     </nav>
   </header>
 
@@ -288,26 +305,128 @@ table.data tr:hover td{ background:var(--surface-2); }
 
   <main>
 
-    <!-- ================= OVERVIEW ================= -->
-    <section class="tab-panel active" id="tab-overview">
+    <!-- ================= TRENDS (Overview + Trends merged) ================= -->
+    <section class="tab-panel active" id="tab-trends">
       <div class="kpi-row" id="overviewKpis"></div>
 
       <div class="panel">
+        <h2>How this compares to average</h2>
+        <div class="panel-sub">Today, this week, and this month vs. the historical average for the same period</div>
+        <div class="kpi-row" id="compareKpis"></div>
+      </div>
+
+      <div class="panel">
         <h2>Temperature — last 3 months &amp; next 3 months</h2>
-        <div class="panel-sub">Recorded highs/lows for recent months; historical monthly averages projected forward for the months ahead</div>
+        <div class="panel-sub">Recorded highs/lows for recent months; historical monthly averages projected forward</div>
         <div class="chart-wrap tall"><canvas id="chartSeasonal"></canvas></div>
+      </div>
+
+      <div class="panel">
+        <h2>Trend charts</h2>
+        <div class="panel-sub">One shared date-range slider drives every chart below in Series view. Charts in Stacked view compare years directly, so they use their own day-of-year range instead.</div>
+        <div class="slider-row" id="sl-shared-x" style="grid-template-columns:1fr 1fr;"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Cumulative rainfall</h2>
+        <div class="panel-sub">Resets to zero each January 1</div>
+        <div class="year-controls" id="yc-rain"></div>
+        <div class="slider-row" id="sl-rain" style="grid-template-columns:1fr 1fr;"></div>
+        <div class="chart-wrap tall"><canvas id="chartTrendRain"></canvas></div>
       </div>
 
       <div class="two-col">
         <div class="panel">
-          <h2>Cumulative rainfall — this year</h2>
-          <div class="panel-sub">Actual vs. historical average</div>
-          <div class="chart-wrap"><canvas id="chartRainCum"></canvas></div>
+          <h2>Daily highs (°F)</h2>
+          <div class="year-controls" id="yc-high"></div>
+          <div class="slider-row" id="sl-high" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap"><canvas id="chartTrendHigh"></canvas></div>
         </div>
         <div class="panel">
-          <h2>Last 30 days — daily rainfall</h2>
-          <div class="panel-sub">Bars: recorded precipitation by day</div>
-          <div class="chart-wrap"><canvas id="chartRain30"></canvas></div>
+          <h2>Daily lows (°F)</h2>
+          <div class="year-controls" id="yc-low"></div>
+          <div class="slider-row" id="sl-low" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap"><canvas id="chartTrendLow"></canvas></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h2>Running water deficit — Bermuda</h2>
+          <div class="panel-sub">Cumulative shortfall vs. threshold, resets each Jan 1</div>
+          <div class="year-controls" id="yc-deficit-bermuda"></div>
+          <div class="slider-row" id="sl-deficit-bermuda" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap"><canvas id="chartDeficitBermuda"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2>Running water deficit — Fescue</h2>
+          <div class="panel-sub">Cumulative shortfall vs. threshold, resets each Jan 1</div>
+          <div class="year-controls" id="yc-deficit-fescue"></div>
+          <div class="slider-row" id="sl-deficit-fescue" style="grid-template-columns:1fr 1fr;"></div>
+          <div class="chart-wrap"><canvas id="chartDeficitFescue"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Water needed — 7-day rolling average</h2>
+        <div class="panel-sub">Inches per week, by grass type</div>
+        <div class="year-controls" id="yc-etweekly"></div>
+        <div class="slider-row" id="sl-etweekly" style="grid-template-columns:1fr 1fr;"></div>
+        <div class="chart-wrap tall"><canvas id="chartEtWeekly"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ================= MOWERS ================= -->
+    <section class="tab-panel" id="tab-mowers">
+      <div class="filter-row">
+        <div class="filter-field">
+          <label>Mower</label>
+          <select id="mwMower">
+            <option value="all">Both mowers</option>
+            <option value="Mowtilda">Mowtilda</option>
+            <option value="Eskimow Joe">Eskimow Joe</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>From</label>
+          <input type="date" id="mwFrom">
+        </div>
+        <div class="filter-field">
+          <label>To</label>
+          <input type="date" id="mwTo">
+        </div>
+        <button class="btn" id="mwApply">Apply</button>
+      </div>
+
+      <div class="kpi-row" id="mowerKpis"></div>
+
+      <div class="panel">
+        <h2>Mowing minutes by zone</h2>
+        <div class="chart-wrap tall"><canvas id="chartMowZone"></canvas></div>
+      </div>
+
+      <div class="panel">
+        <h2>Non-working time by mower</h2>
+        <div class="panel-sub">Everything that isn't an active mowing state — charging, traveling, paused, idle, stuck, etc.</div>
+        <div class="two-col">
+          <div>
+            <h3 style="font-size:0.95rem; margin-bottom:8px;">Mowtilda</h3>
+            <div class="chart-wrap"><canvas id="chartNonWorkMowtilda"></canvas></div>
+          </div>
+          <div>
+            <h3 style="font-size:0.95rem; margin-bottom:8px;">Eskimow Joe</h3>
+            <div class="chart-wrap"><canvas id="chartNonWorkEskimow"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Zone detail</h2>
+        <div class="table-wrap">
+          <table class="data" id="mwTable">
+            <thead><tr><th>Date</th><th>Mower</th><th>Zone</th><th>Est. minutes</th></tr></thead>
+            <tbody></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -393,7 +512,7 @@ table.data tr:hover td{ background:var(--surface-2); }
 
       <div class="panel">
         <h2>What the grass needed vs. what it got</h2>
-        <div class="panel-sub">A positive number means that zone didn't get enough water</div>
+        <div class="panel-sub">Rain and sprinkler water are shown separately</div>
         <div class="chart-wrap tall"><canvas id="chartIrBalance"></canvas></div>
       </div>
 
@@ -402,46 +521,6 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="table-wrap">
           <table class="data" id="irTable">
             <thead><tr><th>Zone</th><th>Grass type</th><th>Water needed (in)</th><th>Rain (in)</th><th>Water applied (in)</th><th>Shortfall (in)</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= MOWERS ================= -->
-    <section class="tab-panel" id="tab-mowers">
-      <div class="filter-row">
-        <div class="filter-field">
-          <label>Mower</label>
-          <select id="mwMower">
-            <option value="all">Both mowers</option>
-            <option value="Mowtilda">Mowtilda</option>
-            <option value="Eskimow Joe">Eskimow Joe</option>
-          </select>
-        </div>
-        <div class="filter-field">
-          <label>From</label>
-          <input type="date" id="mwFrom">
-        </div>
-        <div class="filter-field">
-          <label>To</label>
-          <input type="date" id="mwTo">
-        </div>
-        <button class="btn" id="mwApply">Apply</button>
-      </div>
-
-      <div class="kpi-row" id="mowerKpis"></div>
-
-      <div class="panel">
-        <h2>Mowing minutes by zone</h2>
-        <div class="chart-wrap tall"><canvas id="chartMowZone"></canvas></div>
-      </div>
-
-      <div class="panel">
-        <h2>Zone detail</h2>
-        <div class="table-wrap">
-          <table class="data" id="mwTable">
-            <thead><tr><th>Date</th><th>Mower</th><th>Zone</th><th>Est. minutes</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -494,48 +573,111 @@ table.data tr:hover td{ background:var(--surface-2); }
       </div>
     </section>
 
-    <!-- ================= TRENDS ================= -->
-    <section class="tab-panel" id="tab-trends">
+    <!-- ================= REFERENCE ================= -->
+    <section class="tab-panel" id="tab-reference">
       <div class="panel">
-        <h2>Cumulative rainfall</h2>
-        <div class="panel-sub">Drag the sliders to zoom either axis — resets when you reload data</div>
-        <div class="slider-row" id="sl-rain"></div>
-        <div class="chart-wrap tall"><canvas id="chartTrendRain"></canvas></div>
-      </div>
-
-      <div class="two-col">
-        <div class="panel">
-          <h2>Daily highs (°F)</h2>
-          <div class="slider-row" id="sl-high"></div>
-          <div class="chart-wrap"><canvas id="chartTrendHigh"></canvas></div>
-        </div>
-        <div class="panel">
-          <h2>Daily lows (°F)</h2>
-          <div class="slider-row" id="sl-low"></div>
-          <div class="chart-wrap"><canvas id="chartTrendLow"></canvas></div>
-        </div>
-      </div>
-
-      <div class="two-col">
-        <div class="panel">
-          <h2>Running water deficit — Bermuda</h2>
-          <div class="panel-sub">Cumulative shortfall vs. threshold, averaged across bermuda zones</div>
-          <div class="slider-row" id="sl-deficit-bermuda"></div>
-          <div class="chart-wrap"><canvas id="chartDeficitBermuda"></canvas></div>
-        </div>
-        <div class="panel">
-          <h2>Running water deficit — Fescue</h2>
-          <div class="panel-sub">Cumulative shortfall vs. threshold, averaged across fescue zones</div>
-          <div class="slider-row" id="sl-deficit-fescue"></div>
-          <div class="chart-wrap"><canvas id="chartDeficitFescue"></canvas></div>
+        <h2>Property constants</h2>
+        <div class="panel-sub">Hard-coded inputs to the ET₀ calculation — these are physical facts about the property, not tunable settings</div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Constant</th><th>Value</th><th>Used for</th></tr></thead>
+            <tbody>
+              <tr><td>Latitude</td><td>35.72983843° N</td><td>Solar declination / extraterrestrial radiation</td></tr>
+              <tr><td>Elevation</td><td>1,095 ft (333.756 m)</td><td>Atmospheric pressure, clear-sky radiation</td></tr>
+              <tr><td>Anemometer height</td><td>1.97 m</td><td>Wind speed adjustment to the FAO-56 standard 2m height</td></tr>
+              <tr><td>Reference surface</td><td>Clipped, well-watered grass</td><td>What ET₀ itself represents (see below)</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <div class="panel">
-        <h2>Water needed — 7-day rolling average</h2>
-        <div class="panel-sub">Inches per week, by grass type</div>
-        <div class="slider-row" id="sl-etweekly"></div>
-        <div class="chart-wrap tall"><canvas id="chartEtWeekly"></canvas></div>
+        <h2>What is ET₀?</h2>
+        <div class="panel-sub">Reference evapotranspiration</div>
+        <p style="max-width:70ch; line-height:1.6; color:var(--text-secondary); font-size:0.92rem;">
+          ET₀ is the depth of water, in inches per day, that would evaporate and transpire from a
+          standardized reference surface — a short, uniform, well-watered grass — under the day's actual
+          weather. It's a way of separating "how thirsty the air is today" from "how thirsty this
+          particular type of grass is." Multiply ET₀ by a crop coefficient (Kc) specific to the grass
+          type and the calendar month, and you get ETc: the actual water need for that grass, that day.
+        </p>
+        <p style="max-width:70ch; line-height:1.6; color:var(--text-secondary); font-size:0.92rem; margin-top:10px;">
+          The formula used here is the FAO-56 Penman-Monteith equation, the internationally standard
+          method for computing ET₀ — it combines net radiation, air temperature, humidity, and wind speed
+          into a single physically-grounded estimate, rather than a rough seasonal guess.
+        </p>
+        <div class="panel-sub" style="margin-top:14px;">Source</div>
+        <p style="font-size:0.85rem;">
+          Allen, R.G., Pereira, L.S., Raes, D., Smith, M. (1998).
+          <em>Crop Evapotranspiration — Guidelines for Computing Crop Water Requirements</em>,
+          FAO Irrigation and Drainage Paper 56. —
+          <a href="https://www.fao.org/4/x0490e/x0490e00.htm" target="_blank" rel="noopener">fao.org/4/x0490e/x0490e00.htm</a>
+        </p>
+      </div>
+
+      <div class="panel">
+        <h2>Crop coefficients (Kc)</h2>
+        <div class="panel-sub">Monthly multipliers applied to ET₀ to get each grass type's actual water need (ETc = ET₀ × Kc)</div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Month</th><th>Bermuda</th><th>Fescue</th></tr></thead>
+            <tbody id="refKcTable"></tbody>
+          </table>
+        </div>
+        <div class="panel-sub" style="margin-top:14px;">Source</div>
+        <p style="font-size:0.85rem;">
+          Meyer, J.L. et al. (1985), widely cited turfgrass crop-coefficient reference (UC ANR / extension
+          programs). Values are stored in the <code>turf_kc_monthly</code> table and can be adjusted there
+          if your own observations warrant it.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h2>Other tunable constants</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Constant</th><th>Value</th><th>Where it lives</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td>Bermuda deficit threshold</td><td>0.65 in</td><td>Dashboard script (DEFICIT_THRESHOLD_IN)</td><td>Cumulative shortfall level treated as visible stress for Bermuda</td></tr>
+              <tr><td>Fescue deficit threshold</td><td>0.45 in</td><td>Dashboard script (DEFICIT_THRESHOLD_IN)</td><td>Same, for Fescue — cool-season turf shows stress sooner</td></tr>
+              <tr><td>Default precip rate</td><td>0.3 in/hr</td><td>irrigation_zones.precip_rate_in_per_hr</td><td>From your catch-cup testing; converts sprinkler runtime to inches applied</td></tr>
+              <tr><td>Mister / flower bed precip rate</td><td>0.75 in/hr</td><td>irrigation_zones.precip_rate_in_per_hr</td><td>Higher-output zones, set per your real layout</td></tr>
+              <tr><td>Target watering</td><td>1.5 in/week</td><td>irrigation_zones.target_in_per_week</td><td>Reference target, not currently enforced anywhere automatically</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Defined terms</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td>ET₀</td><td>Reference evapotranspiration — water loss from a standardized grass surface, in/day</td></tr>
+              <tr><td>ETc (shown as "water needed")</td><td>Crop evapotranspiration — ET₀ × Kc, the actual water need for a specific grass type</td></tr>
+              <tr><td>Kc</td><td>Crop coefficient — monthly multiplier converting ET₀ into ETc for a given grass type</td></tr>
+              <tr><td>Shortfall / deficit</td><td>ETc minus rainfall minus irrigation applied — positive means under-watered</td></tr>
+              <tr><td>Feels-like (high/low)</td><td>Heat index (high) and wind chill (low) — how the temperature is actually experienced</td></tr>
+              <tr><td>Precip rate</td><td>How fast a zone's sprinklers apply water, in inches per hour — from catch-cup testing</td></tr>
+              <tr><td>Station number</td><td>B-hyve's numeric zone identifier, mapped 1:1 to this property's zone_number</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Data sources</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Source</th><th>Feeds</th><th>Docs</th></tr></thead>
+            <tbody>
+              <tr><td>Ambient Weather station</td><td>weather_daily</td><td><a href="https://ambientweather.docs.apiary.io/" target="_blank" rel="noopener">ambientweather.docs.apiary.io</a></td></tr>
+              <tr><td>Orbit B-hyve</td><td>irrigation_runs</td><td>Unofficial API — no public docs</td></tr>
+              <tr><td>Kress fleet.kress.com</td><td>mower_activity</td><td>Unofficial, reverse-engineered — no public docs</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -543,43 +685,34 @@ table.data tr:hover td{ background:var(--surface-2); }
 </div>
 <script>
 /* ============================================================
-   CONFIG — fill these in before publishing
+   CONFIG
    ============================================================ */
 const SUPABASE_URL = 'https://uomhdexfwovuovtarycz.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_GP4wq5bwrQ3M0qCTwQei4A_Lsk_zBcK'; // "publishable" key -- safe to expose
+const SUPABASE_ANON_KEY = 'sb_publishable_GP4wq5bwrQ3M0qCTwQei4A_Lsk_zBcK';
 
-// Historical monthly climatology, used (a) to fill in "next 3 months"
-// on the Overview seasonal chart before enough live station history
-// exists, and (b) as the comparison line on the cumulative rainfall
-// chart. Once weather_daily has a few years of real data, the code
-// below prefers the live-computed average automatically — these are
-// just the bootstrap values. Pull from your 16-year weather history
-// export and fill in; leave as null to skip that data point.
+// Bootstrap climatology -- used until enough live station history exists.
+// Fill in from your historical spreadsheet for accuracy.
 const HISTORICAL_MONTHLY = {
-  // Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
   avgHighF: [58, 62, 70, 78, 85, 93, 97, 96, 89, 79, 67, 58],
   avgLowF:  [35, 38, 45, 53, 61, 69, 73, 72, 64, 52, 42, 35],
   avgRainIn:[2.1, 2.0, 2.8, 3.2, 4.5, 3.8, 2.6, 2.4, 3.1, 3.3, 2.9, 2.4],
+  avgWindMph:[7.5, 8.0, 8.5, 9.0, 8.0, 7.0, 6.5, 6.5, 7.0, 7.5, 7.5, 7.5],
+  avgFeelsHighF:[58, 62, 71, 80, 89, 99, 104, 103, 93, 80, 67, 58],
+  avgFeelsLowF: [30, 33, 41, 50, 60, 69, 73, 72, 63, 49, 37, 30],
 };
 
+/* ============================================================
+   SUPABASE INIT (defensive -- see part 3 discussion in this project)
+   ============================================================ */
 const supa = (function initSupabase(){
   if (typeof window.supabase === 'undefined') {
     const el = document.getElementById('loginError');
     if (el) el.textContent =
-      'Could not load the Supabase library — check your internet connection, or a firewall/ad-blocker may be blocking cdn.jsdelivr.net.';
+      'Could not load the Supabase library — check your internet connection.';
     return null;
   }
   return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 })();
-
-// Last-resort net: if anything throws before it's caught elsewhere, show
-// it on the login screen instead of failing completely silently.
-window.addEventListener('error', (e) => {
-  const el = document.getElementById('loginError');
-  if (el && document.getElementById('loginScreen').style.display !== 'none') {
-    el.textContent = 'Something went wrong loading the page: ' + (e.message || e);
-  }
-});
 
 /* ============================================================
    UTIL
@@ -591,6 +724,13 @@ const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate()-n); return 
 const startOfYear = () => new Date(new Date().getFullYear(), 0, 1);
 const monthName = (i) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i];
 const num = (v, d=1) => (v === null || v === undefined || isNaN(v)) ? '—' : Number(v).toFixed(d);
+const yearOf = (dateStr) => dateStr.slice(0,4);
+function dayOfYear(dateStr){
+  const d = new Date(dateStr+'T00:00:00Z');
+  const start = Date.UTC(d.getUTCFullYear(), 0, 1);
+  return Math.floor((d.getTime() - start) / 86400000) + 1;
+}
+function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
 
 function csvFromRows(headers, rows){
   const esc = (v) => `"${String(v ?? '').replace(/"/g,'""')}"`;
@@ -605,29 +745,36 @@ function downloadCsv(filename, csv){
 }
 
 const CHART_COLORS = {
-  high:'#d6432b', low:'#2f6b47', mean:'#c67f14', rain:'#2f6b47',
-  et0:'#c67f14', applied:'#2f6b47', need:'#d6432b', historical:'#a1a1a6'
+  high:'#d6432b', low:'#2f6b47', mean:'#c67f14', rain:'#0a84ff',
+  irrigation:'#2f6b47', et0:'#c67f14', applied:'#2f6b47', need:'#d6432b', historical:'#a1a1a6'
 };
-
-// Apple-clean light theme for Chart.js — set once, globally
-Chart.defaults.color = '#6e6e73';
-Chart.defaults.borderColor = '#e8e8ed';
-Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif";
-Chart.defaults.font.size = 11;
-Chart.defaults.plugins.legend.labels.color = '#6e6e73';
-Chart.defaults.plugins.legend.labels.font = { family: "-apple-system, sans-serif", size: 11 };
+const YEAR_COLORS = ['#2f6b47','#d6432b','#c67f14','#0a84ff','#8b5cf6','#a1a1a6','#1d9bf0'];
 
 function emptyState(canvasId, msg){
   const c = $('#'+canvasId);
+  if (!c) return;
   const wrap = c.parentElement;
   wrap.innerHTML = `<div class="empty-state"><div class="big">No data yet</div>${msg}</div>`;
 }
 
-const charts = {}; // registry so we can .destroy() before re-render
+/* ---- chart registry + global progressive-animation speed ---- */
+const charts = {};
+let ANIMATION_SPEED_MS = 8; // ms of stagger per data point, 0 = instant. Controlled by the header slider.
+
 function makeChart(id, config){
   if (charts[id]) charts[id].destroy();
   const ctx = document.getElementById(id);
   if (!ctx) return;
+  config.options = config.options || {};
+  const priorDelay = config.options.animation && config.options.animation.delay;
+  config.options.animation = {
+    delay(animCtx){
+      if (animCtx.type === 'data') {
+        return animCtx.dataIndex * ANIMATION_SPEED_MS + animCtx.datasetIndex * 40;
+      }
+      return typeof priorDelay === 'function' ? priorDelay(animCtx) : 0;
+    }
+  };
   charts[id] = new Chart(ctx, config);
   return charts[id];
 }
@@ -636,7 +783,7 @@ function makeChart(id, config){
    AUTH
    ============================================================ */
 async function checkSession(){
-  if (!supa) return; // Supabase never loaded — error already shown on screen
+  if (!supa) return;
   try {
     const { data:{ session } } = await supa.auth.getSession();
     if (session) showApp(); else showLogin();
@@ -650,7 +797,7 @@ function showApp(){
   initApp();
 }
 $('#loginBtn').addEventListener('click', async () => {
-  if (!supa) return; // nothing we can do — the load error is already shown
+  if (!supa) return;
   const email = $('#loginEmail').value.trim();
   const password = $('#loginPassword').value;
   $('#loginError').textContent = '';
@@ -664,6 +811,7 @@ $('#loginBtn').addEventListener('click', async () => {
 });
 $('#loginPassword').addEventListener('keydown', (e) => { if (e.key==='Enter') $('#loginBtn').click(); });
 $('#logoutBtn').addEventListener('click', async () => { await supa.auth.signOut(); showLogin(); });
+$('#animSpeedSlider').addEventListener('input', (e) => { ANIMATION_SPEED_MS = Number(e.target.value); });
 
 /* ============================================================
    TABS
@@ -681,79 +829,49 @@ $$('.tab-btn').forEach(btn => {
 function initApp(){
   if (appInitialized) return;
   appInitialized = true;
-  loadSyncStatus();
-  loadOverview();
+  initTrendsTab();
   loadZoneOptions();
+  initMowersTab();
   initWeatherTab();
   initIrrigationTab();
-  initMowersTab();
   initExplorerTab();
-  initTrendsTab();
-}
-
-async function loadSyncStatus(){
-  try {
-    const { data: w } = await supa.from('weather_daily').select('weather_date').order('weather_date',{ascending:false}).limit(1);
-    $('#syncWeather').textContent = w && w.length ? w[0].weather_date : 'no data';
-    const { data: i } = await supa.from('irrigation_runs').select('run_date').order('run_date',{ascending:false}).limit(1);
-    $('#syncIrrigation').textContent = i && i.length ? i[0].run_date : 'no data';
-  } catch(e){ console.error(e); }
+  renderReferenceKc();
 }
 
 /* ============================================================
-   OVERVIEW
+   TRENDS TAB — KPI strip + compare-to-average strip + seasonal chart
+   (multi-year trend charts themselves are in part 4)
    ============================================================ */
-async function loadOverview(){
-  await renderOverviewKpis();
-  await renderSeasonalChart();
-  await renderRainCharts();
-}
-
 async function renderOverviewKpis(){
   const from = fmtDate(daysAgo(30));
   const { data: wx } = await supa.from('weather_daily')
     .select('temp_high_f,temp_low_f,rain_in,et0_in')
     .gte('weather_date', from);
-
   const { data: bal } = await supa.from('et_balance_by_zone')
     .select('irrigation_applied_in,net_deficit_in')
     .gte('weather_date', from);
-
   const { data: feelsRows } = await supa.from('weather_daily')
     .select('feels_low_f,feels_high_f')
     .gte('weather_date', from);
 
   const kpis = [];
   if (wx && wx.length){
-    const avgHigh = wx.reduce((s,r)=>s+(r.temp_high_f||0),0)/wx.length;
-    const avgLow  = wx.reduce((s,r)=>s+(r.temp_low_f||0),0)/wx.length;
-    const totalRain = wx.reduce((s,r)=>s+(r.rain_in||0),0);
-    const totalEt0 = wx.reduce((s,r)=>s+(r.et0_in||0),0);
-    kpis.push({label:'Avg high (30d)', value:num(avgHigh,0), unit:'°F'});
-    kpis.push({label:'Avg low (30d)', value:num(avgLow,0), unit:'°F'});
-    kpis.push({label:'Total rain (30d)', value:num(totalRain,2), unit:'in'});
-    kpis.push({label:'Water lost to evaporation (30d)', value:num(totalEt0,2), unit:'in'});
+    kpis.push({label:'Avg high (30d)', value:num(avg(wx.map(r=>r.temp_high_f).filter(v=>v!=null)),0), unit:'°F'});
+    kpis.push({label:'Avg low (30d)', value:num(avg(wx.map(r=>r.temp_low_f).filter(v=>v!=null)),0), unit:'°F'});
+    kpis.push({label:'Total rain (30d)', value:num(wx.reduce((s,r)=>s+(r.rain_in||0),0),2), unit:'in'});
+    kpis.push({label:'Water lost (30d)', value:num(wx.reduce((s,r)=>s+(r.et0_in||0),0),2), unit:'in'});
   } else {
-    kpis.push({label:'Avg high (30d)', value:'—'});
-    kpis.push({label:'Avg low (30d)', value:'—'});
-    kpis.push({label:'Total rain (30d)', value:'—'});
-    kpis.push({label:'Water lost to evaporation (30d)', value:'—'});
+    ['Avg high (30d)','Avg low (30d)','Total rain (30d)','Water lost (30d)'].forEach(l=>kpis.push({label:l,value:'—'}));
   }
   if (feelsRows && feelsRows.length){
-    const avgFeels = feelsRows.reduce((s,r)=>s+((r.feels_low_f||0)+(r.feels_high_f||0))/2,0)/feelsRows.length;
+    const avgFeels = avg(feelsRows.map(r=>((r.feels_low_f||0)+(r.feels_high_f||0))/2));
     kpis.push({label:'Avg feels-like (30d)', value:num(avgFeels,0), unit:'°F'});
-  } else {
-    kpis.push({label:'Avg feels-like (30d)', value:'—'});
-  }
+  } else kpis.push({label:'Avg feels-like (30d)', value:'—'});
   if (bal && bal.length){
-    const totalApplied = bal.reduce((s,r)=>s+(r.irrigation_applied_in||0),0);
+    kpis.push({label:'Irrigation applied (30d)', value:num(bal.reduce((s,r)=>s+(r.irrigation_applied_in||0),0),2), unit:'in'});
     const netDeficit = bal.reduce((s,r)=>s+(r.net_deficit_in||0),0);
-    kpis.push({label:'Irrigation applied (30d)', value:num(totalApplied,2), unit:'in'});
-    kpis.push({
-      label:'Watering shortfall (30d)', value:num(Math.abs(netDeficit),2), unit:'in',
-      sub: netDeficit > 0 ? 'Needs more water' : 'Extra water',
-      subClass: netDeficit > 0 ? 'neg' : 'pos'
-    });
+    kpis.push({label:'Watering shortfall (30d)', value:num(Math.abs(netDeficit),2), unit:'in',
+      sub: netDeficit>0?'Needs more water':'Extra water', subClass: netDeficit>0?'neg':'pos'});
   } else {
     kpis.push({label:'Irrigation applied (30d)', value:'—'});
     kpis.push({label:'Watering shortfall (30d)', value:'—'});
@@ -767,6 +885,58 @@ async function renderOverviewKpis(){
     </div>`).join('');
 }
 
+async function renderCompareKpis(){
+  const now = new Date();
+  const month = now.getMonth();
+  const daysInMonth = new Date(now.getFullYear(), month+1, 0).getDate();
+  const monthStart = fmtDate(new Date(now.getFullYear(), month, 1));
+  const weekStart = fmtDate(daysAgo(6));
+  const todayStr = fmtDate(now);
+
+  const { data: monthRows } = await supa.from('weather_daily')
+    .select('weather_date,temp_high_f,temp_low_f,rain_in,wind_avg_mph,feels_high_f,feels_low_f')
+    .gte('weather_date', monthStart).order('weather_date');
+
+  if (!monthRows || !monthRows.length){ $('#compareKpis').innerHTML = '<div class="empty-state">No weather data yet.</div>'; return; }
+
+  const todayRow = monthRows.find(r => r.weather_date === todayStr);
+  const weekRows = monthRows.filter(r => r.weather_date >= weekStart);
+
+  const baseHigh = HISTORICAL_MONTHLY.avgHighF[month];
+  const baseLow = HISTORICAL_MONTHLY.avgLowF[month];
+  const baseRainMonth = HISTORICAL_MONTHLY.avgRainIn[month];
+  const baseRainDay = baseRainMonth / daysInMonth;
+  const baseWind = HISTORICAL_MONTHLY.avgWindMph[month];
+  const baseFeelsHigh = HISTORICAL_MONTHLY.avgFeelsHighF[month];
+
+  function compareCard(label, actual, base, unit, decimals=0){
+    if (actual == null || base == null) return {label, value:'—'};
+    const diff = actual - base;
+    const arrow = diff > 0 ? '▲' : (diff < 0 ? '▼' : '—');
+    return { label, value:num(actual,decimals), unit,
+      sub:`${arrow} ${diff>0?'+':''}${num(diff,decimals)} vs avg`,
+      subClass: diff===0 ? '' : (diff>0 ? 'neg' : 'pos') };
+  }
+
+  const cards = [
+    compareCard('High today', todayRow ? todayRow.temp_high_f : null, baseHigh, '°F'),
+    compareCard('Rain today', todayRow ? todayRow.rain_in : null, baseRainDay, 'in', 2),
+    compareCard('Rain this week', weekRows.reduce((s,r)=>s+(r.rain_in||0),0), baseRainDay*7, 'in', 2),
+    compareCard('Rain this month', monthRows.reduce((s,r)=>s+(r.rain_in||0),0), baseRainMonth, 'in', 2),
+    compareCard('Avg high this week', avg(weekRows.map(r=>r.temp_high_f).filter(v=>v!=null)), baseHigh, '°F'),
+    compareCard('Avg low this week', avg(weekRows.map(r=>r.temp_low_f).filter(v=>v!=null)), baseLow, '°F'),
+    compareCard('Avg wind this week', avg(weekRows.map(r=>r.wind_avg_mph).filter(v=>v!=null)), baseWind, 'mph', 1),
+    compareCard('Avg feels-like high, this week', avg(weekRows.map(r=>r.feels_high_f).filter(v=>v!=null)), baseFeelsHigh, '°F'),
+  ];
+
+  $('#compareKpis').innerHTML = cards.map(k => `
+    <div class="kpi-card">
+      <div class="label">${k.label}</div>
+      <div class="value">${k.value}${k.unit ? ` <span class="unit">${k.unit}</span>`:''}</div>
+      ${k.sub ? `<div class="sub ${k.subClass}">${k.sub}</div>` : ''}
+    </div>`).join('');
+}
+
 async function renderSeasonalChart(){
   const start = new Date(); start.setMonth(start.getMonth()-3); start.setDate(1);
   const { data } = await supa.from('weather_daily')
@@ -774,7 +944,6 @@ async function renderSeasonalChart(){
     .gte('weather_date', fmtDate(start))
     .order('weather_date');
 
-  // group actuals by month
   const byMonth = {};
   (data||[]).forEach(r => {
     const m = new Date(r.weather_date).getMonth();
@@ -813,74 +982,17 @@ async function renderSeasonalChart(){
     }
   });
 }
-function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
 
-async function renderRainCharts(){
-  const { data } = await supa.from('weather_daily')
-    .select('weather_date,rain_in')
-    .gte('weather_date', fmtDate(startOfYear()))
-    .order('weather_date');
-
-  if (!data || !data.length){
-    emptyState('chartRainCum', 'Cumulative rainfall will appear once the weather pull has run for a few days.');
-  } else {
-    const labels = []; const cumActual = []; const cumHistorical = [];
-    let runningActual = 0, runningHist = 0;
-    const daysInMonthSoFar = {};
-    data.forEach(r => {
-      const d = new Date(r.weather_date);
-      runningActual += (r.rain_in || 0);
-      labels.push(r.weather_date);
-      cumActual.push(Number(runningActual.toFixed(2)));
-    });
-    // build a smooth historical cumulative curve across the same span, day by day
-    const startD = new Date(fmtDate(startOfYear()));
-    const today = new Date();
-    for (let d = new Date(startD); d <= today; d.setDate(d.getDate()+1)){
-      const m = d.getMonth();
-      const daysInMonth = new Date(d.getFullYear(), m+1, 0).getDate();
-      runningHist += (HISTORICAL_MONTHLY.avgRainIn[m] || 0) / daysInMonth;
-    }
-    // simplified: recompute properly aligned to labels
-    let acc = 0; const histSeries = [];
-    for (const dateStr of labels){
-      const d = new Date(dateStr);
-      const m = d.getMonth();
-      const daysInMonth = new Date(d.getFullYear(), m+1, 0).getDate();
-      acc += (HISTORICAL_MONTHLY.avgRainIn[m] || 0) / daysInMonth;
-      histSeries.push(Number(acc.toFixed(2)));
-    }
-    makeChart('chartRainCum', {
-      type:'line',
-      data:{ labels, datasets:[
-        { label:'This year (actual)', data:cumActual, borderColor:CHART_COLORS.rain, backgroundColor:CHART_COLORS.rain, tension:.2, pointRadius:0 },
-        { label:'Historical average', data:histSeries, borderColor:CHART_COLORS.historical, borderDash:[6,4], tension:.2, pointRadius:0 },
-      ]},
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{position:'bottom'} },
-        scales:{ x:{ type:'time', time:{unit:'month'} }, y:{ title:{display:true, text:'inches'} } }
-      }
-    });
-  }
-
-  const { data: last30 } = await supa.from('weather_daily')
-    .select('weather_date,rain_in')
-    .gte('weather_date', fmtDate(daysAgo(30)))
-    .order('weather_date');
-  if (!last30 || !last30.length){
-    emptyState('chartRain30', 'No rainfall data in the last 30 days yet.');
-  } else {
-    makeChart('chartRain30', {
-      type:'bar',
-      data:{ labels:last30.map(r=>r.weather_date), datasets:[
-        { label:'Rain (in)', data:last30.map(r=>r.rain_in), backgroundColor:CHART_COLORS.rain }
-      ]},
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false} },
-        scales:{ x:{ type:'time', time:{unit:'week'} } }
-      }
-    });
-  }
+async function renderReferenceKc(){
+  const { data } = await supa.from('turf_kc_monthly').select('grass_type,month,kc').order('month');
+  const tbody = $('#refKcTable');
+  if (!tbody) return;
+  if (!data || !data.length){ tbody.innerHTML = '<tr><td colspan="3">No data yet.</td></tr>'; return; }
+  const byMonth = {};
+  data.forEach(r => { byMonth[r.month] = byMonth[r.month] || {}; byMonth[r.month][r.grass_type] = r.kc; });
+  tbody.innerHTML = Array.from({length:12}, (_,i)=>i+1).map(m => `
+    <tr><td>${monthName(m-1)}</td><td>${num(byMonth[m]?.bermuda,2)}</td><td>${num(byMonth[m]?.fescue,2)}</td></tr>
+  `).join('');
 }
 </script>
 
@@ -903,6 +1015,104 @@ function quickRangeDates(value){
   if (value === 'ytd') return [startOfYear(), new Date()];
   if (value === 'all') return [new Date('2020-01-01'), new Date()];
   return [daysAgo(Number(value)), new Date()];
+}
+
+/* ============================================================
+   MOWERS TAB (incl. non-working-time report)
+   ============================================================ */
+const NON_WORKING_LABELS = {
+  0:'manual action required', 1:'home / charging', 2:'starting', 3:'starting',
+  4:'going home', 5:'going home', 30:'going home', 104:'going home',
+  6:'searching border', 32:'mowing border', 33:'zone search', 103:'zone search',
+  34:'paused', 113:'waiting position', 114:'idle',
+};
+const MOWING_CODES = new Set([7,8,9,10,13,112]);
+
+function initMowersTab(){
+  $('#mwFrom').value = fmtDate(daysAgo(30)); $('#mwTo').value = fmtDate(new Date());
+  $('#mwApply').addEventListener('click', renderMowersTab);
+  renderMowersTab();
+}
+
+async function renderMowersTab(){
+  const from = $('#mwFrom').value, to = $('#mwTo').value, mower = $('#mwMower').value;
+
+  let q = supa.from('mower_zone_daily')
+    .select('mower_name,zone_id,zone_name,day,est_minutes')
+    .gte('day', from).lte('day', to)
+    .order('day');
+  if (mower !== 'all') q = q.eq('mower_name', mower);
+  const { data } = await q;
+
+  if (!data || !data.length){
+    emptyState('chartMowZone', 'No mower activity in this range yet.');
+    $('#mowerKpis').innerHTML = '';
+    $('#mwTable tbody').innerHTML = '';
+  } else {
+    const totalMinutes = data.reduce((s,r)=>s+(r.est_minutes||0),0);
+    const byZoneTotal = {};
+    data.forEach(r => { byZoneTotal[r.zone_name||'Unassigned'] = (byZoneTotal[r.zone_name||'Unassigned']||0) + (r.est_minutes||0); });
+    const topZone = Object.entries(byZoneTotal).sort((a,b)=>b[1]-a[1])[0];
+
+    $('#mowerKpis').innerHTML = [
+      {label:'Total mow time', value:num(totalMinutes/60,1), unit:'hrs'},
+      {label:'Days with activity', value:new Set(data.map(r=>r.day)).size},
+      {label:'Busiest zone', value: topZone ? topZone[0] : '—'},
+    ].map(k => `<div class="kpi-card"><div class="label">${k.label}</div><div class="value">${k.value}${k.unit?` <span class="unit">${k.unit}</span>`:''}</div></div>`).join('');
+
+    const zones = Object.keys(byZoneTotal).sort((a,b)=>byZoneTotal[b]-byZoneTotal[a]).slice(0,12);
+    makeChart('chartMowZone', {
+      type:'bar',
+      data:{ labels:zones, datasets:[{ label:'Minutes', data:zones.map(z=>Math.round(byZoneTotal[z])), backgroundColor:CHART_COLORS.applied }]},
+      options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}} }
+    });
+
+    $('#mwTable tbody').innerHTML = data.slice().reverse().slice(0,300).map(r => `
+      <tr><td>${r.day ? r.day.slice(0,10) : ''}</td><td>${r.mower_name}</td><td>${r.zone_name||'Unassigned'}</td><td>${num(r.est_minutes,1)}</td></tr>
+    `).join('');
+  }
+
+  await renderNonWorkingReport(from, to);
+}
+
+async function renderNonWorkingReport(from, to){
+  const { data } = await supa.from('mower_activity')
+    .select('mower_name,timestamp_utc,ls_code')
+    .gte('timestamp_utc', from).lte('timestamp_utc', to+'T23:59:59')
+    .order('timestamp_utc')
+    .limit(10000);
+
+  if (!data || !data.length){
+    emptyState('chartNonWorkMowtilda', 'No data yet.');
+    emptyState('chartNonWorkEskimow', 'No data yet.');
+    return;
+  }
+
+  const byMower = {};
+  data.forEach(r => { (byMower[r.mower_name] = byMower[r.mower_name] || []).push(r); });
+
+  function buildFor(mowerName, chartId){
+    const rows = byMower[mowerName];
+    if (!rows || rows.length < 2){ emptyState(chartId, 'No data yet.'); return; }
+    const stateMinutes = {};
+    for (let i = 0; i < rows.length - 1; i++){
+      const r = rows[i];
+      if (MOWING_CODES.has(r.ls_code)) continue; // only non-working states
+      const gapMin = (new Date(rows[i+1].timestamp_utc) - new Date(r.timestamp_utc)) / 60000;
+      if (gapMin <= 0 || gapMin > 180) continue; // skip bogus/overnight gaps
+      const label = NON_WORKING_LABELS[r.ls_code] || `code ${r.ls_code}`;
+      stateMinutes[label] = (stateMinutes[label] || 0) + gapMin;
+    }
+    const entries = Object.entries(stateMinutes).sort((a,b)=>b[1]-a[1]);
+    if (!entries.length){ emptyState(chartId, 'No non-working time recorded.'); return; }
+    makeChart(chartId, {
+      type:'bar',
+      data:{ labels:entries.map(e=>e[0]), datasets:[{ label:'Minutes', data:entries.map(e=>Math.round(e[1])), backgroundColor:CHART_COLORS.high }]},
+      options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}} }
+    });
+  }
+  buildFor('Mowtilda', 'chartNonWorkMowtilda');
+  buildFor('Eskimow Joe', 'chartNonWorkEskimow');
 }
 
 /* ============================================================
@@ -965,7 +1175,7 @@ async function renderWeatherTab(){
 }
 
 /* ============================================================
-   IRRIGATION TAB
+   IRRIGATION TAB (rain vs. irrigation shown as separate series)
    ============================================================ */
 function initIrrigationTab(){
   const [from, to] = quickRangeDates('30');
@@ -1008,7 +1218,6 @@ async function renderIrrigationTab(){
     <div class="value ${k.subClass==='neg'?'alert':''}">${k.value}${k.unit?` <span class="unit">${k.unit}</span>`:''}</div>
     ${k.sub?`<div class="sub ${k.subClass}">${k.sub}</div>`:''}</div>`).join('');
 
-  // aggregate by day across selected zone(s) for the chart
   const byDate = {};
   data.forEach(r => {
     byDate[r.weather_date] = byDate[r.weather_date] || {etc:0, applied:0, rain:0};
@@ -1021,13 +1230,13 @@ async function renderIrrigationTab(){
     type:'bar',
     data:{ labels:dates, datasets:[
       { label:'Water needed', data:dates.map(d=>byDate[d].etc), backgroundColor:CHART_COLORS.need },
-      { label:'Applied + rain', data:dates.map(d=>byDate[d].applied+byDate[d].rain), backgroundColor:CHART_COLORS.applied },
+      { label:'Rain', data:dates.map(d=>byDate[d].rain), backgroundColor:CHART_COLORS.rain },
+      { label:'Irrigation applied', data:dates.map(d=>byDate[d].applied), backgroundColor:CHART_COLORS.irrigation },
     ]},
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
       scales:{ x:{type:'time', time:{unit:'week'}}, y:{title:{display:true,text:'inches'}} } }
   });
 
-  // by-zone summary table
   const byZone = {};
   data.forEach(r => {
     byZone[r.zone_number] = byZone[r.zone_number] || {name:r.zone_name, grass:r.grass_type, etc:0, rain:0, applied:0, deficit:0};
@@ -1040,54 +1249,6 @@ async function renderIrrigationTab(){
     <tr><td>${zn} — ${z.name}</td><td>${z.grass||'—'}</td><td>${num(z.etc,2)}</td>
     <td>${num(z.rain,2)}</td><td>${num(z.applied,2)}</td>
     <td class="${z.deficit>0?'deficit-pos':'deficit-neg'}">${z.deficit>0?'+':''}${num(z.deficit,2)}</td></tr>
-  `).join('');
-}
-
-/* ============================================================
-   MOWERS TAB
-   ============================================================ */
-function initMowersTab(){
-  $('#mwFrom').value = fmtDate(daysAgo(30)); $('#mwTo').value = fmtDate(new Date());
-  $('#mwApply').addEventListener('click', renderMowersTab);
-  renderMowersTab();
-}
-
-async function renderMowersTab(){
-  const from = $('#mwFrom').value, to = $('#mwTo').value, mower = $('#mwMower').value;
-  let q = supa.from('mower_zone_daily')
-    .select('mower_name,zone_id,zone_name,day,est_minutes')
-    .gte('day', from).lte('day', to)
-    .order('day');
-  if (mower !== 'all') q = q.eq('mower_name', mower);
-  const { data } = await q;
-
-  if (!data || !data.length){
-    emptyState('chartMowZone', 'No mower activity in this range yet.');
-    $('#mowerKpis').innerHTML = '';
-    $('#mwTable tbody').innerHTML = '';
-    return;
-  }
-
-  const totalMinutes = data.reduce((s,r)=>s+(r.est_minutes||0),0);
-  const byZoneTotal = {};
-  data.forEach(r => { byZoneTotal[r.zone_name||'Unassigned'] = (byZoneTotal[r.zone_name||'Unassigned']||0) + (r.est_minutes||0); });
-  const topZone = Object.entries(byZoneTotal).sort((a,b)=>b[1]-a[1])[0];
-
-  $('#mowerKpis').innerHTML = [
-    {label:'Total mow time', value:num(totalMinutes/60,1), unit:'hrs'},
-    {label:'Days with activity', value:new Set(data.map(r=>r.day)).size},
-    {label:'Busiest zone', value: topZone ? topZone[0] : '—'},
-  ].map(k => `<div class="kpi-card"><div class="label">${k.label}</div><div class="value">${k.value}${k.unit?` <span class="unit">${k.unit}</span>`:''}</div></div>`).join('');
-
-  const zones = Object.keys(byZoneTotal).sort((a,b)=>byZoneTotal[b]-byZoneTotal[a]).slice(0,12);
-  makeChart('chartMowZone', {
-    type:'bar',
-    data:{ labels:zones, datasets:[{ label:'Minutes', data:zones.map(z=>Math.round(byZoneTotal[z])), backgroundColor:CHART_COLORS.applied }]},
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}} }
-  });
-
-  $('#mwTable tbody').innerHTML = data.slice().reverse().slice(0,300).map(r => `
-    <tr><td>${r.day ? r.day.slice(0,10) : ''}</td><td>${r.mower_name}</td><td>${r.zone_name||'Unassigned'}</td><td>${num(r.est_minutes,1)}</td></tr>
   `).join('');
 }
 
@@ -1162,7 +1323,6 @@ async function renderExplorer(){
   }
   explorerLastRows = data;
 
-  // aggregate by date if the source has multiple rows per date (e.g. zones)
   const byDate = {};
   data.forEach(r => {
     const d = r[src.dateCol];
@@ -1192,146 +1352,240 @@ function exportExplorerCsv(){
 }
 
 /* ============================================================
-   TRENDS — charts with draggable X/Y axis-range sliders
+   TRENDS — multi-year charts: year pickers, series/stacked view,
+   yearly-reset cumulative, one shared X slider for Series-mode charts
    ============================================================ */
-
-// Cumulative-deficit "stress" threshold per grass type, in inches.
-// Tune these to whatever level you consider the point turf starts
-// showing stress for that species.
 const DEFICIT_THRESHOLD_IN = { bermuda: 0.65, fescue: 0.45 };
 
-function wireAxisSliders(containerId, chart, xValues, yMinData, yMaxData){
+let seriesChartRegistry = {}; // chartId -> chart, only charts currently in "Series" view
+function registerSeriesChart(chartId, chart){ seriesChartRegistry[chartId] = chart; }
+function unregisterSeriesChart(chartId){ delete seriesChartRegistry[chartId]; }
+
+function wireYAxisSlider(containerId, chart, yMinData, yMaxData){
   const el = $('#'+containerId);
-  if (!el || !xValues.length) return;
-  const xMinTs = Math.min(...xValues), xMaxTs = Math.max(...xValues);
+  if (!el) return;
   const yPad = (yMaxData - yMinData) * 0.15 || 1;
   const yLo = yMinData - yPad, yHi = yMaxData + yPad;
   const yStep = ((yHi - yLo) / 100) || 0.1;
-
   el.innerHTML = `
-    <div class="slider-field"><label>X start <span class="val" id="${containerId}-xsv"></span></label>
-      <input type="range" id="${containerId}-xs" min="${xMinTs}" max="${xMaxTs}" value="${xMinTs}" step="86400000"></div>
-    <div class="slider-field"><label>X end <span class="val" id="${containerId}-xev"></span></label>
-      <input type="range" id="${containerId}-xe" min="${xMinTs}" max="${xMaxTs}" value="${xMaxTs}" step="86400000"></div>
     <div class="slider-field"><label>Y min <span class="val" id="${containerId}-ynv"></span></label>
       <input type="range" id="${containerId}-yn" min="${yLo}" max="${yHi}" value="${yLo}" step="${yStep}"></div>
     <div class="slider-field"><label>Y max <span class="val" id="${containerId}-yxv"></span></label>
       <input type="range" id="${containerId}-yx" min="${yLo}" max="${yHi}" value="${yHi}" step="${yStep}"></div>
   `;
-
-  const xs = $('#'+containerId+'-xs'), xe = $('#'+containerId+'-xe');
   const yn = $('#'+containerId+'-yn'), yx = $('#'+containerId+'-yx');
-  const xsv = $('#'+containerId+'-xsv'), xev = $('#'+containerId+'-xev');
   const ynv = $('#'+containerId+'-ynv'), yxv = $('#'+containerId+'-yxv');
-  const shortDate = (ts) => new Date(Number(ts)).toISOString().slice(0,10);
-
   function apply(){
-    chart.options.scales.x.min = Number(xs.value);
-    chart.options.scales.x.max = Number(xe.value);
     chart.options.scales.y.min = Number(yn.value);
     chart.options.scales.y.max = Number(yx.value);
-    xsv.textContent = shortDate(xs.value);
-    xev.textContent = shortDate(xe.value);
     ynv.textContent = Number(yn.value).toFixed(1);
     yxv.textContent = Number(yx.value).toFixed(1);
     chart.update('none');
   }
-  [xs, xe, yn, yx].forEach(inp => inp.addEventListener('input', apply));
+  [yn, yx].forEach(inp => inp.addEventListener('input', apply));
   apply();
 }
 
-function initTrendsTab(){
-  renderTrendRainfall();
-  renderTrendHighLow();
-  renderDeficitChart('bermuda', 'chartDeficitBermuda', 'sl-deficit-bermuda');
-  renderDeficitChart('fescue', 'chartDeficitFescue', 'sl-deficit-fescue');
-  renderEtWeekly();
+function wireSharedXSlider(containerId, xMinTs, xMaxTs){
+  const el = $('#'+containerId);
+  if (!el || !isFinite(xMinTs) || !isFinite(xMaxTs)) return;
+  el.innerHTML = `
+    <div class="slider-field"><label>X start (all Series charts) <span class="val" id="${containerId}-xsv"></span></label>
+      <input type="range" id="${containerId}-xs" min="${xMinTs}" max="${xMaxTs}" value="${xMinTs}" step="86400000"></div>
+    <div class="slider-field"><label>X end (all Series charts) <span class="val" id="${containerId}-xev"></span></label>
+      <input type="range" id="${containerId}-xe" min="${xMinTs}" max="${xMaxTs}" value="${xMaxTs}" step="86400000"></div>
+  `;
+  const xs = $('#'+containerId+'-xs'), xe = $('#'+containerId+'-xe');
+  const xsv = $('#'+containerId+'-xsv'), xev = $('#'+containerId+'-xev');
+  const shortDate = (ts) => new Date(Number(ts)).toISOString().slice(0,10);
+  function apply(){
+    xsv.textContent = shortDate(xs.value); xev.textContent = shortDate(xe.value);
+    Object.values(seriesChartRegistry).forEach(chart => {
+      if (!chart.options.scales.x) return;
+      chart.options.scales.x.min = Number(xs.value);
+      chart.options.scales.x.max = Number(xe.value);
+      chart.update('none');
+    });
+  }
+  [xs, xe].forEach(inp => inp.addEventListener('input', apply));
+  window.__applySharedX = apply; // let newly-drawn charts pick up the current range immediately
+  apply();
 }
 
-async function renderTrendRainfall(){
-  const { data } = await supa.from('weather_daily').select('weather_date,rain_in').order('weather_date');
-  if (!data || !data.length){ emptyState('chartTrendRain', 'No weather data yet.'); return; }
-  let running = 0;
-  const points = data.map(r => { running += (r.rain_in||0); return {x:new Date(r.weather_date).getTime(), y:Number(running.toFixed(2))}; });
-  const chart = makeChart('chartTrendRain', {
-    type:'line',
-    data:{ datasets:[{ label:'Cumulative rain (in)', data:points, borderColor:CHART_COLORS.rain,
-      backgroundColor:CHART_COLORS.rain, pointRadius:0, tension:.15, fill:false }]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'inches'}} } }
+function addCumulativeYearlyReset(rowsSorted){
+  let curYear = null, running = 0;
+  return rowsSorted.map(r => {
+    const y = yearOf(r.date);
+    if (y !== curYear) { curYear = y; running = 0; }
+    running += (r.value || 0);
+    return { ...r, cum: Number(running.toFixed(3)) };
   });
-  const xs = points.map(p=>p.x), ys = points.map(p=>p.y);
-  wireAxisSliders('sl-rain', chart, xs, Math.min(0,...ys), Math.max(...ys));
 }
 
-async function renderTrendHighLow(){
-  const { data } = await supa.from('weather_daily').select('weather_date,temp_high_f,temp_low_f').order('weather_date');
-  if (!data || !data.length){ emptyState('chartTrendHigh','No weather data yet.'); emptyState('chartTrendLow','No weather data yet.'); return; }
-
-  const highPts = data.filter(r=>r.temp_high_f!=null).map(r=>({x:new Date(r.weather_date).getTime(), y:r.temp_high_f}));
-  const chartHigh = makeChart('chartTrendHigh', {
-    type:'line',
-    data:{ datasets:[{ label:'High °F', data:highPts, borderColor:CHART_COLORS.high, pointRadius:0, tension:.2 }]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'°F'}} } }
+function renderYearChips(container, years, selectedSet, cls, onChange){
+  container.innerHTML = years.map(y => `<span class="year-chip ${selectedSet.has(y)?cls:''}" data-y="${y}">${y}</span>`).join('');
+  container.querySelectorAll('.year-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const y = chip.dataset.y;
+      if (selectedSet.has(y)) selectedSet.delete(y); else selectedSet.add(y);
+      chip.classList.toggle(cls);
+      onChange();
+    });
   });
-  const hxs = highPts.map(p=>p.x), hys = highPts.map(p=>p.y);
-  wireAxisSliders('sl-high', chartHigh, hxs, Math.min(...hys), Math.max(...hys));
-
-  const lowPts = data.filter(r=>r.temp_low_f!=null).map(r=>({x:new Date(r.weather_date).getTime(), y:r.temp_low_f}));
-  const chartLow = makeChart('chartTrendLow', {
-    type:'line',
-    data:{ datasets:[{ label:'Low °F', data:lowPts, borderColor:CHART_COLORS.low, pointRadius:0, tension:.2 }]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'°F'}} } }
-  });
-  const lxs = lowPts.map(p=>p.x), lys = lowPts.map(p=>p.y);
-  wireAxisSliders('sl-low', chartLow, lxs, Math.min(...lys), Math.max(...lys));
 }
 
-async function renderDeficitChart(grassType, chartId, sliderContainerId){
-  const { data } = await supa.from('et_balance_by_zone')
-    .select('weather_date,grass_type,net_deficit_in')
-    .eq('grass_type', grassType)
-    .order('weather_date');
-  if (!data || !data.length){ emptyState(chartId, `No ${grassType} zone data yet.`); return; }
+async function buildMultiYearChart(opts){
+  const { chartId, ycContainerId, sliderContainerId, fetchRows, cumulative, yLabel, chartType='line' } = opts;
+  const rawRows = await fetchRows();
+  const ycEl = $('#'+ycContainerId);
+  if (!rawRows || !rawRows.length){
+    emptyState(chartId, 'No data yet.');
+    if (ycEl) ycEl.innerHTML = '';
+    return;
+  }
 
-  const byDate = {};
-  data.forEach(r => {
-    if (r.net_deficit_in == null) return;
-    byDate[r.weather_date] = byDate[r.weather_date] || [];
-    byDate[r.weather_date].push(r.net_deficit_in);
-  });
-  const dates = Object.keys(byDate).sort();
-  if (!dates.length){ emptyState(chartId, `No ${grassType} zone data yet.`); return; }
+  rawRows.sort((a,b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+  const processed = cumulative ? addCumulativeYearlyReset(rawRows) : rawRows.map(r => ({...r, cum:r.value}));
+  const byYear = {};
+  processed.forEach(r => { (byYear[yearOf(r.date)] = byYear[yearOf(r.date)] || []).push(r); });
+  const years = Object.keys(byYear).sort();
 
-  const threshold = DEFICIT_THRESHOLD_IN[grassType] ?? 0.5;
-  let running = 0;
-  const points = dates.map(d => {
-    const avg = byDate[d].reduce((a,b)=>a+b,0) / byDate[d].length;
-    running += avg;
-    return { x:new Date(d).getTime(), y:Number(running.toFixed(3)) };
-  });
+  const avgYears = new Set(years);
+  const showYears = new Set(years);
+  let viewMode = 'series';
 
-  const chart = makeChart(chartId, {
-    type:'line',
-    data:{ datasets:[
-      { label:'Cumulative deficit (in)', data:points, borderColor:CHART_COLORS.need,
-        backgroundColor:'rgba(214,67,43,0.15)', fill:'origin', pointRadius:0, tension:.15 },
-      { label:`Threshold (${threshold}")`, data:points.map(p=>({x:p.x, y:threshold})),
-        borderColor:CHART_COLORS.historical, borderDash:[6,4], pointRadius:0, fill:false }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
-      scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'inches'}} } }
-  });
-  const xs = points.map(p=>p.x);
-  const ys = points.map(p=>p.y).concat([threshold, 0]);
-  wireAxisSliders(sliderContainerId, chart, xs, Math.min(...ys), Math.max(...ys));
+  function draw(){
+    if (viewMode === 'series'){
+      const datasets = years.filter(y => showYears.has(y)).map((y, i) => ({
+        label: y,
+        data: byYear[y].map(r => ({x: new Date(r.date).getTime(), y: r.cum})),
+        borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
+        backgroundColor: YEAR_COLORS[i % YEAR_COLORS.length],
+        pointRadius:0, tension:.15, fill:false,
+      }));
+      const chart = makeChart(chartId, {
+        type: chartType, data:{ datasets },
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ display: datasets.length>1, position:'bottom' } },
+          scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:yLabel}} } }
+      });
+      registerSeriesChart(chartId, chart);
+      if (window.__applySharedX) window.__applySharedX();
+      const allY = processed.map(r=>r.cum);
+      wireYAxisSlider(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY));
+    } else {
+      unregisterSeriesChart(chartId);
+      const datasets = years.filter(y => showYears.has(y)).map((y, i) => ({
+        label: y,
+        data: byYear[y].map(r => ({x: dayOfYear(r.date), y: r.cum})),
+        borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
+        pointRadius:0, tension:.15, fill:false,
+      }));
+      const avgByDoy = {};
+      processed.forEach(r => {
+        if (!avgYears.has(yearOf(r.date))) return;
+        const doy = dayOfYear(r.date);
+        (avgByDoy[doy] = avgByDoy[doy] || []).push(r.cum);
+      });
+      const avgPoints = Object.keys(avgByDoy).map(Number).sort((a,b)=>a-b).map(doy => ({
+        x:doy, y:Number(avg(avgByDoy[doy]).toFixed(3))
+      }));
+      if (avgPoints.length) datasets.push({ label:'Average', data:avgPoints, borderColor:'#a1a1a6', borderDash:[6,4], pointRadius:0, tension:.15, fill:false });
+
+      const chart = makeChart(chartId, {
+        type: chartType, data:{ datasets },
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ display:true, position:'bottom' } },
+          scales:{ x:{type:'linear', title:{display:true, text:'Day of year'}, min:1, max:366},
+                   y:{title:{display:true, text:yLabel}} } }
+      });
+      const allY = datasets.flatMap(ds => ds.data.map(p=>p.y));
+      wireYAxisSlider(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY));
+    }
+  }
+
+  if (ycEl){
+    ycEl.innerHTML = `
+      <div class="year-group"><div class="yg-label">Average uses (Stacked view)</div><div class="year-chip-row" id="${ycContainerId}-avg"></div></div>
+      <div class="year-group"><div class="yg-label">Show on chart</div><div class="year-chip-row" id="${ycContainerId}-show"></div></div>
+      <div class="year-group"><div class="yg-label">View</div><div class="view-toggle" id="${ycContainerId}-mode"><button data-m="series" class="on">Series</button><button data-m="stacked">Stacked by day</button></div></div>
+    `;
+    renderYearChips($('#'+ycContainerId+'-avg'), years, avgYears, 'avg-on', draw);
+    renderYearChips($('#'+ycContainerId+'-show'), years, showYears, 'on', draw);
+    $('#'+ycContainerId+'-mode').querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        viewMode = btn.dataset.m;
+        $('#'+ycContainerId+'-mode').querySelectorAll('button').forEach(b => b.classList.toggle('on', b===btn));
+        draw();
+      });
+    });
+  }
+  draw();
+}
+
+async function initTrendsTab(){
+  renderOverviewKpis();
+  renderCompareKpis();
+  renderSeasonalChart();
+
+  await Promise.all([
+    buildMultiYearChart({
+      chartId:'chartTrendRain', ycContainerId:'yc-rain', sliderContainerId:'sl-rain',
+      cumulative:true, yLabel:'inches', chartType:'line',
+      fetchRows: async () => {
+        const { data } = await supa.from('weather_daily').select('weather_date,rain_in').order('weather_date');
+        return (data||[]).map(r => ({date:r.weather_date, value:r.rain_in||0}));
+      }
+    }),
+    buildMultiYearChart({
+      chartId:'chartTrendHigh', ycContainerId:'yc-high', sliderContainerId:'sl-high',
+      cumulative:false, yLabel:'°F',
+      fetchRows: async () => {
+        const { data } = await supa.from('weather_daily').select('weather_date,temp_high_f').order('weather_date');
+        return (data||[]).filter(r=>r.temp_high_f!=null).map(r => ({date:r.weather_date, value:r.temp_high_f}));
+      }
+    }),
+    buildMultiYearChart({
+      chartId:'chartTrendLow', ycContainerId:'yc-low', sliderContainerId:'sl-low',
+      cumulative:false, yLabel:'°F',
+      fetchRows: async () => {
+        const { data } = await supa.from('weather_daily').select('weather_date,temp_low_f').order('weather_date');
+        return (data||[]).filter(r=>r.temp_low_f!=null).map(r => ({date:r.weather_date, value:r.temp_low_f}));
+      }
+    }),
+    buildMultiYearChart({
+      chartId:'chartDeficitBermuda', ycContainerId:'yc-deficit-bermuda', sliderContainerId:'sl-deficit-bermuda',
+      cumulative:true, yLabel:'inches',
+      fetchRows: async () => {
+        const { data } = await supa.from('et_balance_by_zone').select('weather_date,grass_type,net_deficit_in').eq('grass_type','bermuda').order('weather_date');
+        const byDate = {};
+        (data||[]).forEach(r => { if (r.net_deficit_in==null) return; (byDate[r.weather_date]=byDate[r.weather_date]||[]).push(r.net_deficit_in); });
+        return Object.keys(byDate).sort().map(d => ({date:d, value:avg(byDate[d])}));
+      }
+    }),
+    buildMultiYearChart({
+      chartId:'chartDeficitFescue', ycContainerId:'yc-deficit-fescue', sliderContainerId:'sl-deficit-fescue',
+      cumulative:true, yLabel:'inches',
+      fetchRows: async () => {
+        const { data } = await supa.from('et_balance_by_zone').select('weather_date,grass_type,net_deficit_in').eq('grass_type','fescue').order('weather_date');
+        const byDate = {};
+        (data||[]).forEach(r => { if (r.net_deficit_in==null) return; (byDate[r.weather_date]=byDate[r.weather_date]||[]).push(r.net_deficit_in); });
+        return Object.keys(byDate).sort().map(d => ({date:d, value:avg(byDate[d])}));
+      }
+    }),
+    renderEtWeekly(),
+  ]);
+
+  // wire the one shared X slider off the widest data range we saw
+  const allCharts = Object.values(seriesChartRegistry);
+  let xs = [];
+  allCharts.forEach(c => c.data.datasets.forEach(ds => ds.data.forEach(p => xs.push(p.x))));
+  if (xs.length) wireSharedXSlider('sl-shared-x', Math.min(...xs), Math.max(...xs));
 }
 
 async function renderEtWeekly(){
   const { data } = await supa.from('et_balance_by_zone').select('weather_date,grass_type,etc_in').order('weather_date');
-  if (!data || !data.length){ emptyState('chartEtWeekly', 'No data yet.'); return; }
+  if (!data || !data.length){ emptyState('chartEtWeekly', 'No data yet.'); $('#yc-etweekly').innerHTML=''; return; }
 
   const byGrassDate = {};
   data.forEach(r => {
@@ -1345,10 +1599,10 @@ async function renderEtWeekly(){
   const datasets = []; let allX = []; let allY = [];
   Object.entries(byGrassDate).forEach(([grass, byDate]) => {
     const dates = Object.keys(byDate).sort();
-    const dailyAvg = dates.map(d => byDate[d].reduce((a,b)=>a+b,0) / byDate[d].length);
+    const dailyAvg = dates.map(d => avg(byDate[d]));
     const points = dates.map((d, i) => {
       const win = dailyAvg.slice(Math.max(0, i-6), i+1);
-      const weekly = (win.reduce((a,b)=>a+b,0) / win.length) * 7;
+      const weekly = avg(win) * 7;
       const x = new Date(d).getTime();
       allX.push(x); allY.push(weekly);
       return { x, y:Number(weekly.toFixed(2)) };
@@ -1362,7 +1616,10 @@ async function renderEtWeekly(){
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
       scales:{ x:{type:'time', time:{unit:'month'}}, y:{title:{display:true, text:'inches / week'}} } }
   });
-  wireAxisSliders('sl-etweekly', chart, allX, Math.min(0,...allY), Math.max(...allY));
+  registerSeriesChart('chartEtWeekly', chart);
+  if (window.__applySharedX) window.__applySharedX();
+  wireYAxisSlider('sl-etweekly', chart, Math.min(0,...allY), Math.max(...allY));
+  $('#yc-etweekly').innerHTML = '<div class="panel-sub">Both grass types shown together — no year comparison on this one, since it\'s already a smoothed rolling metric.</div>';
 }
 
 /* ============================================================
