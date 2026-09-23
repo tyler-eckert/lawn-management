@@ -882,14 +882,26 @@ function doyToLabel(doy){
   return `${DOY_MONTH_ABBR[m]} ${dayInMonth}`;
 }
 function todayDoyClamped(offsetMonths){
-  // "3 months back/forward" translated to day-of-year, clamped to [1,366]
-  // rather than wrapping across a year boundary.
-  const d = new Date();
-  d.setDate(1); // start-of-month anchor so "3 months back" lands on day 1 and "forward" lands on a month's end
-  d.setMonth(d.getMonth() + offsetMonths);
-  if (offsetMonths > 0) { d.setMonth(d.getMonth()+1); d.setDate(0); d.setDate(d.getDate()+1); } // end of that month + 1 day
-  const start = new Date(d.getFullYear(), 0, 1);
-  const doy = Math.floor((d - start) / 86400000) + 1;
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  let target;
+  if (offsetMonths > 0) {
+    // last day of the target month, plus one day
+    target = new Date(now.getFullYear(), now.getMonth() + offsetMonths + 1, 0);
+    target = new Date(target.getTime() + 86400000);
+  } else {
+    // first day of the target month
+    target = new Date(now.getFullYear(), now.getMonth() + offsetMonths, 1);
+  }
+  // If the math above landed outside the current calendar year (e.g. "3
+  // months ahead" from a fall month rolls into January of next year),
+  // day-of-year isn't meaningful across a year boundary -- just clamp to
+  // the nearest end of the current year instead of computing a bogus
+  // small number relative to the wrong year.
+  if (target.getFullYear() > currentYear) return 366;
+  if (target.getFullYear() < currentYear) return 1;
+  const start = new Date(currentYear, 0, 1);
+  const doy = Math.floor((target - start) / 86400000) + 1;
   return Math.max(1, Math.min(366, doy));
 }
 
