@@ -342,8 +342,9 @@ table.data tr:hover td{ background:var(--surface-2); }
 .collapsible.collapsed .section-body{ display:none; }
 
 .sticky-controls{
-  position:sticky; top:112px; z-index:5; background:var(--bg);
-  padding-top:4px; padding-bottom:4px;
+  position:sticky; top:112px; z-index:5;
+  background:var(--card); border:1px solid var(--line-soft); border-radius:var(--radius-sm);
+  box-shadow:var(--shadow-sm); padding:12px 16px; margin-bottom:16px;
   transition: top 0.25s ease;
 }
 @media (max-width: 760px){
@@ -378,7 +379,7 @@ table.data tr:hover td{ background:var(--surface-2); }
       <div style="display:flex; align-items:center; gap:10px;">
         <div class="filter-field" style="min-width:110px;">
           <label>Animation speed</label>
-          <input type="range" id="animSpeedSlider" min="0" max="30" value="1.5" step="0.5">
+          <input type="range" id="animSpeedSlider" min="0" max="30" value="3" step="0.5">
         </div>
         <button id="logoutBtn">Sign out</button>
       </div>
@@ -396,9 +397,11 @@ table.data tr:hover td{ background:var(--surface-2); }
     </section>
 
     <!-- ================= SHARED CONTROLS (sticky) ================= -->
-    <div class="panel sticky-controls">
+    <div class="panel">
       <h2>Years &amp; range</h2>
       <div class="panel-sub">Applies to every chart below that compares years. Tap months to set the visible range.</div>
+    </div>
+    <div class="sticky-controls">
       <div class="year-controls" id="yc-shared"></div>
       <div id="sl-shared-x" style="margin-top:10px;"></div>
     </div>
@@ -906,7 +909,7 @@ function emptyState(canvasId, msg){
 }
 
 const charts = {};
-let ANIMATION_SPEED_MS = 1.5;
+let ANIMATION_SPEED_MS = 3;
 
 // Minimalist line icons for section headers (20x20, stroke=currentColor)
 const ICONS = {
@@ -1253,14 +1256,14 @@ async function loadZoneOptions(){
 const DEFICIT_THRESHOLD_IN = { bermuda: 0.65, fescue: 0.45 };
 
 let stackedChartRegistry = {}; // chartId -> {chart, points, zeroFloor, yInputId}
-function registerStackedChart(chartId, chart, points, zeroFloor=false, yInputId=null){
-  stackedChartRegistry[chartId] = {chart, points, zeroFloor, yInputId};
+function registerStackedChart(chartId, chart, points, zeroFloor=false, yInputId=null, wholeNumbers=false){
+  stackedChartRegistry[chartId] = {chart, points, zeroFloor, yInputId, wholeNumbers};
 }
 function unregisterStackedChart(chartId){ delete stackedChartRegistry[chartId]; }
 
 // Default: 3 months back through 3 months ahead of today, so the most
 // recent data sits roughly in the middle of the chart.
-const sharedXRange = { lo: todayDoyClamped(-3), hi: todayDoyClamped(3) };
+const sharedXRange = { lo: 1, hi: 366 }; // default: all months selected
 
 function doyToMonthIdx(doy){
   let m = 11;
@@ -1275,7 +1278,9 @@ function wireYAxisInputs(containerId, chart, yMinData, yMaxData, opts={}){
   const el = $('#'+containerId);
   if (!el) return;
   const yPad = (yMaxData - yMinData) * 0.15 || 1;
-  const yLo = Number((yMinData - yPad).toFixed(2)), yHi = Number((yMaxData + yPad).toFixed(2));
+  let yLo = yMinData - yPad, yHi = yMaxData + yPad;
+  if (opts.wholeNumbers){ yLo = Math.floor(yLo); yHi = Math.ceil(yHi); }
+  yLo = Number(yLo.toFixed(2)); yHi = Number(yHi.toFixed(2));
   const startMin = opts.zeroFloor ? Math.max(yLo, 0) : yLo;
   el.innerHTML = `
     <div class="yi-field"><label>Y min</label><input type="number" id="${containerId}-min" value="${startMin}" step="any"></div>
@@ -1296,16 +1301,22 @@ function wireYAxisInputs(containerId, chart, yMinData, yMaxData, opts={}){
 // a range, tap another to finish it (a single tap alone = that one month).
 let monthTileClickState = null;
 function applySharedXToCharts(){
-  Object.values(stackedChartRegistry).forEach(({chart, points, zeroFloor, yInputId}) => {
+  Object.values(stackedChartRegistry).forEach(({chart, points, zeroFloor, yInputId, wholeNumbers}) => {
     try {
       if (!chart.options.scales.x) return;
       chart.options.scales.x.min = sharedXRange.lo;
       chart.options.scales.x.max = sharedXRange.hi;
       const visible = points.filter(p => p.x >= sharedXRange.lo && p.x <= sharedXRange.hi).map(p=>p.y);
       if (visible.length){
-        const pad = (Math.max(...visible) - Math.min(...visible)) * 0.1 || 1;
-        const yMin = zeroFloor ? Math.min(0, Math.min(...visible) - pad) : Math.min(...visible) - pad;
-        const yMax = Math.max(...visible) + pad;
+        const rawMin = Math.min(...visible), rawMax = Math.max(...visible);
+        const pad = (rawMax - rawMin) * 0.1 || 1;
+        // Clamp UP to 0 (never show a floor below 0 for these always-
+        // non-negative metrics) rather than the previous Math.min(0, ...),
+        // which could let padding push slightly negative when the real
+        // data min was already close to zero.
+        let yMin = zeroFloor ? Math.max(rawMin - pad, 0) : rawMin - pad;
+        let yMax = rawMax + pad;
+        if (wholeNumbers){ yMin = Math.floor(yMin); yMax = Math.ceil(yMax); }
         chart.options.scales.y.min = yMin; chart.options.scales.y.max = yMax;
         if (yInputId){
           const minEl = document.getElementById(yInputId+'-min'), maxEl = document.getElementById(yInputId+'-max');
@@ -1419,7 +1430,7 @@ function colorForYear(y){
 // month-tile picker zooms in and out.
 function monthWeekXAxis(){
   return {
-    type:'linear', title:{display:true, text:'Month'}, min:sharedXRange.lo, max:sharedXRange.hi,
+    type:'linear', title:{display:false}, min:sharedXRange.lo, max:sharedXRange.hi,
     afterBuildTicks:(axis) => {
       const lo = axis.min, hi = axis.max;
       const majors = DOY_MONTH_STARTS.filter(d => d >= lo && d <= hi);
@@ -1429,7 +1440,12 @@ function monthWeekXAxis(){
       axis.ticks = all.map(d => ({ value:d, major: majors.includes(d) }));
     },
     ticks:{
-      callback:(val, idx, ticks) => (ticks[idx] && ticks[idx].major) ? doyToLabel(val) : '',
+      autoSkip:false, // I already generate exactly the ticks I want in afterBuildTicks -- Chart.js's own thinning was hiding months regardless
+      callback:(val, idx, ticks) => {
+        if (!(ticks[idx] && ticks[idx].major)) return '';
+        const mi = DOY_MONTH_STARTS.indexOf(val);
+        return mi >= 0 ? DOY_MONTH_ABBR[mi] : doyToLabel(val);
+      },
     },
     grid:{
       color: (ctx) => (ctx.tick && ctx.tick.major) ? 'rgba(43,43,43,0.16)' : 'rgba(43,43,43,0.055)',
@@ -1481,7 +1497,7 @@ async function buildDeficitChart(grassType, chartId, sliderContainerId){
       plugins:{ legend:{ display:true, position:'bottom',
         labels:{ filter: (item) => item.text !== 'Deficit' } } }, // the line's own color already says the status
       scales:{ x: monthWeekXAxis(),
-               y:{title:{display:true, text:'inches'}} } }
+               y:{title:{display:false}} } }
   });
 
   const allY = plotPoints.map(p=>p.y).concat([threshold]);
@@ -1509,7 +1525,7 @@ function dayOfYearMinMaxDatasets(doyGroups){
 }
 
 async function buildMultiYearChart(opts){
-  const { chartId, sliderContainerId, fetchRows, cumulative, yLabel, chartType='line', zeroFloorY=false, showMinMax=true } = opts;
+  const { chartId, sliderContainerId, fetchRows, cumulative, yLabel, chartType='line', zeroFloorY=false, showMinMax=true, yWholeNumbers=false } = opts;
   const rawRows = await fetchRows();
   if (!rawRows || !rawRows.length){ emptyState(chartId, 'No data yet.'); return; }
 
@@ -1553,7 +1569,7 @@ async function buildMultiYearChart(opts){
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{ display:true, position:'bottom' } },
         scales:{ x: monthWeekXAxis(),
-                 y:{title:{display:true, text:yLabel}} } }
+                 y:{title:{display:false}, ticks: yWholeNumbers ? {precision:0} : {}} } }
     });
     // Register FIRST -- so this chart is connected to the shared month-tile
     // control regardless of what happens in the Y-input setup below. That
@@ -1561,8 +1577,8 @@ async function buildMultiYearChart(opts){
     // throws for any reason, it must not be able to take the registration
     // down with it (that's exactly what was silently breaking rescale-on-
     // month-click: registerStackedChart was never reached).
-    registerStackedChart(chartId, chart, allPoints, zeroFloorY, sliderContainerId);
-    try { wireYAxisInputs(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:zeroFloorY}); }
+    registerStackedChart(chartId, chart, allPoints, zeroFloorY, sliderContainerId, yWholeNumbers);
+    try { wireYAxisInputs(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:zeroFloorY, wholeNumbers:yWholeNumbers}); }
     catch (e) { console.error(`Y-axis inputs failed for ${chartId} (registration still succeeded):`, e); }
     if (window.__applySharedX) window.__applySharedX();
   }
@@ -1588,42 +1604,42 @@ async function initTrendCharts(){
   // other chart from ever getting its first real render.
   await Promise.allSettled([
     buildMultiYearChart({
-      chartId:'chartTrendHigh', sliderContainerId:'sl-high', cumulative:false, yLabel:'°F',
+      chartId:'chartTrendHigh', sliderContainerId:'sl-high', cumulative:false, yLabel:'°F', yWholeNumbers:true,
       fetchRows: async () => {
         const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,temp_high_f').order('weather_date'));
         return (data||[]).filter(r=>r.temp_high_f!=null).map(r => ({date:r.weather_date, value:r.temp_high_f}));
       }
     }),
     buildMultiYearChart({
-      chartId:'chartTrendLow', sliderContainerId:'sl-low', cumulative:false, yLabel:'°F',
+      chartId:'chartTrendLow', sliderContainerId:'sl-low', cumulative:false, yLabel:'°F', yWholeNumbers:true,
       fetchRows: async () => {
         const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,temp_low_f').order('weather_date'));
         return (data||[]).filter(r=>r.temp_low_f!=null).map(r => ({date:r.weather_date, value:r.temp_low_f}));
       }
     }),
     buildMultiYearChart({
-      chartId:'chartTrendFeelsHigh', sliderContainerId:'sl-feels-high', cumulative:false, yLabel:'°F',
+      chartId:'chartTrendFeelsHigh', sliderContainerId:'sl-feels-high', cumulative:false, yLabel:'°F', yWholeNumbers:true,
       fetchRows: async () => {
         const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,feels_high_f').order('weather_date'));
         return (data||[]).filter(r=>r.feels_high_f!=null).map(r => ({date:r.weather_date, value:r.feels_high_f}));
       }
     }),
     buildMultiYearChart({
-      chartId:'chartTrendFeelsLow', sliderContainerId:'sl-feels-low', cumulative:false, yLabel:'°F',
+      chartId:'chartTrendFeelsLow', sliderContainerId:'sl-feels-low', cumulative:false, yLabel:'°F', yWholeNumbers:true,
       fetchRows: async () => {
         const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,feels_low_f').order('weather_date'));
         return (data||[]).filter(r=>r.feels_low_f!=null).map(r => ({date:r.weather_date, value:r.feels_low_f}));
       }
     }),
     buildMultiYearChart({
-      chartId:'chartTrendRain', sliderContainerId:'sl-rain', cumulative:true, yLabel:'inches', zeroFloorY:true,
+      chartId:'chartTrendRain', sliderContainerId:'sl-rain', cumulative:true, yLabel:'inches', zeroFloorY:true, yWholeNumbers:true,
       fetchRows: async () => {
         const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,rain_in').order('weather_date'));
         return (data||[]).map(r => ({date:r.weather_date, value:r.rain_in||0}));
       }
     }),
     buildMultiYearChart({
-      chartId:'chartTrendRainBar', sliderContainerId:'sl-rainbar', cumulative:false, yLabel:'inches', chartType:'bar', zeroFloorY:true, showMinMax:false,
+      chartId:'chartTrendRainBar', sliderContainerId:'sl-rainbar', cumulative:false, yLabel:'inches', chartType:'bar', zeroFloorY:true, showMinMax:false, yWholeNumbers:true,
       fetchRows: async () => {
         const data = await fetchAllRows(() => supa.from('weather_daily').select('weather_date,rain_in').order('weather_date'));
         return (data||[]).map(r => ({date:r.weather_date, value:r.rain_in||0}));
@@ -1735,9 +1751,10 @@ async function buildGrassBalanceChart(grassType, chartId, from, to){
       { type:'bar', label:'Rain', data:rain, backgroundColor:'#c9a66b', stack:'water', order:1 },
       { type:'bar', label:'Irrigation applied (avg across zones)', data:applied, backgroundColor:CHART_COLORS.irrigation, stack:'water', order:1 },
     ]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom', labels:{usePointStyle:true, pointStyle:'circle', boxWidth:10, boxHeight:10}}},
       scales:{ x:{type:'time', time:{unit: weeks.length>26?'month':'week'}, stacked:true},
-               y:{title:{display:true,text:'inches / week'}, stacked:true} } }
+               y:{title:{display:false}, stacked:true} } }
   });
 }
 
@@ -1882,7 +1899,7 @@ function drawEfficiencyDonut(mowerName, chartId, kpiId, eff, dayCount){
       datasets:[{ data:[mowHrs,idleHrs,errHrs,searchHrs,otherHrs].map(v=>Number(v.toFixed(1))),
         backgroundColor:['#2e4a34','#d9cbb3','#b5522f','#c49a6c','#8a9b7a'] }]},
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{position:'bottom', labels:{boxWidth:10}},
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, pointStyle:'circle', boxWidth:10, boxHeight:10}},
         datalabels:{ color:'#fff', font:{weight:'bold'}, formatter:(v)=> v>0 ? num(v,1)+'h' : '' } } }
   });
   $('#'+kpiId).innerHTML = `
@@ -2021,9 +2038,9 @@ async function buildYearlyCountChart(chartId, sliderContainerId, label, color, r
       layout:{ padding:{ top:22 } },
       plugins:{ legend:{display:false},
         datalabels:{ display:true, anchor:'end', align:'top', offset:2, color:'#2b2b2b', font:{weight:'bold'} } },
-      scales:{ y:{ beginAtZero:true, suggestedMax: maxVal*1.15 } } }
+      scales:{ y:{ beginAtZero:true, suggestedMax: maxVal*1.15, ticks:{precision:0} } } }
   });
-  wireYAxisInputs(sliderContainerId, chart, 0, maxVal, {zeroFloor:true});
+  wireYAxisInputs(sliderContainerId, chart, 0, maxVal, {zeroFloor:true, wholeNumbers:true});
 }
 
 async function initRecordsSection(){
