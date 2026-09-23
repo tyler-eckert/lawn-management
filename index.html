@@ -992,20 +992,32 @@ $$('.section-toggle').forEach(btn => {
    BOOT / APP INIT
    ============================================================ */
 let appInitialized = false;
-function initApp(){
+async function initApp(){
   if (appInitialized) return;
   appInitialized = true;
   renderOverviewKpis();
   renderCompareKpiGroups();
-  loadZoneOptions();
-  initTrendCharts();
-  initWaterBalanceSection();
-  initMowersSection();
+  await loadZoneOptions();
+  await initTrendCharts();
+  await initWaterBalanceSection();
+  await initMowersSection();
   initExplorerSection();
   renderReferenceKc();
-  initRecordsSection();
+  await initRecordsSection();
+
+  // Mobile browsers sometimes finish settling a chart's container into its
+  // real on-screen size only AFTER Chart.js already measured it once
+  // (address-bar show/hide, slower layout, etc.) -- that leaves a chart
+  // that's technically drawn, just into a canvas that measured as blank.
+  // Force every chart to remeasure and redraw now that layout has had a
+  // moment to settle, rather than leaving it to whatever the person
+  // happens to interact with next.
+  const forceResizeAll = () => Object.values(charts).forEach(c => { try { c.resize(); } catch(e){} });
+  requestAnimationFrame(forceResizeAll);
+  setTimeout(forceResizeAll, 500);
 }
 </script>
+
 
 <script>
 /* ============================================================
@@ -1510,7 +1522,7 @@ async function initTrendCharts(){
    averages within each grass type separately, matching how the
    deficit charts already treat this.
    ============================================================ */
-function initWaterBalanceSection(){
+async function initWaterBalanceSection(){
   const [f, t] = [daysAgo(30), new Date()];
   $('#wbFrom').value = fmtDate(f); $('#wbTo').value = fmtDate(t);
 
@@ -1530,7 +1542,7 @@ function initWaterBalanceSection(){
     });
   });
   $('#wbApply').addEventListener('click', renderWaterBalanceSection);
-  renderWaterBalanceSection();
+  await renderWaterBalanceSection();
 }
 
 async function renderWaterBalanceSection(){
@@ -1607,7 +1619,7 @@ let lastZoneTotals = null, lastZoneDayCounts = null;
 let lastNonWorkStates = { Mowtilda:null, 'Eskimow Joe':null }, lastNonWorkDays = { Mowtilda:1, 'Eskimow Joe':1 };
 let lastEffMinutes = { Mowtilda:null, 'Eskimow Joe':null };
 
-function initMowersSection(){
+async function initMowersSection(){
   $('#mwFrom').value = fmtDate(daysAgo(30)); $('#mwTo').value = fmtDate(new Date());
   $('#mwApply').addEventListener('click', renderMowersSection);
   $('#mwAvgToggle').querySelectorAll('button').forEach(btn => {
@@ -1621,7 +1633,7 @@ function initMowersSection(){
       if (lastEffMinutes['Eskimow Joe']) drawEfficiencyDonut('Eskimow Joe', 'chartEfficiencyEskimow', 'effKpiEskimow', lastEffMinutes['Eskimow Joe'], lastNonWorkDays['Eskimow Joe']);
     });
   });
-  renderMowersSection();
+  await renderMowersSection();
 }
 
 async function renderMowersSection(){
