@@ -275,31 +275,6 @@ table.data tr:hover td{ background:var(--surface-2); }
   border:2px solid #fff; box-shadow:0 1px 2px rgba(0,0,0,0.3);
 }
 
-/* ---------- True dual-handle sliders: two overlapping native range
-   inputs sharing one visual track, each only its own thumb is clickable ---------- */
-.dual-range{ position:relative; height:28px; }
-.dual-range .drtrack{ position:absolute; top:50%; left:0; right:0; height:4px; margin-top:-2px; background:var(--line); border-radius:2px; }
-.dual-range .drfill{ position:absolute; top:50%; height:4px; margin-top:-2px; background:var(--turf); border-radius:2px; }
-.dual-range .drval{ position:absolute; top:-16px; font-size:0.62rem; color:var(--text-tertiary); font-family:ui-monospace,monospace; white-space:nowrap; }
-.dual-thumb{
-  position:absolute; top:0; left:0; width:100%; height:28px; margin:0;
-  -webkit-appearance:none; appearance:none; background:transparent; pointer-events:none;
-}
-.dual-thumb::-webkit-slider-thumb{
-  -webkit-appearance:none; pointer-events:auto; width:18px; height:18px; border-radius:50%;
-  background:var(--turf); border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.3); cursor:pointer;
-}
-.dual-thumb::-moz-range-thumb{ pointer-events:auto; width:18px; height:18px; border-radius:50%; background:var(--turf); border:2px solid #fff; cursor:pointer; }
-.dual-thumb::-webkit-slider-runnable-track, .dual-thumb::-moz-range-track{ background:transparent; border:none; }
-
-.dual-range.vertical{ width:28px; height:100%; margin:0 auto; }
-.dual-range.vertical .drtrack{ left:50%; top:0; bottom:0; right:auto; width:4px; height:auto; margin-top:0; margin-left:-2px; }
-.dual-range.vertical .drfill{ left:50%; width:4px; height:auto; margin-top:0; margin-left:-2px; }
-.dual-range.vertical .dual-thumb{
-  writing-mode: vertical-lr; direction: rtl; -webkit-appearance:slider-vertical;
-  top:0; left:0; width:28px; height:100%;
-}
-
 /* ---------- Year controls (multi-select years + view mode) ---------- */
 .year-controls{ display:flex; flex-wrap:wrap; gap:14px; align-items:flex-start; margin-bottom:10px; }
 .year-group{ display:flex; flex-direction:column; gap:5px; }
@@ -1204,43 +1179,51 @@ function unregisterStackedChart(chartId){ delete stackedChartRegistry[chartId]; 
 // instead of the full 1-366 default, then getting corrected a tick later.
 const sharedXRange = { lo: 1, hi: todayDoyClamped(3) }; // Jan 1 through 3 months ahead -- always includes the Jan-1 reset point so cumulative charts visibly start at 0, while still trimming off the far future
 
-// Real dual-handle slider: two native range inputs stacked in the exact
-// same box, each with pointer-events disabled except on its own thumb
-// (::-webkit-slider-thumb / ::-moz-range-thumb), so from the outside it
-// reads as one drag bar with two ends. `vertical` swaps which CSS
-// dimension the fill/track use.
+// Two genuinely separate sliders, not the classic "overlapping range
+// inputs" dual-handle trick -- that trick relies on pointer-events only
+// being active on each thumb's pseudo-element, which is unreliable for
+// touch hit-testing on phones (exactly what was reported as "not working
+// on mobile"). Two distinct inputs are less slick but reliably draggable
+// with a mouse or a finger.
 function makeDualRange(containerId, {min, max, step, valueMin, valueMax, vertical=false, formatVal, onChange}){
   const el = $('#'+containerId);
   if (!el) return null;
-  el.innerHTML = `
-    <div class="dual-range ${vertical?'vertical':''}">
-      <span class="drval" id="${containerId}-hiv"></span>
-      <div class="drtrack"></div>
-      <div class="drfill" id="${containerId}-fill"></div>
-      <input type="range" class="dual-thumb" id="${containerId}-lo" min="${min}" max="${max}" step="${step}" value="${valueMin}">
-      <input type="range" class="dual-thumb" id="${containerId}-hi" min="${min}" max="${max}" step="${step}" value="${valueMax}">
-      <span class="drval" id="${containerId}-lov" style="top:auto; bottom:-16px;"></span>
-    </div>
-  `;
-  const fill = $('#'+containerId+'-fill');
-  const thumbLo = $('#'+containerId+'-lo'), thumbHi = $('#'+containerId+'-hi');
-  const loLabel = $('#'+containerId+'-lov'), hiLabel = $('#'+containerId+'-hiv');
   const fmt = formatVal || (v => Number(v).toFixed(1));
 
+  if (vertical){
+    el.innerHTML = `
+      <div class="y-slider-col">
+        <span class="yv" id="${containerId}-hiv"></span>
+        <input type="range" class="y-slider-vertical" id="${containerId}-hi" min="${min}" max="${max}" step="${step}" value="${valueMax}">
+      </div>
+      <div class="y-slider-col">
+        <span class="yv" id="${containerId}-lov"></span>
+        <input type="range" class="y-slider-vertical" id="${containerId}-lo" min="${min}" max="${max}" step="${step}" value="${valueMin}">
+      </div>
+    `;
+  } else {
+    el.innerHTML = `
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        <div class="slider-field"><label>From <span class="val" id="${containerId}-lov"></span></label>
+          <input type="range" id="${containerId}-lo" min="${min}" max="${max}" step="${step}" value="${valueMin}"></div>
+        <div class="slider-field"><label>To <span class="val" id="${containerId}-hiv"></span></label>
+          <input type="range" id="${containerId}-hi" min="${min}" max="${max}" step="${step}" value="${valueMax}"></div>
+      </div>
+    `;
+  }
+
+  const thumbLo = $('#'+containerId+'-lo'), thumbHi = $('#'+containerId+'-hi');
+  const loLabel = $('#'+containerId+'-lov'), hiLabel = $('#'+containerId+'-hiv');
+
   function render(){
-    let lo = Number(thumbLo.value), hi = Number(thumbHi.value);
-    if (lo > hi) { const t = lo; lo = hi; hi = t; } // keep them from crossing/inverting
-    const pctLo = (lo-min)/(max-min)*100, pctHi = (hi-min)/(max-min)*100;
-    if (vertical){ fill.style.bottom = pctLo+'%'; fill.style.top = (100-pctHi)+'%'; fill.style.left=''; fill.style.right=''; }
-    else { fill.style.left = pctLo+'%'; fill.style.right = (100-pctHi)+'%'; fill.style.top=''; fill.style.bottom=''; }
+    const lo = Math.min(Number(thumbLo.value), Number(thumbHi.value));
+    const hi = Math.max(Number(thumbLo.value), Number(thumbHi.value));
     loLabel.textContent = fmt(lo); hiLabel.textContent = fmt(hi);
     onChange(lo, hi);
   }
   [thumbLo, thumbHi].forEach(t => t.addEventListener('input', render));
   render();
-  return {
-    set(lo, hi){ thumbLo.value = lo; thumbHi.value = hi; render(); }
-  };
+  return { set(lo, hi){ thumbLo.value = lo; thumbHi.value = hi; render(); } };
 }
 
 function wireYAxisSlider(containerId, chart, yMinData, yMaxData, opts={}){
