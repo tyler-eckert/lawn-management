@@ -346,6 +346,21 @@ table.data tr:hover td{ background:var(--surface-2); }
   user-select:none; flex:1; min-width:38px; font-weight:500;
 }
 .month-tile.in-range{ background:var(--turf-light); border-color:var(--turf); color:var(--turf-dark); font-weight:600; }
+
+/* ---------- Pull-to-refresh (mobile) ---------- */
+#pullToRefresh{
+  position:fixed; top:0; left:0; right:0; height:60px; z-index:200;
+  display:flex; align-items:center; justify-content:center;
+  transform:translateY(-60px);
+  transition:transform 0.25s ease;
+  color:var(--turf); background:var(--bg);
+  pointer-events:none;
+}
+#pullToRefresh.dragging{ transition:none; }
+#pullToRefresh svg{ width:24px; height:24px; transition:transform 0.2s ease; }
+#pullToRefresh.ready svg{ transform:rotate(180deg); }
+#pullToRefresh.spinning svg{ animation:ptr-spin 0.6s linear infinite; transform:none; }
+@keyframes ptr-spin{ to{ transform:rotate(360deg); } }
 .month-tile.range-end{ background:var(--turf); border-color:var(--turf); color:#fff; }
 
 /* ---------- Collapsible sections ---------- */
@@ -379,6 +394,13 @@ table.data tr:hover td{ background:var(--surface-2); }
 </head>
 
 <body>
+
+<div id="pullToRefresh">
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 6a6.5 6.5 0 1 0 1.5 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M17.5 3v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
 
 <div id="loginScreen">
   <div class="login-card">
@@ -1027,6 +1049,48 @@ $('#loginBtn').addEventListener('click', async () => {
 $('#loginPassword').addEventListener('keydown', (e) => { if (e.key==='Enter') $('#loginBtn').click(); });
 $('#logoutBtn').addEventListener('click', async () => { await supa.auth.signOut(); showLogin(); });
 $('#animSpeedSlider').addEventListener('input', (e) => { ANIMATION_SPEED_MS = Number(e.target.value); });
+
+(function setupPullToRefresh(){
+  const THRESHOLD = 70; // px of pull before it commits to refreshing
+  const CAP = 120;       // max visual travel, for resistance feel
+  const indicator = document.getElementById('pullToRefresh');
+  if (!indicator) return;
+  let startY = null, pulling = false, refreshing = false;
+
+  function onTouchStart(e){
+    if (window.scrollY > 0 || refreshing) { startY = null; pulling = false; return; }
+    startY = e.touches[0].clientY;
+    pulling = true;
+    indicator.classList.add('dragging');
+  }
+  function onTouchMove(e){
+    if (!pulling || startY === null || refreshing) return;
+    const delta = e.touches[0].clientY - startY;
+    if (delta <= 0) { indicator.style.transform = 'translateY(-60px)'; indicator.classList.remove('ready'); return; }
+    e.preventDefault(); // don't let the page ALSO rubber-band scroll while pulling
+    const capped = Math.min(delta, CAP);
+    indicator.style.transform = `translateY(${capped - 60}px)`;
+    indicator.classList.toggle('ready', capped >= THRESHOLD);
+  }
+  function onTouchEnd(){
+    if (!pulling) return;
+    pulling = false;
+    indicator.classList.remove('dragging');
+    if (indicator.classList.contains('ready') && !refreshing){
+      refreshing = true;
+      indicator.classList.remove('ready');
+      indicator.classList.add('spinning');
+      indicator.style.transform = 'translateY(10px)';
+      setTimeout(() => window.location.reload(), 350); // brief visible confirmation before the reload
+    } else {
+      indicator.style.transform = 'translateY(-60px)';
+      indicator.classList.remove('ready');
+    }
+  }
+  document.addEventListener('touchstart', onTouchStart, { passive:true });
+  document.addEventListener('touchmove', onTouchMove, { passive:false });
+  document.addEventListener('touchend', onTouchEnd, { passive:true });
+})();
 
 (function setupHeaderAutoHide(){
   let lastY = window.scrollY;
@@ -1680,9 +1744,9 @@ async function buildWaterRadarChart(){
       labels,
       datasets: [
         { label:'Water applied (in)', data:appliedVals, order:1,
-          borderColor:'#2e4a34', backgroundColor:'transparent', borderWidth:2, borderDash:[5,3] },
+          borderColor:'#2e4a34', backgroundColor:'rgba(46,74,52,0.30)', borderWidth:2 },
         { label:'Need this week (ETc, in)', data:needVals, order:2,
-          borderColor:'#8b8478', backgroundColor:'rgba(139,132,120,0.35)', borderWidth:2 },
+          borderColor:'#8b8478', backgroundColor:'transparent', borderWidth:2, borderDash:[5,3] },
       ],
     },
     options: {
