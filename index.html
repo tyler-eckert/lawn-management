@@ -419,12 +419,10 @@ table.data tr:hover td{ background:var(--surface-2); }
     <!-- ================= SHARED CONTROLS (sticky) ================= -->
     <div class="panel">
       <h2>Years &amp; range</h2>
-      <div class="panel-sub">Applies to every chart below that compares years. Tap months to set the visible range — or on any chart, pinch to zoom in/out directly (double-tap to reset).</div>
-      <div class="panel-sub" style="color:var(--text-tertiary); font-size:0.72rem; margin-top:2px;">On mobile, pinch/zoom on the chart itself is usually easier than tapping months precisely.</div>
+      <div class="panel-sub">Tap a year to toggle it on every chart below. Pinch (or scroll-wheel) to zoom in/out on any chart directly, double-tap to reset.</div>
     </div>
     <div class="sticky-controls">
       <div class="year-controls" id="yc-shared"></div>
-      <div id="sl-shared-x" style="margin-top:10px;"></div>
     </div>
 
     <!-- ================= 1. DAILY HIGHS & LOWS ================= -->
@@ -532,10 +530,10 @@ table.data tr:hover td{ background:var(--surface-2); }
           <div class="year-group">
             <div class="yg-label">Range</div>
             <div class="year-chip-row" id="wbRangeChips">
-              <span class="year-chip on" data-r="180">6 months</span>
               <span class="year-chip" data-r="7">1 week</span>
               <span class="year-chip" data-r="30">1 month</span>
               <span class="year-chip" data-r="90">3 months</span>
+              <span class="year-chip on" data-r="180">6 months</span>
               <span class="year-chip" data-r="365">1 year</span>
               <span class="year-chip" data-r="custom">Custom…</span>
             </div>
@@ -560,6 +558,46 @@ table.data tr:hover td{ background:var(--surface-2); }
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Fescue</h3>
             <div class="panel-sub">Inches per week, averaged across stations 3 &amp; 4</div>
             <div class="chart-wrap tall"><canvas id="chartBalanceFescue"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= WATER APPLIED VS NEED (RADAR) ================= -->
+    <section class="collapsible" id="sec-water-radar">
+      <button class="section-toggle" data-target="sec-water-radar" data-icon="droplet"><h2>Water Applied</h2><span class="chevron">︿</span></button>
+      <div class="section-body">
+        <div class="two-col">
+          <div class="panel">
+            <h3 style="font-size:0.95rem; margin-bottom:6px;">vs. Need — This Week</h3>
+            <div class="panel-sub" id="waterRadarWeekLabel" style="margin-bottom:10px;"></div>
+            <div class="chart-wrap tall"><canvas id="chartWaterRadar"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3 style="font-size:0.95rem; margin-bottom:6px;">By Zone (total inches)</h3>
+            <div class="year-controls" style="margin-bottom:12px;">
+              <div class="year-group">
+                <div class="yg-label">Range</div>
+                <div class="year-chip-row" id="zoneBarRangeChips">
+                  <span class="year-chip on" data-r="0">Today</span>
+                  <span class="year-chip" data-r="7">1 week</span>
+                  <span class="year-chip" data-r="30">1 month</span>
+                  <span class="year-chip" data-r="180">6 months</span>
+                  <span class="year-chip" data-r="365">1 year</span>
+                  <span class="year-chip" data-r="custom">Custom…</span>
+                </div>
+              </div>
+              <div class="year-group" id="zoneBarCustomRange" style="display:none;">
+                <div class="yg-label">Custom dates</div>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <input type="date" id="zoneBarFrom" style="padding:6px 8px; border:1px solid var(--line); border-radius:8px; font-size:0.8rem; background:var(--surface-2);">
+                  <span style="color:var(--text-tertiary);">–</span>
+                  <input type="date" id="zoneBarTo" style="padding:6px 8px; border:1px solid var(--line); border-radius:8px; font-size:0.8rem; background:var(--surface-2);">
+                  <button class="btn" id="zoneBarApply" style="padding:6px 14px; font-size:0.8rem;">Go</button>
+                </div>
+              </div>
+            </div>
+            <div class="chart-wrap tall"><canvas id="chartZoneBar"></canvas></div>
           </div>
         </div>
       </div>
@@ -598,77 +636,6 @@ table.data tr:hover td{ background:var(--surface-2); }
           <h3 style="font-size:0.95rem; margin-bottom:6px;">Total rainfall by year</h3>
           <div class="yaxis-inputs" id="sl-rec-rain"></div>
           <div class="chart-wrap tall"><canvas id="chartRecRain"></canvas></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= MOWING MINUTES BY ZONE ================= -->
-    <section class="collapsible" id="sec-mow-zone">
-      <button class="section-toggle" data-target="sec-mow-zone" data-icon="mower"><h2>Mowing Time by Zone</h2><span class="chevron">︿</span></button>
-      <div class="section-body">
-        <div class="filter-row">
-          <div class="filter-field">
-            <label>Mower</label>
-            <select id="mwMower">
-              <option value="all">Both mowers</option>
-              <option value="Mowtilda">Mowtilda</option>
-              <option value="Eskimow Joe">Eskimow Joe</option>
-            </select>
-          </div>
-          <div class="filter-field"><label>From</label><input type="date" id="mwFrom"></div>
-          <div class="filter-field"><label>To</label><input type="date" id="mwTo"></div>
-          <button class="btn" id="mwApply">Apply</button>
-        </div>
-        <div class="view-toggle" id="mwAvgToggle" style="margin-bottom:14px; width:fit-content;">
-          <button data-m="avg" class="on">Average per visit</button>
-          <button data-m="total">Total</button>
-        </div>
-        <div class="kpi-row" id="mowerKpis"></div>
-        <div class="panel">
-          <div class="panel-sub">"Average per visit" divides each zone's total time by the number of days IT was actually mowed, not the number of days in range — so an every-few-days zone isn't diluted by days it wasn't touched.</div>
-          <div class="chart-wrap tall"><canvas id="chartMowZone"></canvas></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= MOWER EFFICIENCY ================= -->
-    <section class="collapsible" id="sec-mow-efficiency">
-      <button class="section-toggle" data-target="sec-mow-efficiency" data-icon="gauge"><h2>Mower Efficiency</h2><span class="chevron">︿</span></button>
-      <div class="section-body">
-        <div class="panel">
-          <div class="panel-sub">Mowing time vs. other active codes, as a share of a 24-hour day. Idle (unscheduled/parked) time is excluded from the efficiency ratio entirely.</div>
-          <div class="two-col">
-            <div>
-              <h3 style="font-size:0.95rem; margin-bottom:8px;">Mowtilda</h3>
-              <div class="chart-wrap"><canvas id="chartEfficiencyMowtilda"></canvas></div>
-              <div class="kpi-row" id="effKpiMowtilda" style="margin-top:12px;"></div>
-            </div>
-            <div>
-              <h3 style="font-size:0.95rem; margin-bottom:8px;">Eskimow Joe</h3>
-              <div class="chart-wrap"><canvas id="chartEfficiencyEskimow"></canvas></div>
-              <div class="kpi-row" id="effKpiEskimow" style="margin-top:12px;"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= NON-WORKING TIME ================= -->
-    <section class="collapsible" id="sec-non-working">
-      <button class="section-toggle" data-target="sec-non-working" data-icon="mower"><h2>Non-Working Time by Mower</h2><span class="chevron">︿</span></button>
-      <div class="section-body">
-        <div class="panel">
-          <div class="panel-sub">Everything that isn't an active mowing state — charging, traveling, paused, idle, stuck, etc. Uses the same date range and Mower filter as Mowing Time by Zone above.</div>
-          <div class="two-col">
-            <div>
-              <h3 style="font-size:0.95rem; margin-bottom:8px;">Mowtilda</h3>
-              <div class="chart-wrap"><canvas id="chartNonWorkMowtilda"></canvas></div>
-            </div>
-            <div>
-              <h3 style="font-size:0.95rem; margin-bottom:8px;">Eskimow Joe</h3>
-              <div class="chart-wrap"><canvas id="chartNonWorkEskimow"></canvas></div>
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -955,7 +922,14 @@ $$('.section-toggle[data-icon]').forEach(btn => {
 Chart.defaults.plugins.legend.labels.usePointStyle = true;
 Chart.defaults.plugins.legend.labels.pointStyleWidth = 22;
 function makeChart(id, config){
-  if (charts[id]) charts[id].destroy();
+  if (charts[id]) {
+    // Zoom-enabled charts can throw during their own teardown (a known
+    // interaction between Chart.js's destroy() and the zoom plugin's
+    // event-listener cleanup) -- that must not prevent the new chart from
+    // being created, or a redraw silently does nothing at all.
+    try { charts[id].destroy(); }
+    catch (e) { console.error(`destroy() failed for ${id} (recreating anyway):`, e); }
+  }
   const ctx = document.getElementById(id);
   if (!ctx) return;
   config.options = config.options || {};
@@ -1112,7 +1086,13 @@ async function initApp(){
   await safely('zone options', loadZoneOptions);
   await safely('trend charts', initTrendCharts);
   await safely('water balance', initWaterBalanceSection);
-  await safely('mowers', initMowersSection);
+  await safely('water radar', buildWaterRadarChart);
+  await safely('zone bar chart', initZoneBarSection);
+  // Mower section disconnected -- Kress telemetry can't be automated
+  // (hourly manual cookie refresh), so this queried mower_activity /
+  // mower_zone_daily for data that was never going to stay current.
+  // The HTML sections, JS functions, and table data are all still there
+  // untouched -- this is just the one call that would query them.
   await safely('explorer', initExplorerSection);
   await safely('reference', renderReferenceKc);
   await safely('records', initRecordsSection);
@@ -1137,12 +1117,12 @@ async function initApp(){
    highs/lows, not an average; rainfall comparisons are through
    today's equivalent calendar date, not full prior years)
    ============================================================ */
-function compareCard(label, actual, base, unit, decimals=0){
+function compareCard(label, actual, base, unit, decimals=0, vsText='vs avg'){
   if (actual == null || base == null) return {label, value:'—'};
   const diff = actual - base;
   const arrow = diff > 0 ? '▲' : (diff < 0 ? '▼' : '—');
   return { label, value:num(actual,decimals), unit,
-    sub:`${arrow} ${diff>0?'+':''}${num(diff,decimals)} vs avg`,
+    sub:`${arrow} ${diff>0?'+':''}${num(diff,decimals)} ${vsText}`,
     subClass: diff===0 ? '' : (diff>0 ? 'neg' : 'pos') };
 }
 function renderKpiCards(containerId, cards){
@@ -1167,9 +1147,8 @@ function fmtCentral(isoStr, opts={}){
 }
 
 async function renderDataFreshness(){
-  const [wxRes, mowRes, irrRes] = await Promise.all([
+  const [wxRes, irrRes] = await Promise.all([
     supa.from('weather_daily').select('weather_date,updated_at').order('weather_date',{ascending:false}).limit(1),
-    supa.from('mower_activity').select('timestamp_utc').order('timestamp_utc',{ascending:false}).limit(1),
     supa.from('irrigation_runs').select('start_time').order('start_time',{ascending:false}).limit(1),
   ]);
   const parts = [];
@@ -1178,8 +1157,6 @@ async function renderDataFreshness(){
     const upd = fmtCentral(wx.updated_at);
     parts.push(`Weather data through ${fmtCentral(wx.weather_date, {dateOnly:true})}${upd ? ' (synced '+upd+')' : ''}`);
   }
-  const mow = mowRes.data && mowRes.data[0];
-  if (mow) parts.push(`Mower data through ${fmtCentral(mow.timestamp_utc)}`);
   const irr = irrRes.data && irrRes.data[0];
   if (irr) parts.push(`Irrigation data through ${fmtCentral(irr.start_time)}`);
   const el = $('#dataFreshness');
@@ -1188,29 +1165,28 @@ async function renderDataFreshness(){
 
 async function renderOverviewKpis(){
   const from = fmtDate(daysAgo(30));
-  const now = new Date();
-  const month = now.getMonth();
 
   const { data: wx } = await supa.from('weather_daily')
     .select('weather_date,temp_high_f,temp_low_f,rain_in').gte('weather_date', from).order('weather_date');
-
-  const baseHigh = HISTORICAL_MONTHLY.avgHighF[month];
-  const baseLow = HISTORICAL_MONTHLY.avgLowF[month];
 
   const kpis = [];
   if (wx && wx.length){
     const today = wx[wx.length-1];
     const weekStart = fmtDate(daysAgo(6));
     const weekRows = wx.filter(r => r.weather_date >= weekStart);
-    kpis.push(compareCard('Avg high (30d)', avg(wx.map(r=>r.temp_high_f).filter(v=>v!=null)), baseHigh, '°F'));
-    kpis.push(compareCard('Avg low (30d)', avg(wx.map(r=>r.temp_low_f).filter(v=>v!=null)), baseLow, '°F'));
-    kpis.push({label:'Total rain (30d)', value:num(wx.reduce((s,r)=>s+(r.rain_in||0),0),2), unit:'in'});
-    kpis.push({label:'High today', value:num(today.temp_high_f,0), unit:'°F'});
-    kpis.push({label:'Low today', value:num(today.temp_low_f,0), unit:'°F'});
-    kpis.push({label:'Rain today', value:num(today.rain_in,2), unit:'in'});
+    const avgHigh30 = avg(wx.map(r=>r.temp_high_f).filter(v=>v!=null));
+    const avgLow30 = avg(wx.map(r=>r.temp_low_f).filter(v=>v!=null));
+    const totalRain30 = wx.reduce((s,r)=>s+(r.rain_in||0),0);
+
+    kpis.push(compareCard('High today', today.temp_high_f, avgHigh30, '°F', 0, 'vs 30d avg'));
+    kpis.push(compareCard('Low today', today.temp_low_f, avgLow30, '°F', 0, 'vs 30d avg'));
+    kpis.push(compareCard('Rain today', today.rain_in, totalRain30, 'in', 2, 'vs 30d total'));
     kpis.push({label:'Rain this week', value:num(weekRows.reduce((s,r)=>s+(r.rain_in||0),0),2), unit:'in'});
+    kpis.push({label:'Avg high (30d)', value:num(avgHigh30,0), unit:'°F'});
+    kpis.push({label:'Avg low (30d)', value:num(avgLow30,0), unit:'°F'});
+    kpis.push({label:'Total rain (30d)', value:num(totalRain30,2), unit:'in'});
   } else {
-    ['Avg high (30d)','Avg low (30d)','Total rain (30d)','High today','Low today','Rain today','Rain this week']
+    ['High today','Low today','Rain today','Rain this week','Avg high (30d)','Avg low (30d)','Total rain (30d)']
       .forEach(l=>kpis.push({label:l,value:'—'}));
   }
   renderKpiCards('overviewKpis', kpis);
@@ -1316,25 +1292,9 @@ async function loadZoneOptions(){
    ============================================================ */
 const DEFICIT_THRESHOLD_IN = { bermuda: 0.65, fescue: 0.45 };
 
-let stackedChartRegistry = {}; // chartId -> {chart, points, zeroFloor, yInputId}
-function registerStackedChart(chartId, chart, points, zeroFloor=false, yInputId=null, wholeNumbers=false){
-  stackedChartRegistry[chartId] = {chart, points, zeroFloor, yInputId, wholeNumbers};
-}
-function unregisterStackedChart(chartId){ delete stackedChartRegistry[chartId]; }
-
-// Default: 3 months back through 3 months ahead of today, so the most
-// recent data sits roughly in the middle of the chart.
-const sharedXRange = { lo: 1, hi: 366 }; // default: all months selected
-
-function doyToMonthIdx(doy){
-  let m = 11;
-  for (let i=0;i<12;i++){ if (doy < DOY_MONTH_STARTS[i]) { m = i-1; break; } }
-  return Math.max(0, m);
-}
-
-// Above-the-chart min/max NUMBER INPUTS instead of a slider -- typed values
-// control the scale directly, and they're pre-filled with the computed
-// default range immediately (no click needed to "activate" the default).
+// Above-the-chart min/max NUMBER INPUTS -- typed values control the scale
+// directly, pre-filled with the computed default range immediately (no
+// click needed to "activate" the default).
 function wireYAxisInputs(containerId, chart, yMinData, yMaxData, opts={}){
   const el = $('#'+containerId);
   if (!el) return;
@@ -1358,70 +1318,6 @@ function wireYAxisInputs(containerId, chart, yMinData, yMaxData, opts={}){
   apply(); // the computed default takes effect immediately, not just on interaction
 }
 
-// Month tiles replace the old drag slider entirely. Tap one month to start
-// a range, tap another to finish it (a single tap alone = that one month).
-let monthTileClickState = null;
-function applySharedXToCharts(){
-  Object.values(stackedChartRegistry).forEach(({chart, points, zeroFloor, yInputId, wholeNumbers}) => {
-    try {
-      if (!chart.options.scales.x) return;
-      chart.options.scales.x.min = sharedXRange.lo;
-      chart.options.scales.x.max = sharedXRange.hi;
-      const visible = points.filter(p => p.x >= sharedXRange.lo && p.x <= sharedXRange.hi).map(p=>p.y);
-      if (visible.length){
-        const rawMin = Math.min(...visible), rawMax = Math.max(...visible);
-        const pad = (rawMax - rawMin) * 0.1 || 1;
-        // Clamp UP to 0 (never show a floor below 0 for these always-
-        // non-negative metrics) rather than the previous Math.min(0, ...),
-        // which could let padding push slightly negative when the real
-        // data min was already close to zero.
-        let yMin = zeroFloor ? Math.max(rawMin - pad, 0) : rawMin - pad;
-        let yMax = rawMax + pad;
-        if (wholeNumbers){ yMin = Math.floor(yMin); yMax = Math.ceil(yMax); }
-        chart.options.scales.y.min = yMin; chart.options.scales.y.max = yMax;
-        if (yInputId){
-          const minEl = document.getElementById(yInputId+'-min'), maxEl = document.getElementById(yInputId+'-max');
-          if (minEl) minEl.value = Number(yMin.toFixed(2));
-          if (maxEl) maxEl.value = Number(yMax.toFixed(2));
-        }
-      }
-      chart.update('none');
-    } catch (e) {
-      console.error('Rescale failed for one chart on month-tile change (others should be unaffected):', e);
-    }
-  });
-}
-function wireMonthTiles(containerId){
-  const el = $('#'+containerId);
-  if (!el) return;
-  function render(){
-    const from = doyToMonthIdx(sharedXRange.lo), to = doyToMonthIdx(sharedXRange.hi);
-    el.innerHTML = '<div class="month-tiles">' + DOY_MONTH_ABBR.map((label,i) => {
-      const inRange = i>=from && i<=to;
-      return `<div class="month-tile ${inRange?'in-range':''}" data-m="${i}">${label}</div>`;
-    }).join('') + '</div>';
-    el.querySelectorAll('.month-tile').forEach(t => {
-      t.addEventListener('click', () => {
-        const m = Number(t.dataset.m);
-        if (monthTileClickState === null){
-          monthTileClickState = m;
-          sharedXRange.lo = DOY_MONTH_STARTS[m];
-          sharedXRange.hi = (m===11) ? 366 : DOY_MONTH_STARTS[m+1]-1;
-        } else {
-          const fromIdx = Math.min(monthTileClickState, m), toIdx = Math.max(monthTileClickState, m);
-          sharedXRange.lo = DOY_MONTH_STARTS[fromIdx];
-          sharedXRange.hi = (toIdx===11) ? 366 : DOY_MONTH_STARTS[toIdx+1]-1;
-          monthTileClickState = null;
-        }
-        applySharedXToCharts();
-        render();
-      });
-    });
-  }
-  render();
-  window.__applySharedX = applySharedXToCharts;
-}
-
 function addCumulativeYearlyReset(rowsSorted){
   let curYear = null, running = 0;
   return rowsSorted.map(r => {
@@ -1432,11 +1328,11 @@ function addCumulativeYearlyReset(rowsSorted){
   });
 }
 
-// One condensed control replaces the old two-row year-chip UI: a from/to
-// year range (native selects, compact and mobile-friendly) plus a single
-// checkbox for whether the historical-average line should use that same
-// range or all-time data.
-const sharedYears = { from:null, to:null, useAllTimeAvg:true, initialized:false };
+// Year TILES -- an actual multi-select (any combination of years, not just
+// a contiguous range), replacing the old month-tile X-zoom picker now that
+// pinch/wheel zoom (chartjs-plugin-zoom) handles narrowing the view
+// directly on each chart instead.
+const sharedYears = { selected: new Set(), useAllTimeAvg:true, initialized:false };
 const registeredTrendCharts = [];
 function noteChartYears(years, draw){ registeredTrendCharts.push({years, draw}); }
 function redrawAllTrendCharts(){
@@ -1451,29 +1347,26 @@ function finalizeSharedYearControls(){
   if (!allYears.length) return;
   if (!sharedYears.initialized){
     const cy = String(new Date().getFullYear());
-    const defaultYear = allYears.includes(cy) ? cy : allYears[allYears.length-1];
-    sharedYears.from = defaultYear;
-    sharedYears.to = defaultYear;
+    sharedYears.selected = new Set(allYears.includes(cy) ? [cy] : [allYears[allYears.length-1]]);
     sharedYears.initialized = true;
   }
   const el = $('#yc-shared');
-  el.innerHTML = `
-    <div class="year-group"><div class="yg-label">Show years</div>
-      <div style="display:flex; align-items:center; gap:6px;">
-        <select id="yc-shared-from"></select><span style="color:var(--text-tertiary);">–</span><select id="yc-shared-to"></select>
-      </div>
-    </div>
-  `;
-  const fromSel = $('#yc-shared-from'), toSel = $('#yc-shared-to');
-  fromSel.innerHTML = allYears.map(y=>`<option value="${y}" ${y===sharedYears.from?'selected':''}>${y}</option>`).join('');
-  toSel.innerHTML = allYears.map(y=>`<option value="${y}" ${y===sharedYears.to?'selected':''}>${y}</option>`).join('');
-
-  function onChange(){
-    sharedYears.from = fromSel.value; sharedYears.to = toSel.value;
-    if (sharedYears.from > sharedYears.to) { toSel.value = sharedYears.from; sharedYears.to = sharedYears.from; }
-    redrawAllTrendCharts();
+  el.innerHTML = `<div class="year-group"><div class="yg-label">Show years</div><div class="month-tiles" id="yc-shared-tiles"></div></div>`;
+  const tilesEl = $('#yc-shared-tiles');
+  function render(){
+    tilesEl.innerHTML = allYears.map(y =>
+      `<div class="month-tile ${sharedYears.selected.has(y)?'in-range':''}" data-y="${y}">${y}</div>`
+    ).join('');
+    tilesEl.querySelectorAll('.month-tile').forEach(t => {
+      t.addEventListener('click', () => {
+        const y = t.dataset.y;
+        if (sharedYears.selected.has(y)) sharedYears.selected.delete(y); else sharedYears.selected.add(y);
+        render();
+        redrawAllTrendCharts();
+      });
+    });
   }
-  [fromSel, toSel].forEach(el => el.addEventListener('change', onChange));
+  render();
 }
 
 // Color a year deterministically by its distance from the current year, so
@@ -1500,7 +1393,7 @@ function zoomPanConfig(){
 
 function monthWeekXAxis(){
   return {
-    type:'linear', title:{display:false}, min:sharedXRange.lo, max:sharedXRange.hi,
+    type:'linear', title:{display:false}, min:1, max:366,
     afterBuildTicks:(axis) => {
       const lo = axis.min, hi = axis.max;
       const majors = DOY_MONTH_STARTS.filter(d => d >= lo && d <= hi);
@@ -1572,10 +1465,8 @@ async function buildDeficitChart(grassType, chartId, sliderContainerId){
   });
 
   const allY = plotPoints.map(p=>p.y).concat([threshold]);
-  registerStackedChart(chartId, chart, plotPoints, true, sliderContainerId);
   try { wireYAxisInputs(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:true}); }
-  catch (e) { console.error(`Y-axis inputs failed for ${chartId} (registration still succeeded):`, e); }
-  if (window.__applySharedX) window.__applySharedX();
+  catch (e) { console.error(`Y-axis inputs failed for ${chartId}:`, e); }
 }
 
 // Default reference period for the Average line and min/max band --
@@ -1607,8 +1498,7 @@ async function buildMultiYearChart(opts){
   const years = Object.keys(byYear).sort();
 
   function draw(){
-    const inRange = (y) => y >= sharedYears.from && y <= sharedYears.to;
-    const showYears = years.filter(inRange);
+    const showYears = years.filter(y => sharedYears.selected.has(y));
     const allY = processed.map(r=>r.cum);
 
     const datasets = showYears.map((y) => ({
@@ -1618,8 +1508,8 @@ async function buildMultiYearChart(opts){
       backgroundColor: colorForYear(y),
       pointStyle: 'line',
       pointRadius:0, tension:.15, fill:false,
+      barPercentage: 0.98, categoryPercentage: 0.95, // wider/more solid-looking bars -- irrelevant for line charts, harmless to always set
     }));
-    const allPoints = datasets.flatMap(ds => ds.data);
 
     // Average + min/max band, computed from AVG_REF_YEARS (2010-2025 by
     // default), intersected with whatever years this particular dataset
@@ -1642,16 +1532,8 @@ async function buildMultiYearChart(opts){
         scales:{ x: monthWeekXAxis(),
                  y:{title:{display:false}, ticks: yWholeNumbers ? {precision:0} : {}} } }
     });
-    // Register FIRST -- so this chart is connected to the shared month-tile
-    // control regardless of what happens in the Y-input setup below. That
-    // setup calls chart.update() immediately after creation, and if that
-    // throws for any reason, it must not be able to take the registration
-    // down with it (that's exactly what was silently breaking rescale-on-
-    // month-click: registerStackedChart was never reached).
-    registerStackedChart(chartId, chart, allPoints, zeroFloorY, sliderContainerId, yWholeNumbers);
     try { wireYAxisInputs(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:zeroFloorY, wholeNumbers:yWholeNumbers}); }
-    catch (e) { console.error(`Y-axis inputs failed for ${chartId} (registration still succeeded):`, e); }
-    if (window.__applySharedX) window.__applySharedX();
+    catch (e) { console.error(`Y-axis inputs failed for ${chartId}:`, e); }
   }
 
   noteChartYears(years, draw);
@@ -1719,16 +1601,15 @@ async function initTrendCharts(){
     buildDeficitChart('bermuda', 'chartDeficitBermuda', 'sl-deficit-bermuda'),
     buildDeficitChart('fescue', 'chartDeficitFescue', 'sl-deficit-fescue'),
     buildMultiYearChart({
-      chartId:'chartEtWeeklyBermuda', sliderContainerId:'sl-etweekly-bermuda', cumulative:false, yLabel:'inches / week',
+      chartId:'chartEtWeeklyBermuda', sliderContainerId:'sl-etweekly-bermuda', cumulative:false, yLabel:'inches / week', zeroFloorY:true,
       fetchRows: async () => rollingWeeklyRows('bermuda')
     }),
     buildMultiYearChart({
-      chartId:'chartEtWeeklyFescue', sliderContainerId:'sl-etweekly-fescue', cumulative:false, yLabel:'inches / week',
+      chartId:'chartEtWeeklyFescue', sliderContainerId:'sl-etweekly-fescue', cumulative:false, yLabel:'inches / week', zeroFloorY:true,
       fetchRows: async () => rollingWeeklyRows('fescue')
     }),
   ]);
 
-  wireMonthTiles('sl-shared-x');
   finalizeSharedYearControls();
   redrawAllTrendCharts();
 }
@@ -1741,6 +1622,141 @@ async function initTrendCharts(){
    averages within each grass type separately, matching how the
    deficit charts already treat this.
    ============================================================ */
+// Custom summary groupings for the radar chart -- distinct from
+// GUIDE_STATIONS above, which is specifically the Bermuda/Fescue pair used
+// for the weekly balance charts. This is a coarser, whole-property view.
+const RADAR_GROUPS = [
+  { label: 'Front Bermuda', zones: [1, 2] },
+  { label: 'Front Fescue', zones: [3, 4] },
+  { label: 'Side Bermuda', zones: [5] },
+  { label: 'Back Bermuda', zones: [6, 7, 10] },
+  { label: 'West Bermuda & Fescue', zones: [8, 9] },
+];
+
+// Weeks start Sunday -- find the Sunday on/before today, and the Saturday
+// that ends that same week.
+function currentWeekRange(){
+  const now = new Date();
+  const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  const saturday = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate() + 6);
+  return { start: fmtDate(sunday), end: fmtDate(saturday), sunday, saturday };
+}
+
+async function buildWaterRadarChart(){
+  const { start, end, sunday, saturday } = currentWeekRange();
+  const weekFmt = (d) => d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  const labelEl = $('#waterRadarWeekLabel');
+  if (labelEl) labelEl.textContent = `Week of ${weekFmt(sunday)} – ${weekFmt(saturday)} (Sun–Sat)`;
+
+  const { data } = await supa.from('et_balance_by_zone')
+    .select('zone_number,weather_date,etc_in,irrigation_applied_in')
+    .gte('weather_date', start).lte('weather_date', end);
+
+  if (!data || !data.length){ emptyState('chartWaterRadar', 'No data yet for this week.'); return; }
+
+  // Each zone's WEEKLY TOTAL first (sum across the week's days), then
+  // average those weekly totals across the zones within a group -- same
+  // "average the stations" pattern used for the Bermuda/Fescue balance
+  // charts above, just with these coarser groupings.
+  const byZone = {};
+  data.forEach(r => {
+    byZone[r.zone_number] = byZone[r.zone_number] || { etc:0, applied:0 };
+    byZone[r.zone_number].etc += (r.etc_in || 0);
+    byZone[r.zone_number].applied += (r.irrigation_applied_in || 0);
+  });
+
+  const labels = [], appliedVals = [], needVals = [];
+  RADAR_GROUPS.forEach(g => {
+    const weeklyApplied = g.zones.filter(z => byZone[z]).map(z => byZone[z].applied);
+    const weeklyNeed = g.zones.filter(z => byZone[z]).map(z => byZone[z].etc);
+    labels.push(g.label);
+    appliedVals.push(weeklyApplied.length ? Number(avg(weeklyApplied).toFixed(2)) : 0);
+    needVals.push(weeklyNeed.length ? Number(avg(weeklyNeed).toFixed(2)) : 0);
+  });
+
+  makeChart('chartWaterRadar', {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Water applied (in)', data:appliedVals, order:1,
+          borderColor:'#2e4a34', backgroundColor:'transparent', borderWidth:2, borderDash:[5,3] },
+        { label:'Need this week (ETc, in)', data:needVals, order:2,
+          borderColor:'#8b8478', backgroundColor:'rgba(139,132,120,0.35)', borderWidth:2 },
+      ],
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom' } },
+      scales:{ r:{ beginAtZero:true, ticks:{ precision:1 }, pointLabels:{ font:{ size:11 } } } },
+    },
+  });
+}
+
+function initZoneBarSection(){
+  const [f, t] = [daysAgo(0), new Date()];
+  $('#zoneBarFrom').value = fmtDate(f); $('#zoneBarTo').value = fmtDate(t);
+
+  $('#zoneBarRangeChips').querySelectorAll('.year-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      $('#zoneBarRangeChips').querySelectorAll('.year-chip').forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+      const r = chip.dataset.r;
+      if (r === 'custom'){
+        $('#zoneBarCustomRange').style.display = '';
+        return; // wait for the person to pick dates and hit Go
+      }
+      $('#zoneBarCustomRange').style.display = 'none';
+      const today = fmtDate(new Date());
+      $('#zoneBarFrom').value = (r === '0') ? today : fmtDate(daysAgo(Number(r)));
+      $('#zoneBarTo').value = today;
+      buildZoneBarChart($('#zoneBarFrom').value, $('#zoneBarTo').value);
+    });
+  });
+  $('#zoneBarApply').addEventListener('click', () => buildZoneBarChart($('#zoneBarFrom').value, $('#zoneBarTo').value));
+
+  buildZoneBarChart($('#zoneBarFrom').value, $('#zoneBarTo').value);
+}
+
+// Same 5 buckets (and colors) as the radar chart, so a zone reads as the
+// same "group" in both places. Zones not in any radar group (11/12 --
+// mister, flower bed) get a neutral color.
+const RADAR_GROUP_COLORS = ['#2e4a34', '#8a9b7a', '#c49a6c', '#b5522f', '#a87f52'];
+const ZONE_GROUP_COLOR = {};
+RADAR_GROUPS.forEach((g, i) => { g.zones.forEach(z => { ZONE_GROUP_COLOR[z] = RADAR_GROUP_COLORS[i]; }); });
+const ZONE_UNGROUPED_COLOR = '#8b8478';
+
+async function buildZoneBarChart(from, to){
+  const { data } = await supa.from('et_balance_by_zone')
+    .select('zone_number,irrigation_applied_in')
+    .gte('weather_date', from).lte('weather_date', to);
+
+  if (!data || !data.length){ emptyState('chartZoneBar', 'No data in this range.'); return; }
+
+  const totals = {};
+  for (let z = 1; z <= 12; z++) totals[z] = 0;
+  data.forEach(r => {
+    if (r.zone_number == null) return;
+    totals[r.zone_number] = (totals[r.zone_number] || 0) + (r.irrigation_applied_in || 0);
+  });
+
+  const zones = Object.keys(totals).map(Number).sort((a,b)=>a-b);
+  const labels = zones.map(z => String(z)); // just the number -- space-saving
+  const values = zones.map(z => Number(totals[z].toFixed(2)));
+  const barColors = zones.map(z => ZONE_GROUP_COLOR[z] || ZONE_UNGROUPED_COLOR);
+
+  makeChart('chartZoneBar', {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Total inches applied', data:values, backgroundColor:barColors }] },
+    options:{
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{ legend:{display:false},
+        datalabels:{ display:true, color:'#2b2b2b', anchor:'end', align:'right', formatter:(v)=>num(v,2) } },
+      scales:{ x:{ beginAtZero:true, title:{display:true, text:'inches'} } },
+    },
+  });
+}
+
 async function initWaterBalanceSection(){
   const [f, t] = [daysAgo(180), new Date()];
   $('#wbFrom').value = fmtDate(f); $('#wbTo').value = fmtDate(t);
@@ -1817,13 +1833,13 @@ async function buildGrassBalanceChart(grassType, chartId, from, to){
   makeChart(chartId, {
     type:'bar',
     data:{ labels:weeks, datasets:[
-      { type:'line', label:'Water needed (avg across zones)', data:etc, pointStyle:'circle',
+      { type:'line', label:'Water needed (avg across zones)', data:etc,
         borderColor:'#8b8478', backgroundColor:'rgba(139,132,120,0.24)', fill:true, pointRadius:0, tension:.15, order:0 },
-      { type:'bar', label:'Rain', data:rain, backgroundColor:'#c9a66b', pointStyle:'circle', stack:'water', order:1 },
-      { type:'bar', label:'Irrigation applied (avg across zones)', data:applied, backgroundColor:CHART_COLORS.irrigation, pointStyle:'circle', stack:'water', order:1 },
+      { type:'bar', label:'Rain', data:rain, backgroundColor:'#c9a66b', stack:'water', order:1 },
+      { type:'bar', label:'Irrigation applied (avg across zones)', data:applied, backgroundColor:CHART_COLORS.irrigation, stack:'water', order:1 },
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom', labels:{usePointStyle:true, boxWidth:9, boxHeight:9}}},
+      plugins:{legend:{position:'bottom'}},
       scales:{ x:{type:'time', time:{unit: weeks.length>26?'month':'week'}, stacked:true},
                y:{title:{display:false}, stacked:true} } }
   });
