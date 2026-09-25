@@ -1791,10 +1791,11 @@ RADAR_GROUPS.forEach((g, i) => { g.zones.forEach(z => { ZONE_GROUP_COLOR[z] = RA
 const ZONE_UNGROUPED_COLOR = '#8b8478';
 
 async function buildZoneBarChart(from, to){
-  const { data } = await supa.from('et_balance_by_zone')
+  const { data, error } = await supa.from('et_balance_by_zone')
     .select('zone_number,irrigation_applied_in')
     .gte('weather_date', from).lte('weather_date', to);
 
+  if (error) { console.error('Zone bar chart query failed:', error); emptyState('chartZoneBar', 'Error loading zone data — see console.'); return; }
   if (!data || !data.length){ emptyState('chartZoneBar', 'No data in this range.'); return; }
 
   const totals = {};
