@@ -1279,7 +1279,7 @@ async function renderOverviewKpis(){
       .gte('weather_date', lastStart).lte('weather_date', thisEnd);
     if (etcError) throw etcError;
 
-    function weeklyNeedTotal(zones, wStart, wEnd){
+    function weeklyNeedTotal(zones, wStart, wEnd, projectPartial=false){
       const byDate = {};
       (etcData||[]).forEach(r => {
         if (!zones.includes(r.zone_number)) return;
@@ -1287,20 +1287,31 @@ async function renderOverviewKpis(){
         if (r.etc_in == null) return;
         (byDate[r.weather_date] = byDate[r.weather_date] || []).push(r.etc_in);
       });
-      return Object.values(byDate).reduce((sum, vals) => sum + avg(vals), 0);
+      const dailyAvgs = Object.values(byDate).map(vals => avg(vals));
+      if (!dailyAvgs.length) return 0;
+      const total = dailyAvgs.reduce((s,v)=>s+v, 0);
+      // Project a partial "this week" to a full 7 days at the pace seen
+      // so far, rather than showing a running total that looks
+      // artificially low early in the week. A complete week (7 daily
+      // values already) needs no projection -- the actual total IS the
+      // full-week figure at that point.
+      if (projectPartial && dailyAvgs.length < 7){
+        return (total / dailyAvgs.length) * 7;
+      }
+      return total;
     }
 
-    const bermudaThis = weeklyNeedTotal(GUIDE_STATIONS.bermuda, thisStart, thisEnd);
-    const bermudaLast = weeklyNeedTotal(GUIDE_STATIONS.bermuda, lastStart, lastEnd);
-    const fescueThis = weeklyNeedTotal(GUIDE_STATIONS.fescue, thisStart, thisEnd);
-    const fescueLast = weeklyNeedTotal(GUIDE_STATIONS.fescue, lastStart, lastEnd);
+    const bermudaThis = weeklyNeedTotal(GUIDE_STATIONS.bermuda, thisStart, thisEnd, true);
+    const bermudaLast = weeklyNeedTotal(GUIDE_STATIONS.bermuda, lastStart, lastEnd, false);
+    const fescueThis = weeklyNeedTotal(GUIDE_STATIONS.fescue, thisStart, thisEnd, true);
+    const fescueLast = weeklyNeedTotal(GUIDE_STATIONS.fescue, lastStart, lastEnd, false);
 
-    kpis.push(compareCard('Bermuda water need (this wk)', bermudaThis, bermudaLast, 'in', 2, 'vs last wk'));
-    kpis.push(compareCard('Fescue water need (this wk)', fescueThis, fescueLast, 'in', 2, 'vs last wk'));
+    kpis.push(compareCard('Bermuda water need (wk proj.)', bermudaThis, bermudaLast, 'in', 2, 'vs last wk'));
+    kpis.push(compareCard('Fescue water need (wk proj.)', fescueThis, fescueLast, 'in', 2, 'vs last wk'));
   } catch (e) {
     console.error('Bermuda/Fescue water-need KPIs failed:', e);
-    kpis.push({label:'Bermuda water need (this wk)', value:'—'});
-    kpis.push({label:'Fescue water need (this wk)', value:'—'});
+    kpis.push({label:'Bermuda water need (wk proj.)', value:'—'});
+    kpis.push({label:'Fescue water need (wk proj.)', value:'—'});
   }
 
   renderKpiCards('overviewKpis', kpis);
