@@ -1925,16 +1925,24 @@ async function buildGrassBalanceChart(grassType, chartId, from, to){
   });
   const dates = Object.keys(byDate).sort();
 
-  // Bucket the daily (zone-averaged) inches into 7-day weeks and SUM within
-  // each week -- that's what turns "inches/day" into a real "inches/week"
-  // figure, rather than just averaging daily values (which would still be
-  // a per-day number, just smoothed).
-  const startDate = new Date(dates[0]);
+  // Bucket the daily (zone-averaged) inches into real calendar weeks
+  // (Sunday-Saturday) and SUM within each week -- that's what turns
+  // "inches/day" into a real "inches/week" figure. This must align with
+  // the same Sunday-start convention used by currentWeekRange() (the
+  // radar chart, the Bermuda/Fescue water-need KPIs) or "this week" means
+  // two different date ranges depending which part of the dashboard you
+  // look at. weather_date is a date-only string, which JS parses as UTC
+  // midnight -- so this stays in UTC methods throughout (getUTCDay, not
+  // getDay) rather than mixing in local-time methods, which would shift
+  // the day by the timezone offset for anyone not in UTC.
+  function sundayOf(dateStr){
+    const d = new Date(dateStr);
+    const sunday = new Date(d.getTime() - d.getUTCDay()*86400000);
+    return sunday.toISOString().slice(0,10);
+  }
   const weekBuckets = {};
   dates.forEach(d => {
-    const daysSinceStart = Math.floor((new Date(d) - startDate) / 86400000);
-    const weekStart = new Date(startDate.getTime() + Math.floor(daysSinceStart/7)*7*86400000);
-    const key = weekStart.toISOString().slice(0,10);
+    const key = sundayOf(d);
     weekBuckets[key] = weekBuckets[key] || {etc:0, rain:0, applied:0};
     weekBuckets[key].etc += (avg(byDate[d].etc) || 0);
     weekBuckets[key].rain += (avg(byDate[d].rain) || 0);
