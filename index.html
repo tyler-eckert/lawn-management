@@ -1262,6 +1262,47 @@ async function renderOverviewKpis(){
     ['High today','Low today','Rain today','Rain this week','Avg high (30d)','Avg low (30d)','Total rain (30d)']
       .forEach(l=>kpis.push({label:l,value:'—'}));
   }
+
+  // Bermuda/Fescue water need (ETc, averaged across each grass type's
+  // guide stations) this week vs last week -- same Sunday-start week and
+  // same station-averaging convention as the radar chart / balance charts.
+  try {
+    const { start: thisStart, end: thisEnd, sunday } = currentWeekRange();
+    const lastSunday = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate()-7);
+    const lastSaturday = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate()-1);
+    const lastStart = fmtDate(lastSunday), lastEnd = fmtDate(lastSaturday);
+
+    const allStations = [...GUIDE_STATIONS.bermuda, ...GUIDE_STATIONS.fescue];
+    const { data: etcData, error: etcError } = await supa.from('et_balance_by_zone')
+      .select('weather_date,zone_number,etc_in')
+      .in('zone_number', allStations)
+      .gte('weather_date', lastStart).lte('weather_date', thisEnd);
+    if (etcError) throw etcError;
+
+    function weeklyNeedTotal(zones, wStart, wEnd){
+      const byDate = {};
+      (etcData||[]).forEach(r => {
+        if (!zones.includes(r.zone_number)) return;
+        if (r.weather_date < wStart || r.weather_date > wEnd) return;
+        if (r.etc_in == null) return;
+        (byDate[r.weather_date] = byDate[r.weather_date] || []).push(r.etc_in);
+      });
+      return Object.values(byDate).reduce((sum, vals) => sum + avg(vals), 0);
+    }
+
+    const bermudaThis = weeklyNeedTotal(GUIDE_STATIONS.bermuda, thisStart, thisEnd);
+    const bermudaLast = weeklyNeedTotal(GUIDE_STATIONS.bermuda, lastStart, lastEnd);
+    const fescueThis = weeklyNeedTotal(GUIDE_STATIONS.fescue, thisStart, thisEnd);
+    const fescueLast = weeklyNeedTotal(GUIDE_STATIONS.fescue, lastStart, lastEnd);
+
+    kpis.push(compareCard('Bermuda water need (this wk)', bermudaThis, bermudaLast, 'in', 2, 'vs last wk'));
+    kpis.push(compareCard('Fescue water need (this wk)', fescueThis, fescueLast, 'in', 2, 'vs last wk'));
+  } catch (e) {
+    console.error('Bermuda/Fescue water-need KPIs failed:', e);
+    kpis.push({label:'Bermuda water need (this wk)', value:'—'});
+    kpis.push({label:'Fescue water need (this wk)', value:'—'});
+  }
+
   renderKpiCards('overviewKpis', kpis);
 }
 
