@@ -832,7 +832,16 @@ const supa = (function initSupabase(){
    ============================================================ */
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-const fmtDate = (d) => d.toISOString().slice(0,10);
+const fmtDate = (d) => {
+  // Local calendar date, NOT toISOString() -- that converts to UTC first,
+  // which silently rolls over to tomorrow's date every evening for any
+  // timezone behind UTC (including America/Chicago). "Today" must mean
+  // the browser's local today, always.
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+};
 const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate()-n); return d; };
 const startOfYear = () => new Date(new Date().getFullYear(), 0, 1);
 const monthName = (i) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i];
