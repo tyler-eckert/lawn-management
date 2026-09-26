@@ -669,9 +669,9 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="panel-sub" id="onThisDayLabel" style="margin-bottom:10px;"></div>
         <div class="two-col">
           <div class="panel">
-            <h3 style="font-size:0.95rem; margin-bottom:6px;">High &amp; Low by Year</h3>
-            <div class="panel-sub">This year is highlighted and labeled</div>
-            <div class="chart-wrap tall"><canvas id="chartOnThisDayTemp"></canvas></div>
+            <h3 style="font-size:0.95rem; margin-bottom:6px;">High &amp; Low Spread — Every Year</h3>
+            <div class="panel-sub">Each dot is one year. This year, the record high, and the record low are called out; everything else is an ordinary year for comparison.</div>
+            <div class="chart-wrap tall"><canvas id="chartOnThisDayScatter"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Rainfall by Year</h3>
@@ -1198,6 +1198,7 @@ async function initApp(){
   await safely('reference', renderReferenceKc);
   await safely('records', initRecordsSection);
   await safely('on this day', initOnThisDaySection);
+  await safely('on this day scatter', initOnThisDayScatterSection);
 
   // Mobile browsers sometimes finish settling a chart's container into its
   // real on-screen size only AFTER Chart.js already measured it once
@@ -2328,7 +2329,6 @@ async function initOnThisDaySection(){
   });
 
   if (!matches.length){
-    emptyState('chartOnThisDayTemp', 'No historical data for this date yet.');
     emptyState('chartOnThisDayRain', 'No historical data for this date yet.');
     return;
   }
@@ -2336,25 +2336,6 @@ async function initOnThisDaySection(){
   const currentYear = String(now.getFullYear());
   const years = matches.map(r => yearOf(r.weather_date));
   const highlightLabel = (ctx) => years[ctx.dataIndex] === currentYear;
-
-  const highColors = years.map(y => y===currentYear ? CHART_COLORS.high : '#c9a98a');
-  const lowColors = years.map(y => y===currentYear ? CHART_COLORS.low : '#8a9b7a');
-  makeChart('chartOnThisDayTemp', {
-    type:'bar',
-    data:{ labels:years, datasets:[
-      { label:'High (°F)', data:matches.map(r=>r.temp_high_f), backgroundColor:highColors },
-      { label:'Low (°F)', data:matches.map(r=>r.temp_low_f), backgroundColor:lowColors },
-    ]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{position:'bottom'},
-        datalabels:{ display:highlightLabel, anchor:'end', align:'top', font:{weight:'bold'}, color:'#2b2b2b',
-          formatter:(v)=> v==null ? '' : num(v,0) },
-      },
-      scales:{ y:{title:{display:true,text:'°F'}} },
-    },
-  });
 
   const rainColors = years.map(y => y===currentYear ? CHART_COLORS.irrigation : '#a8b89c');
   makeChart('chartOnThisDayRain', {
@@ -2368,6 +2349,91 @@ async function initOnThisDaySection(){
           formatter:(v)=> v==null ? '' : num(v,2) },
       },
       scales:{ y:{title:{display:true,text:'inches'}, beginAtZero:true} },
+    },
+  });
+}
+
+async function initOnThisDayScatterSection(){
+  const now = new Date();
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const currentYear = String(now.getFullYear());
+
+  const rows = await fetchAllRows(() => supa.from('weather_daily')
+    .select('weather_date,temp_high_f,temp_low_f').order('weather_date'));
+  const matches = rows.filter(r => {
+    const parts = r.weather_date.split('-');
+    return parts[1] === mm && parts[2] === dd;
+  });
+  if (!matches.length){ emptyState('chartOnThisDayScatter', 'No historical data for this date yet.'); return; }
+
+  const highs = matches.filter(r => r.temp_high_f != null).map(r => ({year: yearOf(r.weather_date), value: r.temp_high_f}));
+  const lows = matches.filter(r => r.temp_low_f != null).map(r => ({year: yearOf(r.weather_date), value: r.temp_low_f}));
+  if (!highs.length && !lows.length){ emptyState('chartOnThisDayScatter', 'No historical data for this date yet.'); return; }
+
+  const maxOf = (arr) => arr.reduce((m,v) => v.value > m.value ? v : m, arr[0]);
+  const minOf = (arr) => arr.reduce((m,v) => v.value < m.value ? v : m, arr[0]);
+  function classify(point, arr){
+    if (point.year === currentYear) return 'current';
+    if (arr.length && point.year === maxOf(arr).year) return 'max';
+    if (arr.length && point.year === minOf(arr).year) return 'min';
+    return 'normal';
+  }
+
+  // Deterministic "beeswarm" jitter: sort by value, then alternate left/right
+  // with increasing offset by rank -- points close in value (the ones most
+  // likely to visually collide) end up spread furthest apart in x.
+  function jitterAroundX(values, centerX, step=0.01){
+    // Sorted by YEAR (not value) -- oldest on the left, newest on the
+    // right, evenly spaced. Trades away some collision-avoidance (two
+    // adjacent years with similar values now sit adjacent in x too,
+    // rather than being pushed apart) for a left-to-right chronological
+    // read, which is the more intuitive ordering.
+    const sorted = [...values].sort((a,b) => Number(a.year) - Number(b.year));
+    const n = sorted.length;
+    return sorted.map((v, i) => ({ ...v, x: centerX + (i - (n-1)/2) * step }));
+  }
+
+  const COLOR_MAP = { normal:'#8b8478', current:'#c49a6c', max:'#b5522f', min:'#2e4a34' };
+  const LABEL_MAP = { normal:'Other years', current:`${currentYear} (this year)`, max:'Record high', min:'Record low' };
+
+  const datasetsByCategory = { normal:[], current:[], max:[], min:[] };
+  jitterAroundX(highs, 1).forEach(p => datasetsByCategory[classify(p, highs)].push({x:p.x, y:p.value, year:p.year}));
+  jitterAroundX(lows, 2).forEach(p => datasetsByCategory[classify(p, lows)].push({x:p.x, y:p.value, year:p.year}));
+
+  const datasets = ['normal','current','max','min']
+    .filter(cat => datasetsByCategory[cat].length)
+    .map(cat => ({
+      label: LABEL_MAP[cat],
+      data: datasetsByCategory[cat],
+      // Transparent fill for ordinary years -- just a hollow outline --
+      // so the current year, record high, and record low (still solid)
+      // stand out clearly against them.
+      backgroundColor: cat==='normal' ? 'transparent' : COLOR_MAP[cat],
+      borderColor: COLOR_MAP[cat],
+      borderWidth: cat==='normal' ? 1.5 : 2,
+      pointRadius: cat==='normal' ? 5 : 7,
+      pointHoverRadius: cat==='normal' ? 7 : 9,
+    }));
+
+  makeChart('chartOnThisDayScatter', {
+    type:'scatter',
+    data:{ datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ position:'bottom' },
+        tooltip:{ callbacks:{ label:(ctx) => `${ctx.raw.year}: ${num(ctx.raw.y,0)}°F` } },
+      },
+      scales:{
+        x:{
+          min:0.5, max:2.5,
+          afterBuildTicks:(axis) => { axis.ticks = [{value:1},{value:2}]; },
+          ticks:{ callback:(v) => v===1 ? 'High' : (v===2 ? 'Low' : '') },
+          grid:{ display:false },
+        },
+        y:{ title:{display:true, text:'°F'} },
+      },
     },
   });
 }
