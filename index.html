@@ -209,6 +209,7 @@ main{ max-width:1200px; margin:0 auto; padding:20px 20px 60px; }
 .panel .panel-sub{ color:var(--text-secondary); font-size:0.84rem; margin-bottom:16px; }
 .chart-wrap{ position:relative; height:260px; }
 .chart-wrap.tall{ height:320px; }
+.chart-wrap.zone-tall{ height:420px; }
 .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .four-col{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
 @media (max-width: 760px){
@@ -217,6 +218,7 @@ main{ max-width:1200px; margin:0 auto; padding:20px 20px 60px; }
   .panel{ padding:16px; border-radius:14px; }
   .chart-wrap{ height:220px; }
   .chart-wrap.tall{ height:260px; }
+  .chart-wrap.zone-tall{ height:400px; }
   header.top h1{ font-size:1.05rem; }
   body{ font-size:14px; }
 }
@@ -467,12 +469,10 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Highs</h3>
-            <div class="yaxis-inputs" id="sl-high"></div>
             <div class="chart-wrap tall"><canvas id="chartTrendHigh"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Lows</h3>
-            <div class="yaxis-inputs" id="sl-low"></div>
             <div class="chart-wrap tall"><canvas id="chartTrendLow"></canvas></div>
           </div>
         </div>
@@ -486,12 +486,10 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">High</h3>
-            <div class="yaxis-inputs" id="sl-feels-high"></div>
             <div class="chart-wrap tall"><canvas id="chartTrendFeelsHigh"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Low</h3>
-            <div class="yaxis-inputs" id="sl-feels-low"></div>
             <div class="chart-wrap tall"><canvas id="chartTrendFeelsLow"></canvas></div>
           </div>
         </div>
@@ -505,12 +503,10 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Cumulative (resets Jan 1)</h3>
-            <div class="yaxis-inputs" id="sl-rain"></div>
             <div class="chart-wrap tall"><canvas id="chartTrendRain"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">By day (year comparison)</h3>
-            <div class="yaxis-inputs" id="sl-rainbar"></div>
             <div class="chart-wrap tall"><canvas id="chartTrendRainBar"></canvas></div>
           </div>
         </div>
@@ -525,12 +521,10 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Bermuda</h3>
-            <div class="yaxis-inputs" id="sl-deficit-bermuda"></div>
             <div class="chart-wrap tall"><canvas id="chartDeficitBermuda"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Fescue</h3>
-            <div class="yaxis-inputs" id="sl-deficit-fescue"></div>
             <div class="chart-wrap tall"><canvas id="chartDeficitFescue"></canvas></div>
           </div>
         </div>
@@ -545,12 +539,10 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Bermuda</h3>
-            <div class="yaxis-inputs" id="sl-etweekly-bermuda"></div>
             <div class="chart-wrap tall"><canvas id="chartEtWeeklyBermuda"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Fescue</h3>
-            <div class="yaxis-inputs" id="sl-etweekly-fescue"></div>
             <div class="chart-wrap tall"><canvas id="chartEtWeeklyFescue"></canvas></div>
           </div>
         </div>
@@ -632,7 +624,7 @@ table.data tr:hover td{ background:var(--surface-2); }
                 </div>
               </div>
             </div>
-            <div class="chart-wrap tall"><canvas id="chartZoneBar"></canvas></div>
+            <div class="chart-wrap zone-tall"><canvas id="chartZoneBar"></canvas></div>
           </div>
         </div>
       </div>
@@ -646,30 +638,25 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Days at or above 100°F</h3>
-            <div class="yaxis-inputs" id="sl-rec-high100"></div>
             <div class="chart-wrap"><canvas id="chartRecHigh100"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Feels-like ≥ 100°F days</h3>
-            <div class="yaxis-inputs" id="sl-rec-feelshigh"></div>
             <div class="chart-wrap"><canvas id="chartRecFeelsHigh"></canvas></div>
           </div>
         </div>
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Freeze days (low ≤ 32°F)</h3>
-            <div class="yaxis-inputs" id="sl-rec-freeze"></div>
             <div class="chart-wrap"><canvas id="chartRecFreeze"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Feels-like ≤ 32°F days</h3>
-            <div class="yaxis-inputs" id="sl-rec-feelslow"></div>
             <div class="chart-wrap"><canvas id="chartRecFeelsLow"></canvas></div>
           </div>
         </div>
         <div class="panel">
           <h3 style="font-size:0.95rem; margin-bottom:6px;">Total rainfall by year</h3>
-          <div class="yaxis-inputs" id="sl-rec-rain"></div>
           <div class="chart-wrap tall"><canvas id="chartRecRain"></canvas></div>
         </div>
       </div>
@@ -1460,26 +1447,19 @@ const DEFICIT_THRESHOLD_IN = { bermuda: 0.65, fescue: 0.45 };
 // directly, pre-filled with the computed default range immediately (no
 // click needed to "activate" the default).
 function wireYAxisInputs(containerId, chart, yMinData, yMaxData, opts={}){
-  const el = $('#'+containerId);
-  if (!el) return;
+  // Pinch-zoom + double-tap-to-reset now handle axis adjustment directly
+  // on the chart, so the typed Y min/max inputs are redundant UI -- this
+  // keeps just the useful part (a sensible default zoomed-in range applied
+  // automatically) without rendering any input fields, freeing up the
+  // vertical space they used to take above each chart.
   const yPad = (yMaxData - yMinData) * 0.15 || 1;
   let yLo = yMinData - yPad, yHi = yMaxData + yPad;
   if (opts.wholeNumbers){ yLo = Math.floor(yLo); yHi = Math.ceil(yHi); }
   yLo = Number(yLo.toFixed(2)); yHi = Number(yHi.toFixed(2));
   const startMin = opts.zeroFloor ? Math.max(yLo, 0) : yLo;
-  el.innerHTML = `
-    <div class="yi-field"><label>Y min</label><input type="number" id="${containerId}-min" value="${startMin}" step="any"></div>
-    <div class="yi-field"><label>Y max</label><input type="number" id="${containerId}-max" value="${yHi}" step="any"></div>
-  `;
-  const minInput = $('#'+containerId+'-min'), maxInput = $('#'+containerId+'-max');
-  function apply(){
-    const lo = Number(minInput.value), hi = Number(maxInput.value);
-    if (isNaN(lo) || isNaN(hi) || lo >= hi) return;
-    chart.options.scales.y.min = lo; chart.options.scales.y.max = hi;
-    chart.update('none');
-  }
-  [minInput, maxInput].forEach(inp => inp.addEventListener('change', apply));
-  apply(); // the computed default takes effect immediately, not just on interaction
+  chart.options.scales.y.min = startMin;
+  chart.options.scales.y.max = yHi;
+  chart.update('none');
 }
 
 function addCumulativeYearlyReset(rowsSorted){
@@ -1672,7 +1652,7 @@ async function buildMultiYearChart(opts){
       backgroundColor: colorForYear(y),
       pointStyle: 'line',
       pointRadius:0, tension:.15, fill:false,
-      barPercentage: 0.98, categoryPercentage: 0.95, // wider/more solid-looking bars -- irrelevant for line charts, harmless to always set
+      barPercentage: 1.0, categoryPercentage: 1.0, // as wide as the category-slot system allows -- irrelevant for line charts, harmless to always set
     }));
 
     // Average + min/max band, computed from AVG_REF_YEARS (2010-2025 by
@@ -1926,7 +1906,10 @@ async function buildZoneBarChart(from, to){
       layout:{ padding:{ right:36 } },
       plugins:{ legend:{display:false},
         datalabels:{ display:true, color:'#2b2b2b', anchor:'end', align:'right', formatter:(v)=>num(v,2) } },
-      scales:{ x:{ beginAtZero:true, suggestedMax: maxVal*1.2 || undefined, title:{display:true, text:'inches'} } },
+      scales: {
+        x:{ beginAtZero:true, suggestedMax: maxVal*1.2 || undefined, title:{display:true, text:'inches'} },
+        y:{ ticks:{ autoSkip:false } }, // force all 12 zone labels to render, never thinned out for space
+      },
     },
   });
 }
@@ -2015,10 +1998,10 @@ async function buildGrassBalanceChart(grassType, chartId, from, to){
   makeChart(chartId, {
     type:'bar',
     data:{ labels:weeks, datasets:[
-      { type:'line', label:'Water needed (avg across zones)', data:etc,
+      { type:'line', label:'Water Need', data:etc,
         borderColor:'#8b8478', backgroundColor:'rgba(139,132,120,0.24)', fill:true, pointRadius:0, tension:.15, order:0 },
       { type:'bar', label:'Rain', data:rain, backgroundColor:'#c9a66b', stack:'water', order:1 },
-      { type:'bar', label:'Irrigation applied (avg across zones)', data:applied, backgroundColor:CHART_COLORS.irrigation, stack:'water', order:1 },
+      { type:'bar', label:'Irrigation', data:applied, backgroundColor:CHART_COLORS.irrigation, stack:'water', order:1 },
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{position:'bottom'}},
@@ -2384,7 +2367,7 @@ async function initOnThisDayScatterSection(){
   const COLOR_MAP = {
     normal:'#8b8478', current:'#2e4a34',
     high_max:'#8b2f1f', high_min:'#e0a898',
-    low_max:'#1f3a5c', low_min:'#a8c9e0',
+    low_max:'#2f5f8f', low_min:'#a8c9e0',
   };
   const LABEL_MAP = {
     normal:'Other years', current:'This year',
@@ -2395,6 +2378,11 @@ async function initOnThisDayScatterSection(){
   const datasetsByCategory = { normal:[], current:[], high_max:[], high_min:[], low_max:[], low_min:[] };
   jitterAroundX(highs, 1).forEach(p => datasetsByCategory[classify(p, highs, 'high')].push({x:p.x, y:p.value, year:p.year}));
   jitterAroundX(lows, 2).forEach(p => datasetsByCategory[classify(p, lows, 'low')].push({x:p.x, y:p.value, year:p.year}));
+
+  // Labeled categories get their value called out in text, colored to
+  // match their own point color so the label and the dot are visibly the
+  // same thing. Ordinary years rely on color/legend alone -- no label.
+  const LABELED = new Set(['current','high_max','high_min','low_max','low_min']);
 
   const datasets = ['normal','current','high_max','high_min','low_max','low_min']
     .filter(cat => datasetsByCategory[cat].length)
@@ -2407,33 +2395,39 @@ async function initOnThisDayScatterSection(){
       backgroundColor: cat==='normal' ? 'transparent' : COLOR_MAP[cat],
       borderColor: COLOR_MAP[cat],
       borderWidth: cat==='normal' ? 1.5 : 2,
-      pointRadius: cat==='normal' ? 5 : 7,
-      pointHoverRadius: cat==='normal' ? 7 : 9,
-      // Only "this year" gets its value called out with a text label --
-      // record high/low and ordinary years rely on color/legend alone.
-      datalabels: cat==='current' ? {
+      // Current year gets a diamond so it's distinguishable by SHAPE too,
+      // not just color -- warmest-low blue and forest-green can otherwise
+      // read as similar at a glance.
+      pointStyle: cat==='current' ? 'rectRot' : 'circle',
+      pointRadius: cat==='normal' ? 5 : (cat==='current' ? 8 : 7),
+      pointHoverRadius: cat==='normal' ? 7 : (cat==='current' ? 10 : 9),
+      datalabels: LABELED.has(cat) ? {
         display:true, align:'top', anchor:'end', offset:6,
-        formatter:(v)=>`${num(v.y,0)}°F`, color:'#2b2b2b', font:{weight:'bold', size:11},
+        formatter:(v)=>`${num(v.y,0)}°F`, color:COLOR_MAP[cat], font:{weight:'bold', size:11},
       } : { display:false },
     }));
 
   // Dashed median reference line for High and Low separately, each
-  // spanning just that column's width, with a text label at the right end.
+  // spanning just that column's width, with a text label at one end.
+  // The Low line's label sits on its LEFT end (rather than the right, like
+  // High's) -- its right end is close to the chart's fixed right edge, and
+  // labeling from the left avoids running the text off that edge.
   const medianHigh = median(highs);
   const medianLow = median(lows);
-  function medianLineDataset(medianVal, centerX, label){
+  function medianLineDataset(medianVal, centerX, label, labelSide='right'){
     if (medianVal == null) return null;
+    const labelIndex = labelSide === 'right' ? 1 : 0;
     return {
       label, data:[{x:centerX-0.35, y:medianVal},{x:centerX+0.35, y:medianVal}],
       showLine:true, borderDash:[6,4], borderWidth:1.5, borderColor:'#5c5850',
       pointRadius:0, fill:false,
       datalabels:{
-        display:(ctx)=>ctx.dataIndex===1, align:'right', anchor:'end', offset:4,
+        display:(ctx)=>ctx.dataIndex===labelIndex, align:labelSide, anchor:'end', offset:4,
         formatter:()=>`Median ${num(medianVal,0)}°F`, color:'#5c5850', font:{size:10, style:'italic'},
       },
     };
   }
-  [medianLineDataset(medianHigh, 1, 'Median (High)'), medianLineDataset(medianLow, 2, 'Median (Low)')]
+  [medianLineDataset(medianHigh, 1, 'Median (High)', 'right'), medianLineDataset(medianLow, 2, 'Median (Low)', 'left')]
     .filter(Boolean).forEach(ds => datasets.push(ds));
 
   makeChart('chartOnThisDayScatter', {
@@ -2441,14 +2435,17 @@ async function initOnThisDayScatterSection(){
     data:{ datasets },
     options:{
       responsive:true, maintainAspectRatio:false,
-      // The median labels anchor at the right end of each line (x=1.35 for
-      // High, x=2.35 for Low), and the Low line's endpoint sits very close
-      // to the axis's fixed max (2.5) -- with no reserved space, the label
-      // text runs past the plot area and gets clipped, same issue as the
-      // By Zone chart. Reserve real pixel room for it here too.
+      // The median labels anchor at the end of each line, and the Low
+      // line's right end sits very close to the axis's fixed max -- with
+      // no reserved space, label text can run past the plot area and get
+      // clipped, same issue as the By Zone chart. Reserve real pixel room
+      // for it here too (still useful now that High's label stays right).
       layout:{ padding:{ right:60 } },
       plugins:{
-        legend:{ position:'bottom', labels:{ filter:(item) => !item.text.startsWith('Median'), boxWidth:12, padding:8, font:{size:10} } },
+        legend:{ position:'bottom', labels:{
+          filter:(item) => !item.text.startsWith('Median') && item.text !== 'Other years',
+          boxWidth:12, padding:8, font:{size:10},
+        } },
         tooltip:{ callbacks:{ label:(ctx) => `${ctx.raw.year ? ctx.raw.year+': ' : ''}${num(ctx.raw.y,0)}°F` } },
       },
       scales:{
