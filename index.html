@@ -2398,6 +2398,12 @@ async function initOnThisDayScatterSection(){
 
   const maxOf = (arr) => arr.reduce((m,v) => v.value > m.value ? v : m, arr[0]);
   const minOf = (arr) => arr.reduce((m,v) => v.value < m.value ? v : m, arr[0]);
+  function median(arr){
+    if (!arr.length) return null;
+    const sorted = [...arr].map(v=>v.value).sort((a,b)=>a-b);
+    const mid = Math.floor(sorted.length/2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
+  }
   function classify(point, arr){
     if (point.year === currentYear) return 'current';
     if (arr.length && point.year === maxOf(arr).year) return 'max';
@@ -2439,7 +2445,32 @@ async function initOnThisDayScatterSection(){
       borderWidth: cat==='normal' ? 1.5 : 2,
       pointRadius: cat==='normal' ? 5 : 7,
       pointHoverRadius: cat==='normal' ? 7 : 9,
+      // Only "this year" gets its value called out with a text label --
+      // record high/low and ordinary years rely on color/legend alone.
+      datalabels: cat==='current' ? {
+        display:true, align:'top', anchor:'end', offset:6,
+        formatter:(v)=>`${num(v.y,0)}°F`, color:'#2b2b2b', font:{weight:'bold', size:11},
+      } : { display:false },
     }));
+
+  // Dashed median reference line for High and Low separately, each
+  // spanning just that column's width, with a text label at the right end.
+  const medianHigh = median(highs);
+  const medianLow = median(lows);
+  function medianLineDataset(medianVal, centerX, label){
+    if (medianVal == null) return null;
+    return {
+      label, data:[{x:centerX-0.35, y:medianVal},{x:centerX+0.35, y:medianVal}],
+      showLine:true, borderDash:[6,4], borderWidth:1.5, borderColor:'#5c5850',
+      pointRadius:0, fill:false,
+      datalabels:{
+        display:(ctx)=>ctx.dataIndex===1, align:'right', anchor:'end', offset:4,
+        formatter:()=>`Median ${num(medianVal,0)}°F`, color:'#5c5850', font:{size:10, style:'italic'},
+      },
+    };
+  }
+  [medianLineDataset(medianHigh, 1, 'Median (High)'), medianLineDataset(medianLow, 2, 'Median (Low)')]
+    .filter(Boolean).forEach(ds => datasets.push(ds));
 
   makeChart('chartOnThisDayScatter', {
     type:'scatter',
@@ -2447,8 +2478,8 @@ async function initOnThisDayScatterSection(){
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{
-        legend:{ position:'bottom' },
-        tooltip:{ callbacks:{ label:(ctx) => `${ctx.raw.year}: ${num(ctx.raw.y,0)}°F` } },
+        legend:{ position:'bottom', labels:{ filter:(item) => !item.text.startsWith('Median') } },
+        tooltip:{ callbacks:{ label:(ctx) => `${ctx.raw.year ? ctx.raw.year+': ' : ''}${num(ctx.raw.y,0)}°F` } },
       },
       scales:{
         x:{
