@@ -210,6 +210,7 @@ main{ max-width:1200px; margin:0 auto; padding:20px 20px 60px; }
 .chart-wrap{ position:relative; height:260px; }
 .chart-wrap.tall{ height:320px; }
 .chart-wrap.zone-tall{ height:420px; }
+.chart-wrap.scatter-tall{ height:480px; }
 .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .four-col{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
 @media (max-width: 760px){
@@ -219,6 +220,7 @@ main{ max-width:1200px; margin:0 auto; padding:20px 20px 60px; }
   .chart-wrap{ height:220px; }
   .chart-wrap.tall{ height:260px; }
   .chart-wrap.zone-tall{ height:400px; }
+  .chart-wrap.scatter-tall{ height:440px; }
   header.top h1{ font-size:1.05rem; }
   body{ font-size:14px; }
 }
@@ -448,7 +450,7 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="panel">
           <h3 style="font-size:0.95rem; margin-bottom:6px;">High &amp; Low Spread — Every Year</h3>
           <div class="panel-sub">Each dot is one year. This year, the record high, and the record low are called out; everything else is an ordinary year for comparison.</div>
-          <div class="chart-wrap tall"><canvas id="chartOnThisDayScatter"></canvas></div>
+          <div class="chart-wrap scatter-tall"><canvas id="chartOnThisDayScatter"></canvas></div>
         </div>
       </div>
     </section>
