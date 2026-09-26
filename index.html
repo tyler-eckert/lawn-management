@@ -554,8 +554,8 @@ table.data tr:hover td{ background:var(--surface-2); }
             <div class="year-chip-row" id="wbRangeChips">
               <span class="year-chip" data-r="7">1 week</span>
               <span class="year-chip" data-r="30">1 month</span>
-              <span class="year-chip" data-r="90">3 months</span>
-              <span class="year-chip on" data-r="180">6 months</span>
+              <span class="year-chip on" data-r="90">3 months</span>
+              <span class="year-chip" data-r="180">6 months</span>
               <span class="year-chip" data-r="365">1 year</span>
               <span class="year-chip" data-r="custom">Custom…</span>
             </div>
@@ -658,6 +658,26 @@ table.data tr:hover td{ background:var(--surface-2); }
           <h3 style="font-size:0.95rem; margin-bottom:6px;">Total rainfall by year</h3>
           <div class="yaxis-inputs" id="sl-rec-rain"></div>
           <div class="chart-wrap tall"><canvas id="chartRecRain"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ON THIS DAY ================= -->
+    <section class="collapsible" id="sec-on-this-day">
+      <button class="section-toggle" data-target="sec-on-this-day" data-icon="trend"><h2>On This Day</h2><span class="chevron">︿</span></button>
+      <div class="section-body">
+        <div class="panel-sub" id="onThisDayLabel" style="margin-bottom:10px;"></div>
+        <div class="two-col">
+          <div class="panel">
+            <h3 style="font-size:0.95rem; margin-bottom:6px;">High &amp; Low by Year</h3>
+            <div class="panel-sub">This year is highlighted and labeled</div>
+            <div class="chart-wrap tall"><canvas id="chartOnThisDayTemp"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3 style="font-size:0.95rem; margin-bottom:6px;">Rainfall by Year</h3>
+            <div class="panel-sub">This year is highlighted and labeled</div>
+            <div class="chart-wrap tall"><canvas id="chartOnThisDayRain"></canvas></div>
+          </div>
         </div>
       </div>
     </section>
@@ -1016,11 +1036,19 @@ function makeChart(id, config){
   charts[id] = new Chart(ctx, config);
   // Pinch/wheel zoom leaves people stuck zoomed in with no obvious way
   // back out on a phone -- double-tap (or double-click) the chart to reset.
+  // dblclick alone only covers desktop mice; it doesn't reliably fire for
+  // a touch double-tap, so that's handled manually via touchend timing.
   // Charts get destroyed+recreated on every redraw, but the canvas element
   // itself persists, so guard against stacking up duplicate listeners.
   if (config.options.plugins && config.options.plugins.zoom && !ctx.__zoomResetBound){
     ctx.__zoomResetBound = true;
     ctx.addEventListener('dblclick', () => { if (charts[id]) charts[id].resetZoom(); });
+    let lastTapAt = 0;
+    ctx.addEventListener('touchend', () => {
+      const now = Date.now();
+      if (now - lastTapAt < 350) { if (charts[id]) charts[id].resetZoom(); }
+      lastTapAt = now;
+    });
   }
   return charts[id];
 }
@@ -1169,6 +1197,7 @@ async function initApp(){
   await safely('explorer', initExplorerSection);
   await safely('reference', renderReferenceKc);
   await safely('records', initRecordsSection);
+  await safely('on this day', initOnThisDaySection);
 
   // Mobile browsers sometimes finish settling a chart's container into its
   // real on-screen size only AFTER Chart.js already measured it once
@@ -1884,7 +1913,7 @@ async function buildZoneBarChart(from, to){
 }
 
 async function initWaterBalanceSection(){
-  const [f, t] = [daysAgo(180), new Date()];
+  const [f, t] = [daysAgo(90), new Date()];
   $('#wbFrom').value = fmtDate(f); $('#wbTo').value = fmtDate(t);
 
   $('#wbRangeChips').querySelectorAll('.year-chip').forEach(chip => {
@@ -2278,6 +2307,69 @@ async function initRecordsSection(){
     r => (r.temp_low_f != null && r.temp_low_f <= 32) ? 1 : 0);
   buildYearlyCountChart('chartRecRain', 'sl-rec-rain', 'Rain (in)', CHART_COLORS.rain, rows,
     r => r.rain_in || 0);
+}
+
+async function initOnThisDaySection(){
+  const now = new Date();
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const labelEl = $('#onThisDayLabel');
+  if (labelEl) labelEl.textContent = now.toLocaleDateString('en-US', {month:'long', day:'numeric'});
+
+  const rows = await fetchAllRows(() => supa.from('weather_daily')
+    .select('weather_date,temp_high_f,temp_low_f,rain_in').order('weather_date'));
+
+  // Same calendar day (month+day), any year -- filtered client-side rather
+  // than with a LIKE pattern against a native date column, which PostgREST
+  // may not handle the way a text LIKE would.
+  const matches = rows.filter(r => {
+    const parts = r.weather_date.split('-');
+    return parts[1] === mm && parts[2] === dd;
+  });
+
+  if (!matches.length){
+    emptyState('chartOnThisDayTemp', 'No historical data for this date yet.');
+    emptyState('chartOnThisDayRain', 'No historical data for this date yet.');
+    return;
+  }
+
+  const currentYear = String(now.getFullYear());
+  const years = matches.map(r => yearOf(r.weather_date));
+  const highlightLabel = (ctx) => years[ctx.dataIndex] === currentYear;
+
+  const highColors = years.map(y => y===currentYear ? CHART_COLORS.high : '#c9a98a');
+  const lowColors = years.map(y => y===currentYear ? CHART_COLORS.low : '#8a9b7a');
+  makeChart('chartOnThisDayTemp', {
+    type:'bar',
+    data:{ labels:years, datasets:[
+      { label:'High (°F)', data:matches.map(r=>r.temp_high_f), backgroundColor:highColors },
+      { label:'Low (°F)', data:matches.map(r=>r.temp_low_f), backgroundColor:lowColors },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom'},
+        datalabels:{ display:highlightLabel, anchor:'end', align:'top', font:{weight:'bold'}, color:'#2b2b2b',
+          formatter:(v)=> v==null ? '' : num(v,0) },
+      },
+      scales:{ y:{title:{display:true,text:'°F'}} },
+    },
+  });
+
+  const rainColors = years.map(y => y===currentYear ? CHART_COLORS.irrigation : '#a8b89c');
+  makeChart('chartOnThisDayRain', {
+    type:'bar',
+    data:{ labels:years, datasets:[{ label:'Rain (in)', data:matches.map(r=>r.rain_in), backgroundColor:rainColors }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels:{ display:highlightLabel, anchor:'end', align:'top', font:{weight:'bold'}, color:'#2b2b2b',
+          formatter:(v)=> v==null ? '' : num(v,2) },
+      },
+      scales:{ y:{title:{display:true,text:'inches'}, beginAtZero:true} },
+    },
+  });
 }
 
 checkSession();
