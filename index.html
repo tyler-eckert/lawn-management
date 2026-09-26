@@ -2401,10 +2401,22 @@ async function initOnThisDayScatterSection(){
       pointStyle: cat==='current' ? 'rectRot' : 'circle',
       pointRadius: cat==='normal' ? 5 : (cat==='current' ? 8 : 7),
       pointHoverRadius: cat==='normal' ? 7 : (cat==='current' ? 10 : 9),
-      datalabels: LABELED.has(cat) ? {
-        display:true, align:'top', anchor:'end', offset:6,
-        formatter:(v)=>`${num(v.y,0)}°F`, color:COLOR_MAP[cat], font:{weight:'bold', size:11},
-      } : { display:false },
+      // Directional label placement so the three labeled categories never
+      // collide: the top-of-range point (hottest high / warmest low)
+      // labels above itself, the bottom-of-range point (coldest high /
+      // coldest low) labels below itself, and "this year" -- which can
+      // fall anywhere in between and would otherwise land on top of
+      // whichever extreme it's closest to -- labels off to the right instead.
+      datalabels: (() => {
+        if (!LABELED.has(cat)) return { display:false };
+        const align = (cat==='high_max' || cat==='low_max') ? 'top'
+                    : (cat==='high_min' || cat==='low_min') ? 'bottom'
+                    : 'right'; // current
+        return {
+          display:true, align, anchor:'end', offset:6,
+          formatter:(v)=>`${num(v.y,0)}°F`, color:COLOR_MAP[cat], font:{weight:'bold', size:11},
+        };
+      })(),
     }));
 
   // Dashed median reference line for High and Low separately, each
@@ -2430,6 +2442,12 @@ async function initOnThisDayScatterSection(){
   [medianLineDataset(medianHigh, 1, 'Median (High)', 'right'), medianLineDataset(medianLow, 2, 'Median (Low)', 'left')]
     .filter(Boolean).forEach(ds => datasets.push(ds));
 
+  const allValues = [...highs, ...lows].map(v => v.value);
+  const yRange = allValues.length ? Math.max(...allValues) - Math.min(...allValues) : 10;
+  const yAxisPad = allValues.length
+    ? { min: Math.min(...allValues) - yRange*0.15, max: Math.max(...allValues) + yRange*0.15 }
+    : { min: undefined, max: undefined };
+
   makeChart('chartOnThisDayScatter', {
     type:'scatter',
     data:{ datasets },
@@ -2440,7 +2458,12 @@ async function initOnThisDayScatterSection(){
       // no reserved space, label text can run past the plot area and get
       // clipped, same issue as the By Zone chart. Reserve real pixel room
       // for it here too (still useful now that High's label stays right).
-      layout:{ padding:{ right:60 } },
+      // Also: hottest-high/warmest-low labels now sit ABOVE their points,
+      // and coldest-high/coldest-low labels sit BELOW theirs -- if those
+      // points are near the y-axis's actual min/max (likely, since they
+      // ARE the min/max), the label has nowhere to go without top/bottom
+      // room reserved too.
+      layout:{ padding:{ right:60, top:24, bottom:24 } },
       plugins:{
         legend:{ position:'bottom', labels:{
           filter:(item) => !item.text.startsWith('Median') && item.text !== 'Other years',
@@ -2455,7 +2478,7 @@ async function initOnThisDayScatterSection(){
           ticks:{ callback:(v) => v===1 ? 'High' : (v===2 ? 'Low' : '') },
           grid:{ display:false },
         },
-        y:{ title:{display:true, text:'°F'} },
+        y:{ title:{display:true, text:'°F'}, suggestedMin: yAxisPad.min, suggestedMax: yAxisPad.max },
       },
     },
   });
