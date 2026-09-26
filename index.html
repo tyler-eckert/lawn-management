@@ -2477,6 +2477,12 @@ async function initOnThisDayScatterSection(){
     data:{ datasets },
     options:{
       responsive:true, maintainAspectRatio:false,
+      // The median labels anchor at the right end of each line (x=1.35 for
+      // High, x=2.35 for Low), and the Low line's endpoint sits very close
+      // to the axis's fixed max (2.5) -- with no reserved space, the label
+      // text runs past the plot area and gets clipped, same issue as the
+      // By Zone chart. Reserve real pixel room for it here too.
+      layout:{ padding:{ right:60 } },
       plugins:{
         legend:{ position:'bottom', labels:{ filter:(item) => !item.text.startsWith('Median') } },
         tooltip:{ callbacks:{ label:(ctx) => `${ctx.raw.year ? ctx.raw.year+': ' : ''}${num(ctx.raw.y,0)}°F` } },
