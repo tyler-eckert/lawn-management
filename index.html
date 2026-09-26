@@ -1917,14 +1917,23 @@ async function buildZoneBarChart(from, to){
   const values = zones.map(z => Number(totals[z].toFixed(2)));
   const barColors = zones.map(z => ZONE_GROUP_COLOR[z] || ZONE_UNGROUPED_COLOR);
 
+  // Datalabels sit just past each bar's end. With small values (Today, 1
+  // week), Chart.js's auto-scaled axis max can land very close to the
+  // longest bar with little headroom, so the label text runs past the
+  // plot area and gets clipped. Force some breathing room both in the
+  // axis's own range (suggestedMax) and in raw pixels (layout padding),
+  // so this holds regardless of how small or large the values are.
+  const maxVal = values.length ? Math.max(...values) : 0;
+
   makeChart('chartZoneBar', {
     type:'bar',
     data:{ labels, datasets:[{ label:'Total inches applied', data:values, backgroundColor:barColors }] },
     options:{
       responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      layout:{ padding:{ right:36 } },
       plugins:{ legend:{display:false},
         datalabels:{ display:true, color:'#2b2b2b', anchor:'end', align:'right', formatter:(v)=>num(v,2) } },
-      scales:{ x:{ beginAtZero:true, title:{display:true, text:'inches'} } },
+      scales:{ x:{ beginAtZero:true, suggestedMax: maxVal*1.2 || undefined, title:{display:true, text:'inches'} } },
     },
   });
 }
