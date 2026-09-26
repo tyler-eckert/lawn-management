@@ -2414,8 +2414,11 @@ async function initOnThisDayScatterSection(){
         const align = (cat==='high_max' || cat==='low_max') ? 'top'
                     : (cat==='high_min' || cat==='low_min') ? 'bottom'
                     : 'right'; // current
+        // Bottom-aligned labels (coldest high/low) were sitting too close
+        // to their points -- more offset than top/right needs.
+        const offset = (cat==='high_min' || cat==='low_min') ? 14 : 6;
         return {
-          display:true, align, anchor:'end', offset:6,
+          display:true, align, anchor:'end', offset,
           formatter:(v)=>`${num(v.y,0)}°F`, color:COLOR_MAP[cat], font:{weight:'bold', size:11},
         };
       })(),
@@ -2465,7 +2468,7 @@ async function initOnThisDayScatterSection(){
       // points are near the y-axis's actual min/max (likely, since they
       // ARE the min/max), the label has nowhere to go without top/bottom
       // room reserved too.
-      layout:{ padding:{ right:60, top:24, bottom:24 } },
+      layout:{ padding:{ right:60, top:24, bottom:34 } },
       plugins:{
         legend:{ position:'bottom', labels:{
           filter:(item) => !item.text.startsWith('Median') && item.text !== 'Other years',
