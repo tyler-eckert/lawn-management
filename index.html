@@ -580,12 +580,12 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Bermuda</h3>
-            <div class="panel-sub">Inches per week, averaged across stations 1, 2, 6 &amp; 7 — gray area: water needed. Rain and irrigation stack together.</div>
+            <div class="panel-sub">Inches per week, averaged across stations 1, 2, 6 &amp; 7 — gray area: water needed. Rain and irrigation stack together. The current week's Water Need is projected from the pace so far, matching the KPI tile above.</div>
             <div class="chart-wrap tall"><canvas id="chartBalanceBermuda"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Fescue</h3>
-            <div class="panel-sub">Inches per week, averaged across stations 3 &amp; 4</div>
+            <div class="panel-sub">Inches per week, averaged across stations 3 &amp; 4. The current week's Water Need is projected from the pace so far, matching the KPI tile above.</div>
             <div class="chart-wrap tall"><canvas id="chartBalanceFescue"></canvas></div>
           </div>
         </div>
@@ -1811,13 +1811,22 @@ async function buildWaterRadarChart(){
     byZone[r.zone_number].applied += (r.irrigation_applied_in || 0);
   });
 
+  // Need is projected to a full 7 days from the pace seen so far, matching
+  // the Bermuda/Fescue water-need KPIs and the Water Balance chart, so all
+  // three agree on "this week." Water applied stays as the real total --
+  // projecting future irrigation isn't meaningful the same way a
+  // weather-driven rate is.
+  const distinctDays = new Set(data.map(r => r.weather_date)).size;
+
   const labels = [], appliedVals = [], needVals = [];
   RADAR_GROUPS.forEach(g => {
     const weeklyApplied = g.zones.filter(z => byZone[z]).map(z => byZone[z].applied);
     const weeklyNeed = g.zones.filter(z => byZone[z]).map(z => byZone[z].etc);
     labels.push(g.label);
     appliedVals.push(weeklyApplied.length ? Number(avg(weeklyApplied).toFixed(2)) : 0);
-    needVals.push(weeklyNeed.length ? Number(avg(weeklyNeed).toFixed(2)) : 0);
+    let needAvg = weeklyNeed.length ? avg(weeklyNeed) : 0;
+    if (distinctDays > 0 && distinctDays < 7) needAvg = (needAvg / distinctDays) * 7;
+    needVals.push(Number(needAvg.toFixed(2)));
   });
 
   makeChart('chartWaterRadar', {
@@ -1827,7 +1836,7 @@ async function buildWaterRadarChart(){
       datasets: [
         { label:'Water applied (in)', data:appliedVals, order:1,
           borderColor:'#2e4a34', backgroundColor:'rgba(46,74,52,0.30)', borderWidth:2 },
-        { label:'Need this week (ETc, in)', data:needVals, order:2,
+        { label:'Need this week (projected)', data:needVals, order:2,
           borderColor:'#8b8478', backgroundColor:'transparent', borderWidth:2, borderDash:[5,3] },
       ],
     },
@@ -1985,15 +1994,31 @@ async function buildGrassBalanceChart(grassType, chartId, from, to){
     return sunday.toISOString().slice(0,10);
   }
   const weekBuckets = {};
+  const weekDayCounts = {};
   dates.forEach(d => {
     const key = sundayOf(d);
     weekBuckets[key] = weekBuckets[key] || {etc:0, rain:0, applied:0};
+    weekDayCounts[key] = (weekDayCounts[key] || 0) + 1;
     weekBuckets[key].etc += (avg(byDate[d].etc) || 0);
     weekBuckets[key].rain += (avg(byDate[d].rain) || 0);
     weekBuckets[key].applied += (avg(byDate[d].applied) || 0);
   });
   const weeks = Object.keys(weekBuckets).sort();
-  const etc = weeks.map(w => Number(weekBuckets[w].etc.toFixed(3)));
+
+  // The current (potentially partial) week's Water Need is projected to a
+  // full 7 days at the pace seen so far -- matching the same convention as
+  // the Bermuda/Fescue water-need KPIs, so this chart's most recent bar
+  // doesn't conflict with what those tiles show for "this week." Only
+  // Water Need is projected (matching the KPI's own scope); Rain and
+  // Irrigation stay as real accumulated totals, since projecting future
+  // irrigation isn't meaningful the same way a weather-driven rate is.
+  const thisWeekKey = sundayOf(fmtDate(new Date()));
+  const etc = weeks.map(w => {
+    const days = weekDayCounts[w];
+    const total = weekBuckets[w].etc;
+    if (w === thisWeekKey && days < 7) return Number(((total/days)*7).toFixed(3));
+    return Number(total.toFixed(3));
+  });
   const rain = weeks.map(w => Number(weekBuckets[w].rain.toFixed(3)));
   const applied = weeks.map(w => Number(weekBuckets[w].applied.toFixed(3)));
 
@@ -2416,7 +2441,7 @@ async function initOnThisDayScatterSection(){
                     : 'right'; // current
         // Bottom-aligned labels (coldest high/low) were sitting too close
         // to their points -- more offset than top/right needs.
-        const offset = (cat==='high_min' || cat==='low_min') ? 14 : 6;
+        const offset = (cat==='high_min' || cat==='low_min') ? 26 : 6;
         return {
           display:true, align, anchor:'end', offset,
           formatter:(v)=>`${num(v.y,0)}°F`, color:COLOR_MAP[cat], font:{weight:'bold', size:11},
@@ -2468,7 +2493,7 @@ async function initOnThisDayScatterSection(){
       // points are near the y-axis's actual min/max (likely, since they
       // ARE the min/max), the label has nowhere to go without top/bottom
       // room reserved too.
-      layout:{ padding:{ right:60, top:24, bottom:34 } },
+      layout:{ padding:{ right:60, top:24, bottom:48 } },
       plugins:{
         legend:{ position:'bottom', labels:{
           filter:(item) => !item.text.startsWith('Median') && item.text !== 'Other years',
