@@ -2477,8 +2477,11 @@ async function initOnThisDayScatterSection(){
 
   const allValues = [...highs, ...lows].map(v => v.value);
   const yRange = allValues.length ? Math.max(...allValues) - Math.min(...allValues) : 10;
+  // Min side gets a bigger buffer than max -- the "coldest" labels sitting
+  // below their points use a larger offset than the "hottest"/"this year"
+  // labels do, so they need more axis room to avoid clipping.
   const yAxisPad = allValues.length
-    ? { min: Math.min(...allValues) - yRange*0.15, max: Math.max(...allValues) + yRange*0.15 }
+    ? { min: Math.min(...allValues) - yRange*0.22, max: Math.max(...allValues) + yRange*0.15 }
     : { min: undefined, max: undefined };
 
   makeChart('chartOnThisDayScatter', {
@@ -2496,7 +2499,10 @@ async function initOnThisDayScatterSection(){
       // points are near the y-axis's actual min/max (likely, since they
       // ARE the min/max), the label has nowhere to go without top/bottom
       // room reserved too.
-      layout:{ padding:{ right:20, top:24, bottom:48 } },
+      // bottom is intentionally small -- the "coldest" labels' room comes
+      // from the y-axis's own suggestedMin buffer below, not from raw
+      // layout padding, which just adds dead space below the legend.
+      layout:{ padding:{ right:20, top:24, bottom:4 } },
       plugins:{
         legend:{ position:'bottom', labels:{
           filter:(item) => !item.text.startsWith('Median') && item.text !== 'Other years',
