@@ -210,7 +210,7 @@ main{ max-width:1200px; margin:0 auto; padding:20px 20px 60px; }
 .chart-wrap{ position:relative; height:260px; }
 .chart-wrap.tall{ height:320px; }
 .chart-wrap.zone-tall{ height:420px; }
-.chart-wrap.scatter-tall{ height:480px; }
+.chart-wrap.scatter-tall{ height:420px; }
 .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .four-col{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
 @media (max-width: 760px){
@@ -220,7 +220,7 @@ main{ max-width:1200px; margin:0 auto; padding:20px 20px 60px; }
   .chart-wrap{ height:220px; }
   .chart-wrap.tall{ height:260px; }
   .chart-wrap.zone-tall{ height:400px; }
-  .chart-wrap.scatter-tall{ height:440px; }
+  .chart-wrap.scatter-tall{ height:390px; }
   header.top h1{ font-size:1.05rem; }
   body{ font-size:14px; }
 }
@@ -449,7 +449,6 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="panel-sub" id="onThisDayLabel" style="margin-bottom:10px;"></div>
         <div class="panel">
           <h3 style="font-size:0.95rem; margin-bottom:6px;">High &amp; Low Spread — Every Year</h3>
-          <div class="panel-sub">Each dot is one year. This year, the record high, and the record low are called out; everything else is an ordinary year for comparison.</div>
           <div class="chart-wrap scatter-tall"><canvas id="chartOnThisDayScatter"></canvas></div>
         </div>
       </div>
@@ -2497,7 +2496,7 @@ async function initOnThisDayScatterSection(){
       // points are near the y-axis's actual min/max (likely, since they
       // ARE the min/max), the label has nowhere to go without top/bottom
       // room reserved too.
-      layout:{ padding:{ right:60, top:24, bottom:48 } },
+      layout:{ padding:{ right:20, top:24, bottom:48 } },
       plugins:{
         legend:{ position:'bottom', labels:{
           filter:(item) => !item.text.startsWith('Median') && item.text !== 'Other years',
@@ -2512,7 +2511,7 @@ async function initOnThisDayScatterSection(){
           ticks:{ callback:(v) => v===1 ? 'High' : (v===2 ? 'Low' : '') },
           grid:{ display:false },
         },
-        y:{ title:{display:true, text:'°F'}, suggestedMin: yAxisPad.min, suggestedMax: yAxisPad.max },
+        y:{ title:{display:false}, suggestedMin: yAxisPad.min, suggestedMax: yAxisPad.max },
       },
     },
   });
