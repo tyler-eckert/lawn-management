@@ -457,10 +457,23 @@ table.data tr:hover td{ background:var(--surface-2); }
     <!-- ================= SHARED CONTROLS (sticky) ================= -->
     <div class="panel">
       <h2>Years &amp; range</h2>
-      <div class="panel-sub">Tap a year to toggle it on every chart below. Pinch (or scroll-wheel) to zoom in/out on any chart directly, double-tap to reset.</div>
     </div>
     <div class="sticky-controls">
       <div class="year-controls" id="yc-shared"></div>
+      <div class="year-controls" style="margin-top:10px;">
+        <div class="year-group">
+          <div class="yg-label">Day range (centered on today, across all shown years)</div>
+          <div class="year-chip-row" id="doyRangeChips">
+            <span class="year-chip" data-r="today">Today</span>
+            <span class="year-chip" data-r="lastweek">Last week</span>
+            <span class="year-chip" data-r="thisweek">This week</span>
+            <span class="year-chip" data-r="1month">1 month</span>
+            <span class="year-chip" data-r="3month">3 months</span>
+            <span class="year-chip" data-r="6month">6 months</span>
+            <span class="year-chip on" data-r="full">Full year</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ================= 1. DAILY HIGHS & LOWS ================= -->
@@ -518,7 +531,7 @@ table.data tr:hover td{ background:var(--surface-2); }
     <section class="collapsible" id="sec-deficit-bermuda">
       <button class="section-toggle" data-target="sec-deficit-bermuda" data-icon="droplet"><h2>Running Water Deficit</h2><span class="chevron">︿</span></button>
       <div class="section-body">
-        <div class="panel-sub" style="margin-bottom:10px;">Running shortfall, floored at 0 each day (a surplus day doesn't bank against a future dry spell). Resets each Jan 1. Green = ok, yellow = watch (80% of threshold), red = irrigate.</div>
+        <div class="panel-sub" style="margin-bottom:10px;">Inches per week</div>
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Bermuda</h3>
@@ -579,12 +592,12 @@ table.data tr:hover td{ background:var(--surface-2); }
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Bermuda</h3>
-            <div class="panel-sub">Inches per week, averaged across stations 1, 2, 6 &amp; 7 — gray area: water needed. Rain and irrigation stack together. The current week's Water Need is projected from the pace so far, matching the KPI tile above.</div>
+            <div class="panel-sub">Inches per week</div>
             <div class="chart-wrap tall"><canvas id="chartBalanceBermuda"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Fescue</h3>
-            <div class="panel-sub">Inches per week, averaged across stations 3 &amp; 4. The current week's Water Need is projected from the pace so far, matching the KPI tile above.</div>
+            <div class="panel-sub">Inches per week</div>
             <div class="chart-wrap tall"><canvas id="chartBalanceFescue"></canvas></div>
           </div>
         </div>
@@ -1514,6 +1527,62 @@ function finalizeSharedYearControls(){
   render();
 }
 
+// Day-of-year window presets, centered on today, applied globally across
+// every day-of-year chart (the multi-year overlays above, plus the Running
+// Water Deficit charts, which aren't part of the year-tile system at all
+// since they only ever show one year -- they get their own small registry
+// below so the same preset can still reach them).
+// Ranges are computed in DAY-OF-YEAR terms, not real calendar dates: a
+// "future" window like Today+tomorrow has no data for the CURRENT year
+// (that hasn't happened yet), but other selected years' lines have real
+// data at that same day-of-year position, since those years are already
+// complete. Ranges are clamped to [1,366] at the actual year boundary
+// rather than wrapping, so a preset near Dec 31 or Jan 1 may end up
+// asymmetric rather than centered.
+let globalDoyRange = { min: 1, max: 366 };
+function computeDoyRange(preset){
+  if (preset === 'full') return { min: 1, max: 366 };
+  const today = new Date();
+  const todayDoy = dayOfYear(fmtDate(today));
+  const sunday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+  const sundayDoy = dayOfYear(fmtDate(sunday));
+  let lo, hi;
+  switch(preset){
+    case 'today':     lo = todayDoy;        hi = todayDoy + 1;   break; // today + tomorrow
+    case 'lastweek':  lo = sundayDoy - 7;   hi = sundayDoy + 6;  break; // last calendar week + this one
+    case 'thisweek':  lo = sundayDoy;       hi = sundayDoy + 6;  break; // this Sunday + the next 6 days
+    case '1month':    lo = todayDoy - 30;   hi = todayDoy + 30;  break; // last month + next month
+    case '3month':    lo = todayDoy - 90;   hi = todayDoy + 90;  break; // last 3 months + next 3
+    case '6month':    lo = todayDoy - 180;  hi = todayDoy + 180; break; // last 6 months + next 6
+    default:          lo = 1;               hi = 366;
+  }
+  return { min: Math.max(1, lo), max: Math.min(366, hi) };
+}
+
+// Deficit charts always show just the current (or latest available) year,
+// so they sit outside the year-tile system entirely -- this is their own
+// lightweight equivalent of registeredTrendCharts/redrawAllTrendCharts,
+// just for reacting to a day-of-year preset change.
+const registeredDeficitCharts = [];
+function redrawAllDeficitCharts(){
+  registeredDeficitCharts.forEach(draw => {
+    try { draw(); }
+    catch (e) { console.error('A deficit chart failed to redraw (others should be unaffected):', e); }
+  });
+}
+
+function finalizeDoyRangeControls(){
+  $('#doyRangeChips').querySelectorAll('.year-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      $('#doyRangeChips').querySelectorAll('.year-chip').forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+      globalDoyRange = computeDoyRange(chip.dataset.r);
+      redrawAllTrendCharts();
+      redrawAllDeficitCharts();
+    });
+  });
+}
+
 // Color a year deterministically by its distance from the current year, so
 // "this year" always reads the same color (turf green) regardless of which
 // other years happen to be shown alongside it.
@@ -1536,9 +1605,9 @@ function zoomPanConfig(){
   };
 }
 
-function monthWeekXAxis(){
+function monthWeekXAxis(min=1, max=366){
   return {
-    type:'linear', title:{display:false}, min:1, max:366,
+    type:'linear', title:{display:false}, min, max,
     afterBuildTicks:(axis) => {
       const lo = axis.min, hi = axis.max;
       const majors = DOY_MONTH_STARTS.filter(d => d >= lo && d <= hi);
@@ -1591,27 +1660,36 @@ async function buildDeficitChart(grassType, chartId, sliderContainerId){
   const watch = Number((threshold * 0.8).toFixed(3));
   const statusColor = (y) => y >= threshold ? '#b5522f' : (y >= watch ? '#c49a6c' : '#2e4a34');
 
-  const chart = makeChart(chartId, {
-    type:'line',
-    data:{ datasets:[
-      { label:'Deficit', data:plotPoints, pointRadius:0, tension:.15, fill:false, borderWidth:2.5,
-        segment:{ borderColor: ctx => statusColor(ctx.p1.parsed.y) } },
-      { label:`Irrigate (${threshold}")`, data:[{x:1,y:threshold},{x:366,y:threshold}],
-        borderColor:'#b5522f', borderDash:[5,4], borderWidth:1.5, pointRadius:0, pointStyle:'line' },
-      { label:`Watch (${watch}")`, data:[{x:1,y:watch},{x:366,y:watch}],
-        borderColor:'#c49a6c', borderDash:[5,4], borderWidth:1.5, pointRadius:0, pointStyle:'line' },
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:true, position:'bottom',
-        labels:{ filter: (item) => item.text !== 'Deficit' } }, // the line's own color already says the status
-        zoom: zoomPanConfig() },
-      scales:{ x: monthWeekXAxis(),
-               y:{title:{display:false}} } }
-  });
+  function draw(){
+    const chart = makeChart(chartId, {
+      type:'line',
+      data:{ datasets:[
+        { label:'Deficit', data:plotPoints, pointRadius:0, tension:.15, fill:false, borderWidth:2.5,
+          segment:{ borderColor: ctx => statusColor(ctx.p1.parsed.y) } },
+        { label:`Irrigate (${threshold}")`, data:[{x:globalDoyRange.min,y:threshold},{x:globalDoyRange.max,y:threshold}],
+          borderColor:'#b5522f', borderDash:[5,4], borderWidth:1.5, pointRadius:0, pointStyle:'line' },
+        { label:`Watch (${watch}")`, data:[{x:globalDoyRange.min,y:watch},{x:globalDoyRange.max,y:watch}],
+          borderColor:'#c49a6c', borderDash:[5,4], borderWidth:1.5, pointRadius:0, pointStyle:'line' },
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:true, position:'bottom',
+          labels:{ filter: (item) => item.text !== 'Deficit' } }, // the line's own color already says the status
+          zoom: zoomPanConfig() },
+        scales:{ x: monthWeekXAxis(globalDoyRange.min, globalDoyRange.max),
+                 y:{title:{display:false}} } }
+    });
 
-  const allY = plotPoints.map(p=>p.y).concat([threshold]);
-  try { wireYAxisInputs(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:true}); }
-  catch (e) { console.error(`Y-axis inputs failed for ${chartId}:`, e); }
+    // Y-axis fit to only what's visible in the current day-of-year window,
+    // same reasoning as the multi-year charts -- falls back to the full
+    // series if the window happens to contain no points at all.
+    const visiblePlotY = plotPoints.filter(p => p.x >= globalDoyRange.min && p.x <= globalDoyRange.max).map(p=>p.y);
+    const allY = (visiblePlotY.length ? visiblePlotY : plotPoints.map(p=>p.y)).concat([threshold]);
+    try { wireYAxisInputs(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:true}); }
+    catch (e) { console.error(`Y-axis inputs failed for ${chartId}:`, e); }
+  }
+
+  registeredDeficitCharts.push(draw);
+  draw();
 }
 
 // Default reference period for the Average line and min/max band --
@@ -1644,7 +1722,6 @@ async function buildMultiYearChart(opts){
 
   function draw(){
     const showYears = years.filter(y => sharedYears.selected.has(y));
-    const allY = processed.map(r=>r.cum);
 
     const datasets = showYears.map((y) => ({
       label: y,
@@ -1674,10 +1751,19 @@ async function buildMultiYearChart(opts){
       type: chartType, data:{ datasets },
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{ display:true, position:'bottom' }, zoom: zoomPanConfig() },
-        scales:{ x: monthWeekXAxis(),
+        scales:{ x: monthWeekXAxis(globalDoyRange.min, globalDoyRange.max),
                  y:{title:{display:false}, ticks: yWholeNumbers ? {precision:0} : {}} } }
     });
-    try { wireYAxisInputs(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:zeroFloorY, wholeNumbers:yWholeNumbers}); }
+    // Y-axis fit to only what's VISIBLE within the current day-of-year
+    // window (across whichever datasets are shown, including the average/
+    // min-max lines), not the full year's range -- so a preset actually
+    // zooms both axes together, not just the x-axis.
+    const visibleY = datasets.flatMap(ds => ds.data)
+      .filter(p => p.x >= globalDoyRange.min && p.x <= globalDoyRange.max)
+      .map(p => p.y);
+    const yMinSrc = visibleY.length ? Math.min(0, ...visibleY) : 0;
+    const yMaxSrc = visibleY.length ? Math.max(...visibleY) : 1;
+    try { wireYAxisInputs(sliderContainerId, chart, yMinSrc, yMaxSrc, {zeroFloor:zeroFloorY, wholeNumbers:yWholeNumbers}); }
     catch (e) { console.error(`Y-axis inputs failed for ${chartId}:`, e); }
   }
 
@@ -1756,6 +1842,7 @@ async function initTrendCharts(){
   ]);
 
   finalizeSharedYearControls();
+  finalizeDoyRangeControls();
   redrawAllTrendCharts();
 }
 </script>
