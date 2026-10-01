@@ -2426,15 +2426,30 @@ async function buildYearlyCountChart(chartId, sliderContainerId, label, color, r
   };
   const lightColors = barColors.map(c => lighten(c, 0.3));
   const tdLabel = new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  // True when the solid bar is tall enough (in pixels) to hold a white label.
+  const solidFits = (ctx) => {
+    const v = solidVals[ctx.dataIndex];
+    if (!(v > 0)) return false;
+    const y = ctx.chart.scales && ctx.chart.scales.y;
+    if (!y) return true;
+    return (y.getPixelForValue(0) - y.getPixelForValue(v)) >= 20;
+  };
   const chart = makeChart(chartId, {
     type:'bar',
     data:{ labels:years, datasets:[
+      // To-date value sits inside the top of the solid bar in white, but only
+      // when the bar is tall enough to hold it legibly -- a sliver of a bar
+      // (or a zero) would otherwise clip or overflow the white text.
       { label:`Through ${tdLabel}`, data:solidVals, backgroundColor:barColors, stack:'y',
-        datalabels:{ display:false } },
-      // The full-year total labels the top of the stack; for the current
-      // year (no remainder) that's simply its to-date value.
+        datalabels:{ display:(ctx) => solidFits(ctx), anchor:'end', align:'start', offset:4,
+          color:'#ffffff', font:{weight:'bold', size:11}, formatter:(v) => v } },
+      // The full-year total labels the top of the stack. Hidden when it would
+      // just repeat the in-bar label (no remainder and the bar fits its label,
+      // e.g. the current year); kept as a fallback when the solid bar is too
+      // short to hold its own label.
       { label:'Rest of year', data:lightVals, backgroundColor:lightColors, stack:'y',
-        datalabels:{ display:true, anchor:'end', align:'top', offset:2, color:'#2b2b2b',
+        datalabels:{ display:(ctx) => lightVals[ctx.dataIndex] > 0 || !solidFits(ctx),
+          anchor:'end', align:'top', offset:2, color:'#2b2b2b',
           font:{weight:'bold'}, formatter:(v, ctx) => totals[ctx.dataIndex] } },
     ] },
     options:{ responsive:true, maintainAspectRatio:false,
