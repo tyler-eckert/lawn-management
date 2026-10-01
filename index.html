@@ -648,7 +648,7 @@ table.data tr:hover td{ background:var(--surface-2); }
     <section class="collapsible" id="sec-records">
       <button class="section-toggle" data-target="sec-records" data-icon="trend"><h2>Records</h2><span class="chevron">︿</span></button>
       <div class="section-body">
-        <div class="panel-sub" style="margin-bottom:10px;">Gray bars are typical years — the lowest year is flagged blue, the highest flagged red.</div>
+        <div class="panel-sub" style="margin-bottom:10px;">Solid bars run through today; light bars show the rest of each year. Lowest full year is blue, highest is red.</div>
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Days at or above 100°F</h3>
@@ -2385,29 +2385,67 @@ function attachSort(theadSelector, stateRef, accessors, rerenderFn){
 
 async function buildYearlyCountChart(chartId, sliderContainerId, label, color, rows, countFn){
   if (!rows.length){ emptyState(chartId, 'No data yet.'); return; }
-  const byYear = {};
-  rows.forEach(r => { const y = yearOf(r.weather_date); byYear[y] = (byYear[y] || 0) + countFn(r); });
-  const years = Object.keys(byYear).sort();
-  const values = years.map(y => Math.round(byYear[y]*10)/10);
-  const maxVal = Math.max(...values, 0);
-  const minVal = Math.min(...values);
-  // Gray bars for typical years; the single lowest year flagged blue, the
-  // single highest flagged red -- no separate reference lines needed.
-  const firstMaxIdx = values.indexOf(maxVal);
-  const firstMinIdx = values.indexOf(minVal);
-  const barColors = values.map((v, i) => {
-    if (i === firstMaxIdx && maxVal !== minVal) return '#b5522f'; // rust (highest)
-    if (i === firstMinIdx && maxVal !== minVal) return '#3a6ea5'; // blue (lowest)
+  // Each year is split at today's month-day: the solid portion is everything
+  // through today, the light portion is the rest of that year. Compared by
+  // MM-DD string (not day-of-year) so leap years line up, and "today" comes
+  // from fmtDate (local calendar date, never toISOString/UTC).
+  const todayMD = fmtDate(new Date()).slice(5);
+  const currentYear = String(new Date().getFullYear());
+  const toDate = {}, rest = {};
+  rows.forEach(r => {
+    const y = yearOf(r.weather_date);
+    if (!(y in toDate)) { toDate[y] = 0; rest[y] = 0; }
+    const v = countFn(r);
+    if (r.weather_date.slice(5) <= todayMD) toDate[y] += v; else rest[y] += v;
+  });
+  const years = Object.keys(toDate).sort();
+  const r1 = (v) => Math.round(v*10)/10;
+  const solidVals = years.map(y => r1(toDate[y]));
+  const lightVals = years.map(y => r1(rest[y]));
+  const totals = years.map((y, i) => r1(solidVals[i] + lightVals[i]));
+  const maxVal = Math.max(...totals, 0);
+  const minVal = Math.min(...totals);
+  // Gray bars for typical years; the highest full year flagged rust, the
+  // lowest flagged blue. The current year is still in progress, so it's
+  // excluded from the extremes -- its partial total would always read as
+  // "lowest" and the solid bar already shows where it stands to date.
+  const completeIdx = years.map((y, i) => i).filter(i => years[i] !== currentYear);
+  const compTotals = completeIdx.map(i => totals[i]);
+  const cMax = compTotals.length ? Math.max(...compTotals) : 0;
+  const cMin = compTotals.length ? Math.min(...compTotals) : 0;
+  const firstMaxIdx = compTotals.length ? completeIdx[compTotals.indexOf(cMax)] : -1;
+  const firstMinIdx = compTotals.length ? completeIdx[compTotals.indexOf(cMin)] : -1;
+  const barColors = totals.map((v, i) => {
+    if (i === firstMaxIdx && cMax !== cMin) return '#b5522f'; // rust (highest)
+    if (i === firstMinIdx && cMax !== cMin) return '#3a6ea5'; // blue (lowest)
     return '#a39d8f'; // neutral gray
   });
+  const lighten = (hex, a) => {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;
+  };
+  const lightColors = barColors.map(c => lighten(c, 0.3));
+  const tdLabel = new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'});
   const chart = makeChart(chartId, {
     type:'bar',
-    data:{ labels:years, datasets:[{ label, data:values, backgroundColor:barColors }] },
+    data:{ labels:years, datasets:[
+      { label:`Through ${tdLabel}`, data:solidVals, backgroundColor:barColors, stack:'y',
+        datalabels:{ display:false } },
+      // The full-year total labels the top of the stack; for the current
+      // year (no remainder) that's simply its to-date value.
+      { label:'Rest of year', data:lightVals, backgroundColor:lightColors, stack:'y',
+        datalabels:{ display:true, anchor:'end', align:'top', offset:2, color:'#2b2b2b',
+          font:{weight:'bold'}, formatter:(v, ctx) => totals[ctx.dataIndex] } },
+    ] },
     options:{ responsive:true, maintainAspectRatio:false,
       layout:{ padding:{ top:22 } },
       plugins:{ legend:{display:false},
-        datalabels:{ display:true, anchor:'end', align:'top', offset:2, color:'#2b2b2b', font:{weight:'bold'} } },
-      scales:{ y:{ beginAtZero:true, suggestedMax: maxVal*1.15, ticks:{precision:0} } } }
+        tooltip:{ callbacks:{
+          label:(ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`,
+          footer:(items) => `Full year: ${totals[items[0].dataIndex]}`,
+        } } },
+      scales:{ x:{ stacked:true },
+        y:{ stacked:true, beginAtZero:true, suggestedMax: maxVal*1.15, ticks:{precision:0} } } }
   });
   wireYAxisInputs(sliderContainerId, chart, 0, maxVal, {zeroFloor:true, wholeNumbers:true});
 }
