@@ -1710,7 +1710,11 @@ function dayOfYearMinMaxDatasets(doyGroups){
 }
 
 async function buildMultiYearChart(opts){
-  const { chartId, sliderContainerId, fetchRows, cumulative, yLabel, chartType='line', zeroFloorY=false, showMinMax=true, yWholeNumbers=false } = opts;
+  const { chartId, sliderContainerId, fetchRows, cumulative, yLabel, chartType='line', zeroFloorY=false, showMinMax=true, yWholeNumbers=false,
+          // Only bar charts have to be anchored at 0 (a bar's length IS its value).
+          // Line charts should fit the visible data, otherwise the Y-axis can never
+          // zoom in on the lower side -- e.g. temps would always start near -15.
+          includeZeroY = (chartType === 'bar') } = opts;
   const rawRows = await fetchRows();
   if (!rawRows || !rawRows.length){ emptyState(chartId, 'No data yet.'); return; }
 
@@ -1758,10 +1762,13 @@ async function buildMultiYearChart(opts){
     // window (across whichever datasets are shown, including the average/
     // min-max lines), not the full year's range -- so a preset actually
     // zooms both axes together, not just the x-axis.
+    // +/-1 day margin so the line segment running off each edge of the window
+    // (clipped at the axis boundary) can't poke outside the fitted Y range.
     const visibleY = datasets.flatMap(ds => ds.data)
-      .filter(p => p.x >= globalDoyRange.min && p.x <= globalDoyRange.max)
+      .filter(p => p.x >= globalDoyRange.min - 1 && p.x <= globalDoyRange.max + 1)
       .map(p => p.y);
-    const yMinSrc = visibleY.length ? Math.min(0, ...visibleY) : 0;
+    const yMinSrc = !visibleY.length ? 0
+      : (includeZeroY ? Math.min(0, ...visibleY) : Math.min(...visibleY));
     const yMaxSrc = visibleY.length ? Math.max(...visibleY) : 1;
     try { wireYAxisInputs(sliderContainerId, chart, yMinSrc, yMaxSrc, {zeroFloor:zeroFloorY, wholeNumbers:yWholeNumbers}); }
     catch (e) { console.error(`Y-axis inputs failed for ${chartId}:`, e); }
