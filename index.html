@@ -441,6 +441,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
 .bud-tl-axis{ position:relative; height:16px; font-size:0.7rem; color:var(--text-tertiary); font-family:ui-monospace,monospace; }
 .bud-tl-axis span{ position:absolute; top:0; white-space:nowrap; }
 /* ---------- Layout settings drawer ---------- */
+.lay-hidden{ display:none !important; }
 .icon-btn{ background:var(--surface); border:none; color:var(--text-secondary); width:34px; height:34px; border-radius:50%; display:inline-grid; place-items:center; cursor:pointer; flex-shrink:0; padding:0; font-family:inherit; }
 .icon-btn:hover{ background:var(--line-soft); }
 #layoutOverlay{ position:fixed; inset:0; background:rgba(30,30,25,0.38); z-index:150; opacity:0; pointer-events:none; transition:opacity .2s ease; }
@@ -455,6 +456,11 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
 .lay-row.lay-chart{ margin-left:28px; border-bottom:1px dashed var(--line-soft); }
 .lay-name{ flex:1; min-width:0; font-size:0.9rem; font-weight:600; }
 .lay-chart .lay-name{ font-weight:500; font-size:0.84rem; color:var(--text-secondary); }
+.lay-vis{ position:relative; width:42px; height:24px; flex-shrink:0; border:none; border-radius:12px; background:var(--line); cursor:pointer; padding:0; transition:background .15s ease; }
+.lay-vis span{ position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.3); transition:transform .15s ease; }
+.lay-vis.on{ background:var(--turf); }
+.lay-vis.on span{ transform:translateX(18px); }
+.lay-sec.is-hidden > .lay-row .lay-name{ opacity:0.45; }
 .lay-count{ margin-left:8px; font-size:0.7rem; font-weight:500; color:var(--text-tertiary); }
 .lay-exp{ width:26px; height:34px; background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:0.9rem; padding:0; }
 .lay-exp:disabled{ visibility:hidden; }
@@ -2872,7 +2878,7 @@ checkSession();
 <div id="layoutOverlay"></div>
 <aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
   <div class="lay-head"><h2>Layout</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
-  <p class="lay-help">Use ▲ ▼ to reorder sections. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device.</p>
+  <p class="lay-help">Use the switch to show or hide a section, and ▲ ▼ to reorder. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device.</p>
   <div id="layoutList"></div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset to default</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
@@ -3328,11 +3334,16 @@ checkSession();
     return out;
   }
 
+  const isHidden = s => s.classList.contains('lay-hidden');
+
   function placeRangeControls(){
     const head = document.getElementById('rangeControlsHeading');
     const ctl = document.getElementById('rangeControls');
     if (!head || !ctl) return;
-    const first = secEls().find(s => RANGE_SECTIONS.includes(s.id));
+    // sit above the first VISIBLE section that uses them; if every one of those is hidden, hide the controls too
+    const first = secEls().find(s => RANGE_SECTIONS.includes(s.id) && !isHidden(s));
+    head.classList.toggle('lay-hidden', !first);
+    ctl.classList.toggle('lay-hidden', !first);
     if (!first || ctl.nextElementSibling === first) return;
     main.insertBefore(head, first);
     main.insertBefore(ctl, first);
@@ -3364,7 +3375,7 @@ checkSession();
   function snapshot(){
     const charts = {};
     secEls().forEach(s => { charts[s.id] = chartPanels(s).map(panelKey); });
-    return { sections: secEls().map(s => s.id), charts };
+    return { sections: secEls().map(s => s.id), charts, hidden: secEls().filter(isHidden).map(s => s.id) };
   }
   function persist(){ try { localStorage.setItem(LS_KEY, JSON.stringify(snapshot())); } catch (e) {} }
 
@@ -3374,6 +3385,8 @@ checkSession();
     if (saved && Array.isArray(saved.sections)){
       applySectionOrder(saved.sections);
       Object.keys(saved.charts || {}).forEach(id => applyChartOrder(id, saved.charts[id]));
+      if (Array.isArray(saved.hidden)) saved.hidden.forEach(id => { const s = document.getElementById(id); if (s && s.matches('section.collapsible')) s.classList.add('lay-hidden'); });
+      placeRangeControls();
       refreshCharts();
     }
   } catch (e) { console.error('Layout: could not apply saved layout', e); }
@@ -3391,14 +3404,23 @@ checkSession();
     const secs = secEls();
     list.innerHTML = secs.map((s, i) => {
       const charts = chartPanels(s), multi = charts.length > 1, open = multi && expanded.has(s.id);
-      let h = `<div class="lay-sec" data-sec="${esc(s.id)}"><div class="lay-row">
+      const hid = isHidden(s);
+      let h = `<div class="lay-sec ${hid ? 'is-hidden' : ''}" data-sec="${esc(s.id)}"><div class="lay-row">
         <button type="button" class="lay-exp" data-act="toggle" ${multi ? '' : 'disabled'} aria-label="Show charts">${open ? '▾' : '▸'}</button>
         <div class="lay-name">${esc(secTitle(s))}${multi ? `<span class="lay-count">${charts.length} charts</span>` : ''}</div>
+        <button type="button" class="lay-vis ${hid ? '' : 'on'}" data-act="vis" role="switch" aria-checked="${!hid}" aria-label="${hid ? 'Show' : 'Hide'} ${esc(secTitle(s))}"><span></span></button>
         ${arrows('sec', i === 0, i === secs.length - 1)}</div>`;
       if (open) h += charts.map((p, j) => `<div class="lay-row lay-chart" data-key="${esc(panelKey(p))}">
         <div class="lay-name">${esc(panelTitle(p))}</div>${arrows('chart', j === 0, j === charts.length - 1)}</div>`).join('');
       return h + '</div>';
     }).join('');
+  }
+
+  function toggleSection(id){
+    const sec = document.getElementById(id); if (!sec) return;
+    sec.classList.toggle('lay-hidden');
+    placeRangeControls(); persist(); render();
+    if (!isHidden(sec)) refreshCharts([sec]);            // charts sized themselves at 0x0 while hidden -- re-measure
   }
 
   function moveSection(id, dir){
@@ -3419,6 +3441,7 @@ checkSession();
     const b = e.target.closest('button[data-act]'); if (!b || b.disabled) return;
     const row = b.closest('.lay-row'), secId = b.closest('.lay-sec').dataset.sec, act = b.dataset.act;
     if (act === 'toggle'){ expanded.has(secId) ? expanded.delete(secId) : expanded.add(secId); render(); }
+    else if (act === 'vis') toggleSection(secId);
     else if (act === 'sec-up') moveSection(secId, -1);
     else if (act === 'sec-down') moveSection(secId, 1);
     else if (act === 'chart-up') moveChart(secId, row.dataset.key, -1);
@@ -3428,6 +3451,8 @@ checkSession();
   document.getElementById('layoutReset').addEventListener('click', () => {
     applySectionOrder(DEFAULT.sections);
     Object.keys(DEFAULT.charts).forEach(id => applyChartOrder(id, DEFAULT.charts[id]));
+    secEls().forEach(s => s.classList.remove('lay-hidden'));
+    placeRangeControls();
     try { localStorage.removeItem(LS_KEY); } catch (e) {}
     render(); refreshCharts();
   });
