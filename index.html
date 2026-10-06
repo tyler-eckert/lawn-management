@@ -394,6 +394,75 @@ table.data tr:hover td{ background:var(--surface-2); }
   background:var(--amber-light); color:#7a5209; padding:10px 20px; font-size:0.85rem;
   text-align:center; display:none; border-radius:10px; margin:12px 20px 0;
 }
+/* ---------- Irrigation budget calculator ---------- */
+.bud-controls{ display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+.bud-controls .filter-field{ min-width:150px; }
+.bud-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+.bud-summary{ margin-top:12px; font-size:0.84rem; color:var(--text-secondary); line-height:1.5; }
+.bud-summary b{ color:var(--text); }
+.bud-prog-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom:12px; }
+.bud-prog-head > div:first-child{ flex:1; min-width:0; }
+.bud-set{ flex-shrink:0; }
+.bud-prog-head h3{ font-size:1rem; }
+.bud-prog-head .bud-area{ font-size:0.8rem; color:var(--text-tertiary); margin-top:2px; }
+.bud-set{ text-align:right; }
+.bud-set .lbl{ font-size:0.72rem; color:var(--text-secondary); }
+.bud-set .big{ font-family:ui-monospace,'SF Mono',Menlo,monospace; font-variant-numeric:tabular-nums; font-weight:700; font-size:2rem; line-height:1.05; color:var(--turf); }
+.bud-set .big.warn{ color:var(--rust); }
+.bud-note{ font-size:0.76rem; color:var(--rust); margin:-4px 0 10px; }
+table.bud-table th{ cursor:default; position:static; white-space:normal; line-height:1.25; vertical-align:bottom; }
+table.bud-table th, table.bud-table td{ padding:8px 6px; }
+table.bud-table td > b{ white-space:nowrap; }
+@media (max-width:760px){ table.bud-table td{ font-size:0.8rem; } table.bud-table th{ font-size:0.7rem; } .bud-set .big{ font-size:1.8rem; } }
+table.bud-table th:hover{ color:var(--text-secondary); }
+table.bud-table td{ vertical-align:top; }
+table.bud-table .bud-zsub{ font-family:-apple-system,sans-serif; font-size:0.72rem; color:var(--text-tertiary); margin-top:2px; }
+table.bud-table tr.bud-muted td{ opacity:0.5; }
+.bud-ok{ color:var(--turf); font-weight:600; } .bud-lo{ color:var(--rust); font-weight:600; } .bud-hi{ color:var(--amber-deep); font-weight:600; }
+table.bud-table .bud-zsub.bud-ok, table.bud-table .bud-zsub.bud-lo, table.bud-table .bud-zsub.bud-hi{ font-weight:600; }
+.bud-legend{ font-size:0.74rem; color:var(--text-tertiary); margin:-4px 2px 14px; }
+details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem; }
+.bud-setup-table input[type=number]{ width:66px; padding:5px 6px; border:1px solid var(--line); border-radius:7px; font-family:ui-monospace,monospace; font-size:0.82rem; background:var(--surface-2); color:var(--text); }
+.bud-setup-table input[type=checkbox]{ width:18px; height:18px; accent-color:var(--turf); }
+.bud-setup-table tr.bud-sethead td{ background:var(--surface-2); font-family:-apple-system,sans-serif; }
+.bud-setup-table .bud-cyc{ float:right; font-size:0.78rem; color:var(--text-secondary); }
+.bud-ends{ font-size:0.76rem; color:var(--text-secondary); margin-top:2px; font-family:ui-monospace,monospace; }
+.bud-ends.warn{ color:var(--rust); font-weight:600; }
+.bud-tl-block{ margin-bottom:16px; }
+.bud-tl-head{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:0.88rem; }
+.bud-tl-head .end{ font-family:ui-monospace,'SF Mono',Menlo,monospace; font-weight:700; white-space:nowrap; }
+.bud-tl-head .end.over{ color:var(--rust); }
+.bud-tl-track{ position:relative; height:16px; background:var(--surface-2); border:1px solid var(--line-soft); border-radius:8px; margin:6px 0 5px; overflow:hidden; }
+.bud-tl-bar{ position:absolute; top:0; bottom:0; background:var(--turf); }
+.bud-tl-bar.over{ background:var(--rust); }
+.bud-tl-win{ position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--text-secondary); z-index:2; }
+.bud-tl-detail{ font-size:0.74rem; color:var(--text-tertiary); line-height:1.45; }
+.bud-tl-detail .warn{ color:var(--rust); font-weight:600; }
+.bud-tl-axis{ position:relative; height:16px; font-size:0.7rem; color:var(--text-tertiary); font-family:ui-monospace,monospace; }
+.bud-tl-axis span{ position:absolute; top:0; white-space:nowrap; }
+/* ---------- Layout settings drawer ---------- */
+.icon-btn{ background:var(--surface); border:none; color:var(--text-secondary); width:34px; height:34px; border-radius:50%; display:inline-grid; place-items:center; cursor:pointer; flex-shrink:0; padding:0; font-family:inherit; }
+.icon-btn:hover{ background:var(--line-soft); }
+#layoutOverlay{ position:fixed; inset:0; background:rgba(30,30,25,0.38); z-index:150; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+#layoutOverlay.open{ opacity:1; pointer-events:auto; }
+#layoutPanel{ position:fixed; top:0; right:0; bottom:0; width:min(400px,100%); background:var(--card); z-index:151; box-shadow:-8px 0 30px rgba(0,0,0,0.18); transform:translateX(102%); transition:transform .25s ease, visibility 0s linear .25s; display:flex; flex-direction:column; visibility:hidden; }
+#layoutPanel.open{ transform:translateX(0); visibility:visible; transition:transform .25s ease, visibility 0s; }
+.lay-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 16px 6px; }
+.lay-head h2{ font-size:1.15rem; }
+.lay-help{ font-size:0.78rem; color:var(--text-secondary); line-height:1.5; margin:0; padding:0 16px 10px; border-bottom:1px solid var(--line-soft); }
+#layoutList{ flex:1; overflow-y:auto; padding:8px 12px; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+.lay-row{ display:flex; align-items:center; gap:8px; padding:6px 4px; border-bottom:1px solid var(--line-soft); }
+.lay-row.lay-chart{ margin-left:28px; border-bottom:1px dashed var(--line-soft); }
+.lay-name{ flex:1; min-width:0; font-size:0.9rem; font-weight:600; }
+.lay-chart .lay-name{ font-weight:500; font-size:0.84rem; color:var(--text-secondary); }
+.lay-count{ margin-left:8px; font-size:0.7rem; font-weight:500; color:var(--text-tertiary); }
+.lay-exp{ width:26px; height:34px; background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:0.9rem; padding:0; }
+.lay-exp:disabled{ visibility:hidden; }
+.lay-btns{ display:flex; gap:4px; }
+.lay-btns button{ width:38px; height:34px; border:1px solid var(--line); background:var(--surface-2); color:var(--text-secondary); border-radius:8px; cursor:pointer; font-size:0.8rem; padding:0; font-family:inherit; }
+.lay-btns button:active{ background:var(--turf-light); }
+.lay-btns button:disabled{ opacity:0.3; cursor:default; }
+.lay-foot{ display:flex; gap:10px; justify-content:space-between; padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line-soft); }
 </style>
 </head>
 
@@ -426,6 +495,7 @@ table.data tr:hover td{ background:var(--surface-2); }
           <label>Animation speed</label>
           <input type="range" id="animSpeedSlider" min="0" max="30" value="3" step="0.5">
         </div>
+        <button id="layoutBtn" class="icon-btn" type="button" aria-label="Layout settings" title="Reorder sections &amp; charts"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 5h8M15 5h2M3 10h2M9 10h8M3 15h10M17 15h0"/><circle cx="13" cy="5" r="2"/><circle cx="7" cy="10" r="2"/><circle cx="15" cy="15" r="2"/></svg></button>
         <button id="logoutBtn">Sign out</button>
       </div>
     </div>
@@ -455,10 +525,10 @@ table.data tr:hover td{ background:var(--surface-2); }
     </section>
 
     <!-- ================= SHARED CONTROLS (sticky) ================= -->
-    <div class="panel">
+    <div class="panel" id="rangeControlsHeading">
       <h2>Years &amp; range</h2>
     </div>
-    <div class="sticky-controls">
+    <div class="sticky-controls" id="rangeControls">
       <div class="year-controls" id="yc-shared"></div>
       <div class="year-controls" style="margin-top:10px;">
         <div class="year-group">
@@ -644,6 +714,56 @@ table.data tr:hover td{ background:var(--surface-2); }
       </div>
     </section>
 
+    <!-- ================= IRRIGATION BUDGET CALCULATOR ================= -->
+    <section class="collapsible" id="sec-budget">
+      <button class="section-toggle" data-target="sec-budget" data-icon="droplet"><h2>Irrigation Budget Calculator</h2><span class="chevron">︿</span></button>
+      <div class="section-body">
+        <div class="kpi-row" id="budgetNeedKpis"></div>
+        <div class="panel">
+          <div class="bud-controls">
+            <div class="filter-field">
+              <label for="budTarget">Water needed (in / week)</label>
+              <input id="budTarget" type="number" inputmode="decimal" step="0.05" min="0" value="1.50">
+            </div>
+            <div class="filter-field">
+              <label for="budDays">Watering days per week</label>
+              <select id="budDays"></select>
+            </div>
+            <div class="filter-field">
+              <label for="budAgg">Program budget based on</label>
+              <select id="budAgg">
+                <option value="avg">Average of zones</option>
+                <option value="max">Highest-need zone (none short)</option>
+                <option value="min">Lowest-need zone (none over)</option>
+              </select>
+            </div>
+          </div>
+          <div class="bud-chips" id="budChips"></div>
+          <div class="bud-summary" id="budSummary"></div>
+        </div>
+        <div id="budgetPrograms"></div>
+        <div class="bud-legend">"At budget" column: <span class="bud-ok">on target (±5%)</span> · <span class="bud-lo">short</span> · <span class="bud-hi">over</span></div>
+        <div class="panel" id="budTimelinePanel">
+          <h3 style="font-size:1rem; margin-bottom:2px;">When each program finishes</h3>
+          <div class="panel-sub" style="margin-bottom:12px;">Run time = each zone's baseline × the budget above, added up for one cycle, × the cycles per day (plus any gap between cycles set in Zone setup).</div>
+          <div class="bud-controls">
+            <div class="filter-field"><label for="budStart">Programs start at</label><input id="budStart" type="time" value="04:00"></div>
+            <div class="filter-field"><label for="budWinEnd">Watering window ends</label><input id="budWinEnd" type="time" value="12:00"></div>
+          </div>
+          <div class="view-toggle" id="budMode" style="margin-top:12px; display:inline-flex;">
+            <button type="button" data-mode="each" class="on">Separate days</button>
+            <button type="button" data-mode="queue">Same morning, queued</button>
+          </div>
+          <div class="bud-summary" id="budModeNote" style="margin-top:8px;"></div>
+          <div id="budTimeline" style="margin-top:14px;"></div>
+        </div>
+        <details class="panel bud-setup" id="budSetup">
+          <summary>Zone setup — baseline times, cycles &amp; precip rates</summary>
+          <div id="budSetupBody"></div>
+        </details>
+      </div>
+    </section>
+
     <!-- ================= RECORDS ================= -->
     <section class="collapsible" id="sec-records">
       <button class="section-toggle" data-target="sec-records" data-icon="trend"><h2>Records</h2><span class="chevron">︿</span></button>
@@ -678,7 +798,7 @@ table.data tr:hover td{ background:var(--surface-2); }
 
     <!-- ================= ON THIS DAY ================= -->
     <!-- ================= REFERENCE ================= -->
-    <section class="collapsible" id="sec-reference">
+    <section class="collapsible collapsed" id="sec-reference">
       <button class="section-toggle" data-target="sec-reference" data-icon="book"><h2>Reference</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel">
@@ -776,7 +896,7 @@ table.data tr:hover td{ background:var(--surface-2); }
     </section>
 
     <!-- ================= EXPLORER ================= -->
-    <section class="collapsible" id="sec-explorer">
+    <section class="collapsible collapsed" id="sec-explorer">
       <button class="section-toggle" data-target="sec-explorer" data-icon="search"><h2>Explorer</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel">
@@ -1285,7 +1405,7 @@ async function renderOverviewKpis(){
   const kpis = [];
   if (wx && wx.length){
     const today = wx[wx.length-1];
-    const weekStart = fmtDate(daysAgo(6));
+    const weekStart = currentWeekRange().start;   // Sunday of this week -- resets to 0" every Sunday
     const weekRows = wx.filter(r => r.weather_date >= weekStart);
     const avgHigh30 = avg(wx.map(r=>r.temp_high_f).filter(v=>v!=null));
     const avgLow30 = avg(wx.map(r=>r.temp_low_f).filter(v=>v!=null));
@@ -1304,19 +1424,24 @@ async function renderOverviewKpis(){
   }
 
   // Bermuda/Fescue water need (ETc, averaged across each grass type's
-  // guide stations) this week vs last week -- same Sunday-start week and
-  // same station-averaging convention as the radar chart / balance charts.
+  // guide stations) this week, projected to a full week, compared against
+  // the HISTORICAL average for this same week (the Water Needed chart's
+  // Average line) -- same Sunday-start week and station-averaging
+  // convention as the radar chart / balance charts. The historical average
+  // needs the full multi-year history, so the tiles render right away with
+  // this week's number and the comparison fills in when it arrives.
+  let needIdx = -1, needVals = null;
+  const needCard = (label, v, hist) => hist
+    ? compareCard(label, v, hist.value, 'in', 2, `vs hist. avg (${num(hist.value, 2)})`)
+    : { label, value: num(v, 2), unit: 'in', sub: hist === undefined ? 'vs hist. avg: loading…' : 'hist. avg unavailable' };
   try {
-    const { start: thisStart, end: thisEnd, sunday } = currentWeekRange();
-    const lastSunday = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate()-7);
-    const lastSaturday = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate()-1);
-    const lastStart = fmtDate(lastSunday), lastEnd = fmtDate(lastSaturday);
+    const { start: thisStart, end: thisEnd } = currentWeekRange();
 
     const allStations = [...GUIDE_STATIONS.bermuda, ...GUIDE_STATIONS.fescue];
     const { data: etcData, error: etcError } = await supa.from('et_balance_by_zone')
       .select('weather_date,zone_number,etc_in')
       .in('zone_number', allStations)
-      .gte('weather_date', lastStart).lte('weather_date', thisEnd);
+      .gte('weather_date', thisStart).lte('weather_date', thisEnd);
     if (etcError) throw etcError;
 
     function weeklyNeedTotal(zones, wStart, wEnd, projectPartial=false){
@@ -1342,19 +1467,32 @@ async function renderOverviewKpis(){
     }
 
     const bermudaThis = weeklyNeedTotal(GUIDE_STATIONS.bermuda, thisStart, thisEnd, true);
-    const bermudaLast = weeklyNeedTotal(GUIDE_STATIONS.bermuda, lastStart, lastEnd, false);
     const fescueThis = weeklyNeedTotal(GUIDE_STATIONS.fescue, thisStart, thisEnd, true);
-    const fescueLast = weeklyNeedTotal(GUIDE_STATIONS.fescue, lastStart, lastEnd, false);
 
-    kpis.push(compareCard('Bermuda water need (wk proj.)', bermudaThis, bermudaLast, 'in', 2, 'vs last wk'));
-    kpis.push(compareCard('Fescue water need (wk proj.)', fescueThis, fescueLast, 'in', 2, 'vs last wk'));
+    needIdx = kpis.length; needVals = { bermuda: bermudaThis, fescue: fescueThis };
+    kpis.push(needCard('Bermuda water need (wk proj.)', bermudaThis));
+    kpis.push(needCard('Fescue water need (wk proj.)', fescueThis));
+    window.TURF_WEEK_NEED = { bermuda: bermudaThis, fescue: fescueThis };   // read by the budget calculator
   } catch (e) {
+    window.TURF_WEEK_NEED = null;
     console.error('Bermuda/Fescue water-need KPIs failed:', e);
     kpis.push({label:'Bermuda water need (wk proj.)', value:'—'});
     kpis.push({label:'Fescue water need (wk proj.)', value:'—'});
   }
 
   renderKpiCards('overviewKpis', kpis);
+  if (typeof window.renderBudgetCalc === 'function') { try { window.renderBudgetCalc(); } catch (e) { console.error('Budget calculator render failed:', e); } }
+
+  // Fill in the historical-average comparison once the multi-year data is in.
+  if (needIdx >= 0){
+    const apply = (hb, hf) => {
+      kpis[needIdx]     = needCard('Bermuda water need (wk proj.)', needVals.bermuda, hb);
+      kpis[needIdx + 1] = needCard('Fescue water need (wk proj.)',  needVals.fescue,  hf);
+      renderKpiCards('overviewKpis', kpis);
+    };
+    try { const [hb, hf] = await Promise.all([historicalWeekNeed('bermuda'), historicalWeekNeed('fescue')]); apply(hb, hf); }
+    catch (e) { console.error('Historical water-need average failed:', e); apply(null, null); }
+  }
 }
 
 async function renderCompareKpiGroups(){
@@ -1777,9 +1915,21 @@ async function buildMultiYearChart(opts){
   noteChartYears(years, draw);
 }
 
-async function rollingWeeklyRows(grassType){
-  const data = await fetchAllRows(() => supa.from('et_balance_by_zone')
-    .select('weather_date,grass_type,etc_in').eq('grass_type', grassType).order('weather_date'));
+const _rollingFullHistory = {};   // grassType -> Promise, so the chart and the budget tiles share one fetch
+function rollingWeeklyRows(grassType, sinceDate){
+  if (sinceDate) return _rollingWeeklyRowsFetch(grassType, sinceDate);
+  if (!_rollingFullHistory[grassType]){
+    _rollingFullHistory[grassType] = _rollingWeeklyRowsFetch(grassType).catch(e => { delete _rollingFullHistory[grassType]; throw e; });
+  }
+  return _rollingFullHistory[grassType];
+}
+async function _rollingWeeklyRowsFetch(grassType, sinceDate){
+  // sinceDate (optional, 'YYYY-MM-DD') limits the fetch to recent days.
+  const data = await fetchAllRows(() => {
+    let q = supa.from('et_balance_by_zone').select('weather_date,grass_type,etc_in').eq('grass_type', grassType);
+    if (sinceDate) q = q.gte('weather_date', sinceDate);
+    return q.order('weather_date');
+  });
   const byDate = {};
   (data||[]).forEach(r => { if (r.etc_in==null) return; (byDate[r.weather_date]=byDate[r.weather_date]||[]).push(r.etc_in); });
   const dates = Object.keys(byDate).sort();
@@ -1788,6 +1938,21 @@ async function rollingWeeklyRows(grassType){
     const win = dailyAvg.slice(Math.max(0, i-6), i+1);
     return { date:d, value: Number((avg(win) * 7).toFixed(3)) };
   });
+}
+
+// Historical average weekly water need for the week ending this Saturday: the dashed "Average"
+// line on the Water Needed -- 7-Day Rolling Average chart (mean over AVG_REF_YEARS of the rolling
+// 7-day value at that day-of-year). A rolling value on a Saturday covers Sun..Sat, so this is the
+// typical full-week need for this same stretch of the calendar. Returns {value, years, weekEnd} or null.
+async function historicalWeekNeed(grassType){
+  const sat = currentWeekRange().saturday;
+  const doy = dayOfYear(fmtDate(sat));
+  const rows = await rollingWeeklyRows(grassType);
+  const vals = rows.filter(r => {
+    const y = yearOf(r.date);
+    return y >= AVG_REF_YEARS.from && y <= AVG_REF_YEARS.to && dayOfYear(r.date) === doy;
+  }).map(r => r.value);
+  return vals.length ? { value: avg(vals), years: vals.length, weekEnd: sat } : null;
 }
 
 async function initTrendCharts(){
@@ -2676,5 +2841,581 @@ async function initOnThisDayScatterSection(){
 checkSession();
 </script>
 
+<div id="layoutOverlay"></div>
+<aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
+  <div class="lay-head"><h2>Layout</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
+  <p class="lay-help">Use ▲ ▼ to reorder sections. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device.</p>
+  <div id="layoutList"></div>
+  <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset to default</button><button class="btn" id="layoutDone" type="button">Done</button></div>
+</aside>
+<script>
+/* ============================================================
+   IRRIGATION BUDGET CALCULATOR
+   Turns a weekly water target into the B-hyve "Budget" % for each
+   program, without touching start times, programs or cycle counts.
+
+   Model:  inches per watering day at 100% budget, for a zone
+             = precip rate (in/hr) x baseline minutes per cycle x cycles / 60
+           budget needed for a zone
+             = (target in/week / watering days) / that baseline figure
+   ============================================================ */
+(function budgetCalculator(){
+  'use strict';
+
+  const LS_KEY = 'turfops.budget.v1';
+  const MIN_PCT = 10, MAX_PCT = 200;          // B-hyve's budget range
+  const PROPERTY_TARGET = 1.5;                // in/week reference target
+  const DEFAULT_CYCLES = 4;
+  const DEFAULT_DAYS = 2;                     // watering days per week
+  const PROGRAMS = [
+    { key:'A', title:'Program A', area:'Front & East', zones:[ {z:1,min:20}, {z:2,min:20}, {z:3,min:20}, {z:4,min:20} ] },
+    { key:'B', title:'Program B', area:'Front West',   zones:[ {z:5,min:25}, {z:6,min:30}, {z:7,min:30}, {z:11,min:5} ] },
+    { key:'C', title:'Program C', area:'Backyard',     zones:[ {z:8,min:22}, {z:9,min:20}, {z:10,min:30} ] },
+  ];
+  const ZONE_DEFAULT_MIN = {};
+  PROGRAMS.forEach(p => p.zones.forEach(zd => { ZONE_DEFAULT_MIN[zd.z] = zd.min; }));
+  // Only used if the irrigation_zones table can't be read: 0.3 in/hr (catch-cup
+  // tested) for sprinkler zones, 0.75 in/hr for the mister / flower beds.
+  const FALLBACK_RATE = z => (z === 11 || z === 12) ? 0.75 : 0.3;
+  // Zone 11 is a mister (different output, supplemental) -- left out of each
+  // program's budget by default so it doesn't skew the figure for the turf zones.
+  const COUNT_DEFAULT = z => z !== 11;
+
+  const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+  const el = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+  const r2 = v => Math.round(v * 100) / 100;
+  const fmtMin = v => { const r = Math.round(v * 10) / 10; return Number.isInteger(r) ? String(r) : r.toFixed(1); };
+  const isTime = s => typeof s === 'string' && /^\d{1,2}:\d{2}$/.test(s);
+  const toMin = s => { const [hh, mm] = s.split(':').map(Number); return hh * 60 + mm; };           // 'HH:MM' -> minutes since midnight
+  const fmtClock = m => {
+    const t = Math.round(m), day = Math.floor(t / 1440), mm = ((t % 1440) + 1440) % 1440;
+    const h24 = Math.floor(mm / 60), min = mm % 60, h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+    return `${h12}:${String(min).padStart(2, '0')} ${h24 < 12 ? 'AM' : 'PM'}${day > 0 ? ` (+${day} day${day > 1 ? 's' : ''})` : ''}`;
+  };
+  const fmtDur = m => { const t = Math.round(m), hh = Math.floor(t / 60); return hh ? `${hh} h ${t % 60} m` : `${t % 60} m`; };
+
+  /* ---------- persisted settings (this device only) ---------- */
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) {}
+  const persist = {
+    days:   DEFAULT_DAYS,                       // always starts at the default; change it per session
+    agg:    ['avg','max','min'].includes(saved.agg) ? saved.agg : 'avg',
+    cycles: saved.cycles || {}, base: saved.base || {}, rate: saved.rate || {}, count: saved.count || {},
+    gap:    saved.gap || {},                                          // idle minutes between a program's cycles
+    start:  isTime(saved.start) ? saved.start : '04:00',              // when programs start
+    winEnd: isTime(saved.winEnd) ? saved.winEnd : '12:00',            // end of the watering window (mowers head out at noon)
+    mode:   saved.mode === 'queue' ? 'queue' : 'each',               // 'each' = own day, 'queue' = same morning, one after another
+  };
+  const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(persist)); } catch (e) {} };
+
+  const state = { target: PROPERTY_TARGET, follow: 'bermuda', zoneInfo: {}, loadingZones: false, hist: {}, histState: 'loading', loadingHist: false };
+
+  const cyclesOf  = k => (persist.cycles[k] > 0) ? persist.cycles[k] : DEFAULT_CYCLES;
+  const gapOf     = k => (has(persist.gap, k) && persist.gap[k] >= 0) ? persist.gap[k] : 0;
+  const baseOf    = (z, def) => has(persist.base, z) ? persist.base[z] : def;
+  const dbRate    = z => (state.zoneInfo[z] && state.zoneInfo[z].rate > 0) ? state.zoneInfo[z].rate : FALLBACK_RATE(z);
+  const rateOf    = z => has(persist.rate, z) ? persist.rate[z] : dbRate(z);
+  const countedOf = z => has(persist.count, z) ? !!persist.count[z] : COUNT_DEFAULT(z);
+  const needOf    = which => { const n = window.TURF_WEEK_NEED; const v = n && n[which]; return v > 0 ? v : null; };
+
+  function syncTargetFromNeed(){
+    if (state.follow === 'bermuda' || state.follow === 'fescue'){
+      const v = needOf(state.follow);
+      if (v != null) state.target = r2(v);
+    }
+  }
+
+  /* ---------- the math ---------- */
+  function calc(){
+    const days = persist.days, perDay = state.target / days;
+    return PROGRAMS.map(p => {
+      const cyc = cyclesOf(p.key);
+      const rows = p.zones.map(zd => {
+        const z = zd.z, min = baseOf(z, zd.min), rate = rateOf(z);
+        const baseInDay = rate * min * cyc / 60;                      // in per watering day at 100%
+        const needPct = baseInDay > 0 ? perDay / baseInDay * 100 : null;
+        const info = state.zoneInfo[z] || {};
+        return { z, min, rate, baseInDay, needPct, counted: countedOf(z), name: info.name || '', grass: info.grass || '' };
+      });
+      const vals = rows.filter(x => x.counted && x.needPct != null).map(x => x.needPct);
+      let raw = null;
+      if (vals.length){
+        raw = persist.agg === 'max' ? Math.max(...vals)
+            : persist.agg === 'min' ? Math.min(...vals)
+            : vals.reduce((a, b) => a + b, 0) / vals.length;
+        raw = Math.round(raw);
+      }
+      const pct = raw == null ? null : Math.min(MAX_PCT, Math.max(MIN_PCT, raw));
+      rows.forEach(x => {
+        x.atMin = pct == null ? null : x.min * pct / 100;                 // minutes per cycle at that budget
+        x.atWk  = pct == null ? null : x.baseInDay * pct / 100 * days;    // inches per week at that budget
+      });
+      return { p, cyc, rows, raw, pct, clamped: raw != null && (raw > MAX_PCT || raw < MIN_PCT) };
+    });
+  }
+
+  // When does each program finish? Every zone in a program runs (including ones not counted toward the
+  // budget, like the mister), scaled by the program's budget; that sequence repeats once per cycle.
+  function timeline(results){
+    const startMin = toMin(persist.start), winEnd = toMin(persist.winEnd);
+    let cursor = startMin;                                  // used in 'queue' mode: next program starts when this one ends
+    return results.map(r => {
+      const perCycle = r.pct == null ? null : r.rows.reduce((s, x) => s + x.min * r.pct / 100, 0);
+      const gaps = gapOf(r.p.key) * (r.cyc - 1);
+      const total = perCycle == null ? null : perCycle * r.cyc + gaps;
+      const start = persist.mode === 'queue' ? cursor : startMin;
+      const end = total == null ? null : start + total;
+      if (persist.mode === 'queue' && end != null) cursor = end;
+      const over = end != null && Math.round(end) > winEnd;
+      return { perCycle, gaps, total, start, end, over, overBy: end == null ? 0 : Math.round(end) - winEnd };
+    });
+  }
+
+  /* ---------- rendering ---------- */
+  function renderTiles(){
+    const b = needOf('bermuda'), f = needOf('fescue');
+    // Secondary number: the historical average from the "Water Needed — 7-Day Rolling Average"
+    // chart (its dashed Average line, 2010-2025) for the week ending this Saturday, i.e. the
+    // typical full-week need for this same stretch of the calendar.
+    const tile = (label, v, hist) => {
+      let sub;
+      if (hist) sub = `Historical avg: ${num(hist.value, 2)} in/wk · ${num(hist.value / 7, 2)} in/day` +
+        `<br><span style="font-weight:400;color:var(--text-tertiary)">${AVG_REF_YEARS.from}–${AVG_REF_YEARS.to} · week ending ${state.histWeekEnd || 'Sat'}</span>`;
+      else sub = state.histState === 'loading' ? 'Historical avg: loading…' : 'Historical avg: —';
+      return { label, value: num(v, 2), unit: 'in', sub };
+    };
+    renderKpiCards('budgetNeedKpis', [
+      tile('Bermuda need · this week', b, state.hist.bermuda),
+      tile('Fescue need · this week', f, state.hist.fescue),
+    ]);
+  }
+
+  function renderChips(){
+    const b = needOf('bermuda'), f = needOf('fescue');
+    const chip = (id, label, disabled) =>
+      `<span class="year-chip ${state.follow === id ? 'on' : ''}" data-follow="${id}"${disabled ? ' style="opacity:.45;pointer-events:none"' : ''}>${label}</span>`;
+    el('budChips').innerHTML =
+      chip('bermuda',  'Use Bermuda need' + (b != null ? ' · ' + num(b, 2) : ''), b == null) +
+      chip('fescue',   'Use Fescue need'  + (f != null ? ' · ' + num(f, 2) : ''), f == null) +
+      chip('property', 'Use property target · ' + num(PROPERTY_TARGET, 2), false);
+  }
+
+  function renderSummary(){
+    const d = persist.days;
+    el('budSummary').innerHTML =
+      `${num(state.target, 2)} in/week ÷ ${d} watering day${d > 1 ? 's' : ''} = <b>${num(state.target / d, 2)} in per watering day</b>. ` +
+      `Budget only scales the run time of each cycle — your start times, programs and cycle counts stay exactly as scheduled.`;
+  }
+
+  function programHtml(r, t){
+    const { p, cyc, rows, pct, raw, clamped } = r;
+    let note = '';
+    if (clamped) note = raw > MAX_PCT
+      ? `Needs ${raw}% — over the ${MAX_PCT}% cap. Add a watering day to bring it in range.`
+      : `Needs ${raw}% — under the ${MIN_PCT}% floor. Water on fewer days.`;
+    else if (pct == null) note = 'No zones counted — turn one on in Zone setup below.';
+
+    const body = rows.map(x => {
+      const nr = x.needPct == null ? null : Math.round(x.needPct);
+      const needCls = nr != null && (nr > MAX_PCT || nr < MIN_PCT) ? 'bud-lo' : '';
+      const getsCls = x.atWk == null ? '' : (x.atWk < state.target * 0.95 ? 'bud-lo' : (x.atWk > state.target * 1.05 ? 'bud-hi' : 'bud-ok'));
+      const sub = [esc(x.name), x.counted ? '' : 'not counted'].filter(Boolean).join(' · ');
+      return `<tr class="${x.counted ? '' : 'bud-muted'}">
+        <td><b>Zone ${x.z}</b>${sub ? `<div class="bud-zsub">${sub}</div>` : ''}</td>
+        <td>${fmtMin(x.min)} min<div class="bud-zsub">${num(x.baseInDay, 2)} in/day</div></td>
+        <td class="${needCls}">${nr == null ? '—' : nr + '%'}</td>
+        <td class="${getsCls}">${x.atMin == null ? '—' : fmtMin(x.atMin) + ' min'}<div class="bud-zsub ${getsCls}">${x.atWk == null ? '' : num(x.atWk, 2) + ' in/wk'}</div></td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="panel">
+      <div class="bud-prog-head">
+        <div><h3>${esc(p.title)}</h3><div class="bud-area">${esc(p.area)} · ${cyc} cycles per watering day (times are per cycle)</div></div>
+        <div class="bud-set"><div class="lbl">Set budget to</div><div class="big ${clamped ? 'warn' : ''}">${pct == null ? '—' : pct + '%'}</div>${t && t.end != null ? `<div class="bud-ends ${t.over ? 'warn' : ''}">ends ${fmtClock(t.end)}</div>` : ''}</div>
+      </div>
+      ${note ? `<div class="bud-note">${note}</div>` : ''}
+      <div class="table-wrap" style="max-height:none;"><table class="data bud-table">
+        <thead><tr><th>Zone</th><th>Baseline</th><th>Budget needed</th><th>At ${pct == null ? '—' : pct + '%'} budget</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  function renderTimeline(results, tl){
+    const host = el('budTimeline'); if (!host) return;
+    const startMin = toMin(persist.start), winEnd = toMin(persist.winEnd);
+    const domStart = startMin;
+    const domEnd = Math.max(winEnd, domStart + 60, ...tl.filter(t => t.end != null).map(t => t.end));
+    const span = domEnd - domStart;
+    const pctOf = m => Math.max(0, Math.min(100, (m - domStart) / span * 100));
+
+    document.querySelectorAll('#budMode button').forEach(b => b.classList.toggle('on', b.dataset.mode === persist.mode));
+    el('budModeNote').textContent = persist.mode === 'queue'
+      ? `Everything is scheduled for the same morning: Program A starts at ${fmtClock(startMin)}, B starts when A finishes, then C.`
+      : `Each program begins at ${fmtClock(startMin)} on its own watering day.`;
+
+    const blocks = results.map((r, i) => {
+      const t = tl[i], p = r.p;
+      const head = (endTxt, cls) => `<div class="bud-tl-head"><span><b>${esc(p.title)}</b> · ${esc(p.area)}</span><span class="end ${cls || ''}">${endTxt}</span></div>`;
+      if (t.end == null) return `<div class="bud-tl-block">${head('—')}<div class="bud-tl-detail">No zones counted, so no budget to time.</div></div>`;
+      const inEnd = Math.min(t.end, winEnd), overStart = Math.max(t.start, winEnd);
+      const bars = (inEnd > t.start ? `<div class="bud-tl-bar" style="left:${pctOf(t.start)}%;width:${pctOf(inEnd) - pctOf(t.start)}%"></div>` : '') +
+                   (t.end > winEnd ? `<div class="bud-tl-bar over" style="left:${pctOf(overStart)}%;width:${pctOf(t.end) - pctOf(overStart)}%"></div>` : '');
+      const detail = `${fmtClock(t.start)} → ${fmtClock(t.end)} · ${r.cyc} × ${fmtMin(t.perCycle)} min` +
+        (t.gaps ? ` + ${fmtMin(t.gaps)} min between cycles` : '') + ` = ${fmtDur(t.total)}` +
+        (t.over ? ` <span class="warn">⚠ ${fmtDur(t.overBy)} past ${fmtClock(winEnd)}</span>` : '');
+      return `<div class="bud-tl-block">${head('ends ' + fmtClock(t.end), t.over ? 'over' : '')}
+        <div class="bud-tl-track">${bars}<div class="bud-tl-win" style="left:${pctOf(winEnd)}%"></div></div>
+        <div class="bud-tl-detail">${detail}</div></div>`;
+    }).join('');
+
+    const wp = pctOf(winEnd);
+    host.innerHTML = blocks +
+      `<div class="bud-tl-axis"><span style="left:0">${fmtClock(startMin)}</span>` +
+      `<span style="left:${wp}%;transform:translateX(${wp > 50 ? '-100%' : '0'})">window ends ${fmtClock(winEnd)}</span></div>`;
+  }
+
+  function renderOutputs(){
+    const results = calc(), tl = timeline(results);
+    renderTiles(); renderChips(); renderSummary();
+    el('budgetPrograms').innerHTML = results.map((r, i) => programHtml(r, tl[i])).join('');
+    renderTimeline(results, tl);
+  }
+
+  function renderSetup(){
+    const host = el('budSetupBody'); if (!host) return;
+    let rows = '';
+    PROGRAMS.forEach(p => {
+      rows += `<tr class="bud-sethead"><td colspan="4"><b>${esc(p.title)}</b> · ${esc(p.area)}
+        <span class="bud-cyc">Cycles/day <input type="number" min="1" max="12" step="1" data-cyc="${p.key}" value="${cyclesOf(p.key)}"> · Gap <input type="number" min="0" step="1" data-gap="${p.key}" value="${gapOf(p.key)}"> min</span></td></tr>`;
+      p.zones.forEach(zd => {
+        const z = zd.z, info = state.zoneInfo[z] || {};
+        const sub = [info.name, info.grass ? cap(info.grass) : ''].filter(Boolean).map(esc).join(' · ');
+        rows += `<tr>
+          <td><b>Zone ${z}</b>${sub ? `<div class="bud-zsub">${sub}</div>` : ''}</td>
+          <td><input type="number" min="0" step="1" data-base="${z}" value="${baseOf(z, zd.min)}"></td>
+          <td><input type="number" min="0.05" step="0.05" data-rate="${z}" value="${rateOf(z)}"></td>
+          <td><input type="checkbox" data-count="${z}" ${countedOf(z) ? 'checked' : ''}></td>
+        </tr>`;
+      });
+    });
+    host.innerHTML = `<p class="panel-sub" style="margin:10px 0 12px;">
+        Gap = idle minutes between one cycle finishing and the next starting (0 = cycles run back-to-back), used for the finish times.
+        Baseline = the run time per cycle in your B-hyve program at 100% budget. Precip rates are read from your zones table;
+        changing one here overrides it on this device only. Zones left unchecked are shown but not counted toward a program's budget
+        (zone 11, the mister, starts unchecked).</p>
+      <div class="table-wrap" style="max-height:none;"><table class="data bud-table bud-setup-table">
+        <thead><tr><th>Zone</th><th>Min / cycle</th><th>Precip in/hr</th><th>Count</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <div style="margin-top:12px;"><button class="btn ghost" id="budResetSetup" type="button">Reset setup to defaults</button></div>`;
+  }
+
+  function syncInputs(){
+    const t = el('budTarget');
+    if (t && document.activeElement !== t) t.value = num(state.target, 2);
+    el('budDays').value = String(persist.days);
+    el('budAgg').value = persist.agg;
+    const st = el('budStart'), we = el('budWinEnd');
+    if (st && document.activeElement !== st) st.value = persist.start;
+    if (we && document.activeElement !== we) we.value = persist.winEnd;
+  }
+
+  function renderAll(){
+    syncInputs();
+    renderOutputs();
+    const setup = el('budSetupBody');
+    if (setup && !setup.contains(document.activeElement)) renderSetup();
+  }
+
+  /* ---------- zone rates from Supabase ---------- */
+  async function loadZones(){
+    if (state.loadingZones || typeof supa === 'undefined' || !supa) return;
+    state.loadingZones = true;
+    try {
+      const { data, error } = await supa.from('irrigation_zones').select('zone_number,zone_name,grass_type,precip_rate_in_per_hr');
+      if (error) throw error;
+      (data || []).forEach(r => {
+        state.zoneInfo[r.zone_number] = {
+          name: r.zone_name || '', grass: r.grass_type || '',
+          rate: r.precip_rate_in_per_hr != null ? Number(r.precip_rate_in_per_hr) : null,
+        };
+      });
+      renderAll();
+    } catch (e) {
+      console.error('Budget calculator: could not read irrigation_zones, using default precip rates:', e);
+    } finally {
+      state.loadingZones = false;
+    }
+  }
+
+  /* ---------- historical average (same numbers as the Water Needed chart's Average line) ---------- */
+  async function loadHistorical(){
+    if (state.loadingHist || typeof historicalWeekNeed !== 'function' || typeof currentWeekRange !== 'function') return;
+    state.loadingHist = true;
+    try {
+      // The rolling 7-day value on a Saturday covers Sun..Sat, so the historical average of that
+      // value at this Saturday's day-of-year = the typical total need for this same week.
+      state.histWeekEnd = currentWeekRange().saturday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const [b, f] = await Promise.all([historicalWeekNeed('bermuda'), historicalWeekNeed('fescue')]);
+      state.hist = { bermuda: b, fescue: f };
+      state.histState = 'done';
+    } catch (e) {
+      console.error('Budget calculator: could not load the historical average:', e);
+      state.histState = 'error';
+    } finally {
+      state.loadingHist = false;
+      renderTiles();
+    }
+  }
+
+  /* ---------- wiring ---------- */
+  const daysSel = el('budDays');
+  if (!daysSel || !el('budgetPrograms')) return;      // markup missing -- bail quietly
+  for (let d = 1; d <= 7; d++) daysSel.insertAdjacentHTML('beforeend', `<option value="${d}">${d} day${d > 1 ? 's' : ''}</option>`);
+
+  el('budTarget').addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    state.follow = null;
+    if (isFinite(v) && v >= 0){ state.target = v; renderOutputs(); }
+  });
+  daysSel.addEventListener('change', e => { persist.days = parseInt(e.target.value, 10) || DEFAULT_DAYS; renderOutputs(); });
+  el('budAgg').addEventListener('change', e => { persist.agg = e.target.value; save(); renderOutputs(); });
+  el('budStart').addEventListener('input', e => { if (isTime(e.target.value)) { persist.start = e.target.value; save(); renderOutputs(); } });
+  el('budWinEnd').addEventListener('input', e => { if (isTime(e.target.value)) { persist.winEnd = e.target.value; save(); renderOutputs(); } });
+  el('budMode').addEventListener('click', e => {
+    const b = e.target.closest('[data-mode]'); if (!b) return;
+    persist.mode = b.dataset.mode; save(); renderOutputs();
+  });
+  el('budChips').addEventListener('click', e => {
+    const c = e.target.closest('[data-follow]'); if (!c) return;
+    state.follow = c.dataset.follow;
+    if (state.follow === 'property') state.target = PROPERTY_TARGET;
+    else syncTargetFromNeed();
+    renderAll();
+  });
+
+  const setupHost = el('budSetupBody');
+  setupHost.addEventListener('input', e => {
+    const t = e.target, v = parseFloat(t.value);
+    if (t.type === 'checkbox' || !(v >= 0)) return;
+    if (t.dataset.base !== undefined){
+      if (v === ZONE_DEFAULT_MIN[t.dataset.base]) delete persist.base[t.dataset.base]; else persist.base[t.dataset.base] = v;
+    } else if (t.dataset.rate !== undefined){
+      if (v === dbRate(Number(t.dataset.rate))) delete persist.rate[t.dataset.rate]; else persist.rate[t.dataset.rate] = v;
+    } else if (t.dataset.gap !== undefined){
+      if (v === 0) delete persist.gap[t.dataset.gap]; else persist.gap[t.dataset.gap] = v;
+    } else if (t.dataset.cyc !== undefined){
+      if (v < 1) return;
+      if (v === DEFAULT_CYCLES) delete persist.cycles[t.dataset.cyc]; else persist.cycles[t.dataset.cyc] = Math.round(v);
+    } else return;
+    save(); renderOutputs();
+  });
+  setupHost.addEventListener('change', e => {
+    const t = e.target;
+    if (t.dataset.count !== undefined){
+      if (t.checked === COUNT_DEFAULT(Number(t.dataset.count))) delete persist.count[t.dataset.count]; else persist.count[t.dataset.count] = t.checked;
+      save(); renderOutputs();
+    }
+  });
+  setupHost.addEventListener('click', e => {
+    if (e.target.id === 'budResetSetup'){
+      persist.cycles = {}; persist.base = {}; persist.rate = {}; persist.count = {}; persist.gap = {};
+      save(); renderSetup(); renderOutputs();
+    }
+  });
+
+  // Called by renderOverviewKpis() once this week's Bermuda / Fescue need is known
+  // (and again on every refresh), so the target tracks the need until it's edited.
+  window.renderBudgetCalc = function(){
+    syncTargetFromNeed();
+    renderAll();
+    loadZones();
+    loadHistorical();
+  };
+
+  renderAll();
+})();
+</script>
+<script>
+/* ============================================================
+   LAYOUT SETTINGS -- reorder sections, and the charts inside them.
+   Saved per device in localStorage. Sections swap places; charts swap
+   places within their section's existing grid (two-up rows stay two-up,
+   a full-width slot stays full-width).
+   ============================================================ */
+(function layoutSettings(){
+  'use strict';
+
+  const LS_KEY = 'turfops.layout.v1';
+  const main = document.querySelector('main');
+  const panel = document.getElementById('layoutPanel');
+  const overlay = document.getElementById('layoutOverlay');
+  const list = document.getElementById('layoutList');
+  const openBtn = document.getElementById('layoutBtn');
+  if (!main || !panel || !overlay || !list) return;
+
+  // Sections that read the shared "Years & range" controls. Those controls
+  // always sit directly above whichever of these is currently first.
+  const RANGE_SECTIONS = ['sec-daily-highs', 'sec-feels-high', 'sec-cum-rain', 'sec-deficit-bermuda', 'sec-etweekly-bermuda'];
+
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const secEls = () => Array.from(main.children).filter(e => e.matches('section.collapsible'));
+  const chartPanels = sec => Array.from(sec.querySelectorAll('.panel'))
+    .filter(p => p.querySelector('canvas') && !(p.parentElement && p.parentElement.closest('.panel')));
+  const panelKey = p => p.querySelector('canvas').id;
+  const secTitle = s => { const h = s.querySelector('.section-toggle h2'); return h ? h.textContent.trim() : s.id; };
+  const panelTitle = p => { const h = p.querySelector('h3'); return (h && h.textContent.trim()) || panelKey(p); };
+
+  // Capture the shipped order before any saved layout is applied (used by Reset,
+  // and to place sections added in future versions where they belong).
+  const DEFAULT = { sections: secEls().map(s => s.id), charts: {} };
+  secEls().forEach(s => { DEFAULT.charts[s.id] = chartPanels(s).map(panelKey); });
+
+  // Put `desired` into the DOM slots currently held by `current` (same set of nodes).
+  function permute(current, desired){
+    const slots = current.map(n => { const c = document.createComment('slot'); n.replaceWith(c); return c; });
+    desired.forEach((n, i) => slots[i].replaceWith(n));
+  }
+
+  // saved order + anything it doesn't know about, each slotted after its default predecessor
+  function mergeOrder(saved, base){
+    const out = (saved || []).filter((id, i, a) => base.includes(id) && a.indexOf(id) === i);
+    base.forEach((id, i) => {
+      if (out.includes(id)) return;
+      let j = i - 1; while (j >= 0 && !out.includes(base[j])) j--;
+      out.splice(j >= 0 ? out.indexOf(base[j]) + 1 : 0, 0, id);
+    });
+    return out;
+  }
+
+  function placeRangeControls(){
+    const head = document.getElementById('rangeControlsHeading');
+    const ctl = document.getElementById('rangeControls');
+    if (!head || !ctl) return;
+    const first = secEls().find(s => RANGE_SECTIONS.includes(s.id));
+    if (!first || ctl.nextElementSibling === first) return;
+    main.insertBefore(head, first);
+    main.insertBefore(ctl, first);
+  }
+
+  function refreshCharts(sections){
+    requestAnimationFrame(() => {
+      (sections || secEls()).forEach(sec => sec.querySelectorAll('canvas').forEach(c => {
+        const ch = window.Chart && Chart.getChart && Chart.getChart(c);
+        if (ch) { try { ch.resize(); } catch (e) {} }
+      }));
+    });
+  }
+
+  function applySectionOrder(ids){
+    const cur = secEls(), byId = {};
+    cur.forEach(s => { byId[s.id] = s; });
+    permute(cur, mergeOrder(ids, DEFAULT.sections).map(id => byId[id]));
+    placeRangeControls();
+  }
+  function applyChartOrder(secId, keys){
+    const sec = document.getElementById(secId); if (!sec) return;
+    const cur = chartPanels(sec), byKey = {};
+    cur.forEach(p => { byKey[panelKey(p)] = p; });
+    if (cur.length < 2) return;
+    permute(cur, mergeOrder(keys, DEFAULT.charts[secId] || cur.map(panelKey)).map(k => byKey[k]));
+  }
+
+  function snapshot(){
+    const charts = {};
+    secEls().forEach(s => { charts[s.id] = chartPanels(s).map(panelKey); });
+    return { sections: secEls().map(s => s.id), charts };
+  }
+  function persist(){ try { localStorage.setItem(LS_KEY, JSON.stringify(snapshot())); } catch (e) {} }
+
+  /* ---------- apply a saved layout on load ---------- */
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_KEY));
+    if (saved && Array.isArray(saved.sections)){
+      applySectionOrder(saved.sections);
+      Object.keys(saved.charts || {}).forEach(id => applyChartOrder(id, saved.charts[id]));
+      refreshCharts();
+    }
+  } catch (e) { console.error('Layout: could not apply saved layout', e); }
+
+  /* ---------- the settings drawer ---------- */
+  const expanded = new Set();
+
+  function arrows(act, disUp, disDown){
+    return `<div class="lay-btns">
+      <button type="button" data-act="${act}-up" aria-label="Move up" ${disUp ? 'disabled' : ''}>▲</button>
+      <button type="button" data-act="${act}-down" aria-label="Move down" ${disDown ? 'disabled' : ''}>▼</button></div>`;
+  }
+
+  function render(){
+    const secs = secEls();
+    list.innerHTML = secs.map((s, i) => {
+      const charts = chartPanels(s), multi = charts.length > 1, open = multi && expanded.has(s.id);
+      let h = `<div class="lay-sec" data-sec="${esc(s.id)}"><div class="lay-row">
+        <button type="button" class="lay-exp" data-act="toggle" ${multi ? '' : 'disabled'} aria-label="Show charts">${open ? '▾' : '▸'}</button>
+        <div class="lay-name">${esc(secTitle(s))}${multi ? `<span class="lay-count">${charts.length} charts</span>` : ''}</div>
+        ${arrows('sec', i === 0, i === secs.length - 1)}</div>`;
+      if (open) h += charts.map((p, j) => `<div class="lay-row lay-chart" data-key="${esc(panelKey(p))}">
+        <div class="lay-name">${esc(panelTitle(p))}</div>${arrows('chart', j === 0, j === charts.length - 1)}</div>`).join('');
+      return h + '</div>';
+    }).join('');
+  }
+
+  function moveSection(id, dir){
+    const cur = secEls(), i = cur.findIndex(s => s.id === id), j = i + dir;
+    if (i < 0 || j < 0 || j >= cur.length) return;
+    const next = cur.slice(); [next[i], next[j]] = [next[j], next[i]];
+    permute(cur, next); placeRangeControls(); persist(); render(); refreshCharts([next[i], next[j]]);
+  }
+  function moveChart(secId, key, dir){
+    const sec = document.getElementById(secId); if (!sec) return;
+    const cur = chartPanels(sec), i = cur.findIndex(p => panelKey(p) === key), j = i + dir;
+    if (i < 0 || j < 0 || j >= cur.length) return;
+    const next = cur.slice(); [next[i], next[j]] = [next[j], next[i]];
+    permute(cur, next); persist(); render(); refreshCharts([sec]);
+  }
+
+  list.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b || b.disabled) return;
+    const row = b.closest('.lay-row'), secId = b.closest('.lay-sec').dataset.sec, act = b.dataset.act;
+    if (act === 'toggle'){ expanded.has(secId) ? expanded.delete(secId) : expanded.add(secId); render(); }
+    else if (act === 'sec-up') moveSection(secId, -1);
+    else if (act === 'sec-down') moveSection(secId, 1);
+    else if (act === 'chart-up') moveChart(secId, row.dataset.key, -1);
+    else if (act === 'chart-down') moveChart(secId, row.dataset.key, 1);
+  });
+
+  document.getElementById('layoutReset').addEventListener('click', () => {
+    applySectionOrder(DEFAULT.sections);
+    Object.keys(DEFAULT.charts).forEach(id => applyChartOrder(id, DEFAULT.charts[id]));
+    try { localStorage.removeItem(LS_KEY); } catch (e) {}
+    render(); refreshCharts();
+  });
+
+  function open(){
+    render();
+    overlay.classList.add('open'); panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function close(){
+    overlay.classList.remove('open'); panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+  if (openBtn) openBtn.addEventListener('click', open);
+  overlay.addEventListener('click', close);
+  document.getElementById('layoutClose').addEventListener('click', close);
+  document.getElementById('layoutDone').addEventListener('click', close);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
+
+  // The page's pull-to-refresh listens for touches on `document`; keep drags
+  // inside the drawer from being mistaken for a pull.
+  ['touchstart', 'touchmove', 'touchend'].forEach(t => {
+    panel.addEventListener(t, e => e.stopPropagation(), { passive: true });
+    overlay.addEventListener(t, e => e.stopPropagation(), { passive: true });
+  });
+})();
+</script>
 </body>
 </html>
