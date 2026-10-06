@@ -1598,20 +1598,49 @@ const DEFICIT_THRESHOLD_IN = { bermuda: 0.65, fescue: 0.45 };
 // Above-the-chart min/max NUMBER INPUTS -- typed values control the scale
 // directly, pre-filled with the computed default range immediately (no
 // click needed to "activate" the default).
-function wireYAxisInputs(containerId, chart, yMinData, yMaxData, opts={}){
-  // Pinch-zoom + double-tap-to-reset now handle axis adjustment directly
-  // on the chart, so the typed Y min/max inputs are redundant UI -- this
-  // keeps just the useful part (a sensible default zoomed-in range applied
-  // automatically) without rendering any input fields, freeing up the
-  // vertical space they used to take above each chart.
-  const yPad = (yMaxData - yMinData) * 0.15 || 1;
-  let yLo = yMinData - yPad, yHi = yMaxData + yPad;
-  if (opts.wholeNumbers){ yLo = Math.floor(yLo); yHi = Math.ceil(yHi); }
-  yLo = Number(yLo.toFixed(2)); yHi = Number(yHi.toFixed(2));
-  const startMin = opts.zeroFloor ? Math.max(yLo, 0) : yLo;
-  chart.options.scales.y.min = startMin;
-  chart.options.scales.y.max = yHi;
-  chart.update('none');
+// ---- Y-axis fitting ----------------------------------------------------------
+// The range is computed BEFORE the chart is created and passed in as the y scale's
+// min/max, so the very first layout -- and the progressive draw-in animation -- already
+// use the final scale. (Applying it afterwards with chart.update('none') left points that
+// were already mid-animation positioned against the old automatic axis, so lines drew up
+// to ~30px away from where the tick labels said their values were.)
+//
+// min/max are snapped OUTWARD to a round step, and the tick labels are generated on that
+// same step (afterBuildTicks, like the x-axis), so ticks are evenly spaced round numbers
+// with no odd "7, 20, 30, 40" bounds -- and still adapt when you pinch-zoom.
+function niceStep(raw, whole){
+  if (!(raw > 0)) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const cands = whole ? [1, 2, 5, 10] : [1, 2, 2.5, 5, 10];
+  let step = (cands.find(c => c * mag >= raw - 1e-12) ?? 10) * mag;
+  if (whole) step = Math.max(1, Math.round(step));        // whole-number charts can't tick in fractions
+  return step;
+}
+function computeYRange(yMinData, yMaxData, opts={}){
+  const pad = (yMaxData - yMinData) * 0.15 || 1;
+  let lo = yMinData - pad, hi = yMaxData + pad;
+  const step = niceStep((hi - lo) / 6, !!opts.wholeNumbers);
+  lo = Math.floor(lo / step + 1e-9) * step;
+  hi = Math.ceil(hi / step - 1e-9) * step;
+  if (opts.zeroFloor) lo = Math.max(lo, 0);
+  return { min: Number(lo.toFixed(6)), max: Number(hi.toFixed(6)), step };
+}
+function niceYTicks(wholeNumbers, range){
+  return (axis) => {
+    const lo = axis.min, hi = axis.max;
+    // At the fitted range, reuse the step that chose the bounds (so min and max are both ticks).
+    // Once zoomed/panned, the range is no longer the fitted one -- re-pick a step for what's on screen.
+    const fitted = range && Math.abs(lo - range.min) < 1e-9 && Math.abs(hi - range.max) < 1e-9;
+    const step = fitted ? range.step : niceStep((hi - lo) / 6, wholeNumbers);
+    const ticks = [];
+    for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-9; v += step) ticks.push({ value: Number(v.toFixed(6)) });
+    axis.ticks = ticks;
+  };
+}
+function yScaleOptions(range, wholeNumbers, extra={}){
+  return Object.assign({ title:{display:false}, min:range.min, max:range.max,
+    afterBuildTicks: niceYTicks(wholeNumbers, range),
+    ticks: wholeNumbers ? {precision:0} : {} }, extra);
 }
 
 function addCumulativeYearlyReset(rowsSorted){
@@ -1799,7 +1828,14 @@ async function buildDeficitChart(grassType, chartId, sliderContainerId){
   const statusColor = (y) => y >= threshold ? '#b5522f' : (y >= watch ? '#c49a6c' : '#2e4a34');
 
   function draw(){
-    const chart = makeChart(chartId, {
+    // Y-axis fit to only what's visible in the current day-of-year window,
+    // same reasoning as the multi-year charts -- falls back to the full
+    // series if the window happens to contain no points at all.
+    const visiblePlotY = plotPoints.filter(p => p.x >= globalDoyRange.min && p.x <= globalDoyRange.max).map(p=>p.y);
+    const allY = (visiblePlotY.length ? visiblePlotY : plotPoints.map(p=>p.y)).concat([threshold]);
+    const yRange = computeYRange(Math.min(0,...allY), Math.max(...allY), {zeroFloor:true});
+
+    makeChart(chartId, {
       type:'line',
       data:{ datasets:[
         { label:'Deficit', data:plotPoints, pointRadius:0, tension:.15, fill:false, borderWidth:2.5,
@@ -1814,16 +1850,8 @@ async function buildDeficitChart(grassType, chartId, sliderContainerId){
           labels:{ filter: (item) => item.text !== 'Deficit' } }, // the line's own color already says the status
           zoom: zoomPanConfig() },
         scales:{ x: monthWeekXAxis(globalDoyRange.min, globalDoyRange.max),
-                 y:{title:{display:false}} } }
+                 y: yScaleOptions(yRange, false) } }
     });
-
-    // Y-axis fit to only what's visible in the current day-of-year window,
-    // same reasoning as the multi-year charts -- falls back to the full
-    // series if the window happens to contain no points at all.
-    const visiblePlotY = plotPoints.filter(p => p.x >= globalDoyRange.min && p.x <= globalDoyRange.max).map(p=>p.y);
-    const allY = (visiblePlotY.length ? visiblePlotY : plotPoints.map(p=>p.y)).concat([threshold]);
-    try { wireYAxisInputs(sliderContainerId, chart, Math.min(0,...allY), Math.max(...allY), {zeroFloor:true}); }
-    catch (e) { console.error(`Y-axis inputs failed for ${chartId}:`, e); }
   }
 
   registeredDeficitCharts.push(draw);
@@ -1889,13 +1917,6 @@ async function buildMultiYearChart(opts){
     const avgPoints = Object.keys(avgByDoy).map(Number).sort((a,b)=>a-b).map(doy => ({x:doy, y:Number(avg(avgByDoy[doy]).toFixed(3))}));
     if (avgPoints.length) datasets.push({ label:'Average', data:avgPoints, borderColor:'#5c5850', borderDash:[6,4], pointRadius:0, pointStyle:'line', tension:.15, fill:false });
 
-    const chart = makeChart(chartId, {
-      type: chartType, data:{ datasets },
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{ display:true, position:'bottom' }, zoom: zoomPanConfig() },
-        scales:{ x: monthWeekXAxis(globalDoyRange.min, globalDoyRange.max),
-                 y:{title:{display:false}, ticks: yWholeNumbers ? {precision:0} : {}} } }
-    });
     // Y-axis fit to only what's VISIBLE within the current day-of-year
     // window (across whichever datasets are shown, including the average/
     // min-max lines), not the full year's range -- so a preset actually
@@ -1908,8 +1929,15 @@ async function buildMultiYearChart(opts){
     const yMinSrc = !visibleY.length ? 0
       : (includeZeroY ? Math.min(0, ...visibleY) : Math.min(...visibleY));
     const yMaxSrc = visibleY.length ? Math.max(...visibleY) : 1;
-    try { wireYAxisInputs(sliderContainerId, chart, yMinSrc, yMaxSrc, {zeroFloor:zeroFloorY, wholeNumbers:yWholeNumbers}); }
-    catch (e) { console.error(`Y-axis inputs failed for ${chartId}:`, e); }
+    const yRange = computeYRange(yMinSrc, yMaxSrc, {zeroFloor:zeroFloorY, wholeNumbers:yWholeNumbers});
+
+    makeChart(chartId, {
+      type: chartType, data:{ datasets },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:true, position:'bottom' }, zoom: zoomPanConfig() },
+        scales:{ x: monthWeekXAxis(globalDoyRange.min, globalDoyRange.max),
+                 y: yScaleOptions(yRange, yWholeNumbers) } }
+    });
   }
 
   noteChartYears(years, draw);
@@ -2609,7 +2637,8 @@ async function buildYearlyCountChart(chartId, sliderContainerId, label, color, r
     if (!y) return true;
     return (y.getPixelForValue(0) - y.getPixelForValue(v)) >= 20;
   };
-  const chart = makeChart(chartId, {
+  const yRange = computeYRange(0, maxVal, {zeroFloor:true, wholeNumbers:true});
+  makeChart(chartId, {
     type:'bar',
     data:{ labels:years, datasets:[
       // To-date value sits inside the top of the solid bar in white, but only
@@ -2635,9 +2664,8 @@ async function buildYearlyCountChart(chartId, sliderContainerId, label, color, r
           footer:(items) => `Full year: ${totals[items[0].dataIndex]}`,
         } } },
       scales:{ x:{ stacked:true },
-        y:{ stacked:true, beginAtZero:true, suggestedMax: maxVal*1.15, ticks:{precision:0} } } }
+        y: yScaleOptions(yRange, true, { stacked:true, beginAtZero:true }) } }
   });
-  wireYAxisInputs(sliderContainerId, chart, 0, maxVal, {zeroFloor:true, wholeNumbers:true});
 }
 
 async function initRecordsSection(){
@@ -2920,11 +2948,17 @@ checkSession();
   const countedOf = z => has(persist.count, z) ? !!persist.count[z] : COUNT_DEFAULT(z);
   const needOf    = which => { const n = window.TURF_WEEK_NEED; const v = n && n[which]; return v > 0 ? v : null; };
 
+  const histOf = g => (state.hist[g] && state.hist[g].value > 0) ? state.hist[g].value : null;
+
+  // The target can track this week's projected need ('bermuda' / 'fescue') or the historical
+  // average for this week ('bermuda-hist' / 'fescue-hist') until it's typed over.
   function syncTargetFromNeed(){
-    if (state.follow === 'bermuda' || state.follow === 'fescue'){
-      const v = needOf(state.follow);
-      if (v != null) state.target = r2(v);
-    }
+    const f = state.follow;
+    let v = null;
+    if (f === 'bermuda' || f === 'fescue') v = needOf(f);
+    else if (f === 'bermuda-hist') v = histOf('bermuda');
+    else if (f === 'fescue-hist') v = histOf('fescue');
+    if (v != null) state.target = r2(v);
   }
 
   /* ---------- the math ---------- */
@@ -2996,9 +3030,12 @@ checkSession();
     const b = needOf('bermuda'), f = needOf('fescue');
     const chip = (id, label, disabled) =>
       `<span class="year-chip ${state.follow === id ? 'on' : ''}" data-follow="${id}"${disabled ? ' style="opacity:.45;pointer-events:none"' : ''}>${label}</span>`;
+    const hb = histOf('bermuda'), hf = histOf('fescue');
     el('budChips').innerHTML =
       chip('bermuda',  'Use Bermuda need' + (b != null ? ' · ' + num(b, 2) : ''), b == null) +
       chip('fescue',   'Use Fescue need'  + (f != null ? ' · ' + num(f, 2) : ''), f == null) +
+      chip('bermuda-hist', 'Use Bermuda historical avg' + (hb != null ? ' · ' + num(hb, 2) : ''), hb == null) +
+      chip('fescue-hist',  'Use Fescue historical avg'  + (hf != null ? ' · ' + num(hf, 2) : ''), hf == null) +
       chip('property', 'Use property target · ' + num(PROPERTY_TARGET, 2), false);
   }
 
@@ -3166,7 +3203,8 @@ checkSession();
       state.histState = 'error';
     } finally {
       state.loadingHist = false;
-      renderTiles();
+      syncTargetFromNeed();
+      renderAll();
     }
   }
 
