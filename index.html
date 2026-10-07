@@ -461,6 +461,11 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
 .lay-vis.on{ background:var(--turf); }
 .lay-vis.on span{ transform:translateX(18px); }
 .lay-sec.is-hidden > .lay-row .lay-name{ opacity:0.45; }
+.lay-ranges{ padding:16px 4px 8px; }
+.lay-ranges h3{ font-size:0.95rem; margin-bottom:2px; }
+.lay-ranges p{ font-size:0.76rem; color:var(--text-secondary); line-height:1.45; margin:0 0 4px; }
+.lay-ranges label{ display:block; font-size:0.78rem; color:var(--text-secondary); margin-top:12px; margin-bottom:4px; }
+.lay-ranges select{ width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); color:var(--text); font-size:0.9rem; font-family:inherit; }
 .lay-count{ margin-left:8px; font-size:0.7rem; font-weight:500; color:var(--text-tertiary); }
 .lay-exp{ width:26px; height:34px; background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:0.9rem; padding:0; }
 .lay-exp:disabled{ visibility:hidden; }
@@ -1732,6 +1737,19 @@ function computeDoyRange(preset){
   return { min: Math.max(1, lo), max: Math.min(366, hi) };
 }
 
+// Starting day range for the three range selectors (trend charts, Water Balance, Water
+// Applied by zone). Comes from the Layout settings drawer (saved per device); the chips on the
+// page still change it on the fly. Falls back to the original defaults if nothing is saved.
+const RANGE_DEFAULTS_FALLBACK = { doy: 'full', wb: '90', zone: '0' };
+function rangeDefault(key){
+  const d = window.TURF_RANGE_DEFAULTS && window.TURF_RANGE_DEFAULTS[key];
+  return d || RANGE_DEFAULTS_FALLBACK[key];
+}
+function markRangeChip(rowSelector, r){
+  const row = document.querySelector(rowSelector); if (!row) return;
+  row.querySelectorAll('.year-chip').forEach(c => c.classList.toggle('on', c.dataset.r === String(r)));
+}
+
 // Deficit charts always show just the current (or latest available) year,
 // so they sit outside the year-tile system entirely -- this is their own
 // lightweight equivalent of registeredTrendCharts/redrawAllTrendCharts,
@@ -1990,6 +2008,8 @@ async function historicalWeekNeed(grassType){
 }
 
 async function initTrendCharts(){
+  // Start at the day range chosen in Layout settings (default: full year) -- set before any chart draws.
+  { const r0 = rangeDefault('doy'); globalDoyRange = computeDoyRange(r0); markRangeChip('#doyRangeChips', r0); }
   // allSettled, not all -- one chart's fetch failing shouldn't block every
   // other chart from ever getting its first real render.
   await Promise.allSettled([
@@ -2141,8 +2161,11 @@ async function buildWaterRadarChart(){
 }
 
 function initZoneBarSection(){
-  const [f, t] = [daysAgo(0), new Date()];
-  $('#zoneBarFrom').value = fmtDate(f); $('#zoneBarTo').value = fmtDate(t);
+  // starting range from Layout settings (default: Today); same rules as the chip handler below
+  const r0 = rangeDefault('zone'); markRangeChip('#zoneBarRangeChips', r0);
+  const todayStr = fmtDate(new Date());
+  $('#zoneBarFrom').value = r0 === 'thisweek' ? currentWeekRange().start : (r0 === '0' ? todayStr : fmtDate(daysAgo(Number(r0))));
+  $('#zoneBarTo').value = todayStr;
 
   $('#zoneBarRangeChips').querySelectorAll('.year-chip').forEach(chip => {
     chip.addEventListener('click', () => {
@@ -2222,7 +2245,9 @@ async function buildZoneBarChart(from, to){
 }
 
 async function initWaterBalanceSection(){
-  const [f, t] = [daysAgo(90), new Date()];
+  // starting range from Layout settings (default: 3 months)
+  const r0 = rangeDefault('wb'); markRangeChip('#wbRangeChips', r0);
+  const [f, t] = [daysAgo(Number(r0)), new Date()];
   $('#wbFrom').value = fmtDate(f); $('#wbTo').value = fmtDate(t);
 
   $('#wbRangeChips').querySelectorAll('.year-chip').forEach(chip => {
@@ -2878,7 +2903,7 @@ checkSession();
 <div id="layoutOverlay"></div>
 <aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
   <div class="lay-head"><h2>Layout</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
-  <p class="lay-help">Use the switch to show or hide a section, and ▲ ▼ to reorder. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device.</p>
+  <p class="lay-help">Use the switch to show or hide a section, and ▲ ▼ to reorder. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device. Default day ranges are at the bottom.</p>
   <div id="layoutList"></div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset to default</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
@@ -3293,6 +3318,25 @@ checkSession();
   'use strict';
 
   const LS_KEY = 'turfops.layout.v1';
+
+  /* ---------- default day ranges (read by the page's init code via window.TURF_RANGE_DEFAULTS) ---------- */
+  const RANGE_LS = 'turfops.ranges.v1';
+  const RANGE_FALLBACK = { doy: 'full', wb: '90', zone: '0' };
+  const RANGE_UI = [
+    { key: 'doy',  label: 'Trend charts (Years & range)',      row: '#doyRangeChips',
+      opts: [['today','Today'],['lastweek','Last week'],['thisweek','This week'],['1month','1 month'],['3month','3 months'],['6month','6 months'],['full','Full year']] },
+    { key: 'wb',   label: 'What the Grass Needed vs. What It Got', row: '#wbRangeChips',
+      opts: [['7','1 week'],['30','1 month'],['90','3 months'],['180','6 months'],['365','1 year']] },
+    { key: 'zone', label: 'Water Applied — By Zone',           row: '#zoneBarRangeChips',
+      opts: [['0','Today'],['thisweek','This week'],['30','1 month'],['180','6 months'],['365','1 year']] },
+  ];
+  const rangeDefaults = Object.assign({}, RANGE_FALLBACK);
+  try {
+    const saved = JSON.parse(localStorage.getItem(RANGE_LS)) || {};
+    RANGE_UI.forEach(u => { if (typeof saved[u.key] === 'string' && u.opts.some(o => o[0] === saved[u.key])) rangeDefaults[u.key] = saved[u.key]; });
+  } catch (e) {}
+  window.TURF_RANGE_DEFAULTS = rangeDefaults;
+
   const main = document.querySelector('main');
   const panel = document.getElementById('layoutPanel');
   const overlay = document.getElementById('layoutOverlay');
@@ -3413,7 +3457,11 @@ checkSession();
       if (open) h += charts.map((p, j) => `<div class="lay-row lay-chart" data-key="${esc(panelKey(p))}">
         <div class="lay-name">${esc(panelTitle(p))}</div>${arrows('chart', j === 0, j === charts.length - 1)}</div>`).join('');
       return h + '</div>';
-    }).join('');
+    }).join('') + `<div class="lay-ranges"><h3>Default day ranges</h3>
+      <p>What each chart group shows when the page opens. Changing one also switches the view now; the range chips on the page still change it on the fly.</p>` +
+      RANGE_UI.map(u => `<label for="layRange-${u.key}">${esc(u.label)}</label>
+        <select id="layRange-${u.key}" data-range="${u.key}">${u.opts.map(o => `<option value="${o[0]}" ${o[0] === rangeDefaults[u.key] ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`).join('') +
+      `</div>`;
   }
 
   function toggleSection(id){
@@ -3446,6 +3494,15 @@ checkSession();
     else if (act === 'sec-down') moveSection(secId, 1);
     else if (act === 'chart-up') moveChart(secId, row.dataset.key, -1);
     else if (act === 'chart-down') moveChart(secId, row.dataset.key, 1);
+  });
+
+  list.addEventListener('change', e => {
+    const sel = e.target.closest('select[data-range]'); if (!sel) return;
+    const u = RANGE_UI.find(x => x.key === sel.dataset.range); if (!u) return;
+    rangeDefaults[u.key] = sel.value;
+    try { localStorage.setItem(RANGE_LS, JSON.stringify(rangeDefaults)); } catch (err) {}
+    const chip = document.querySelector(`${u.row} .year-chip[data-r="${sel.value}"]`);
+    if (chip) chip.click();                       // apply now, through the section's own handler (redraws as usual)
   });
 
   document.getElementById('layoutReset').addEventListener('click', () => {
