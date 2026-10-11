@@ -2926,13 +2926,20 @@ checkSession();
   const PROPERTY_TARGET = 1.5;                // in/week reference target
   const DEFAULT_CYCLES = 4;
   const DEFAULT_DAYS = 2;                     // watering days per week
+  // Settings are keyed per PROGRAM + zone ('A:1'), because a zone can belong to more than one program
+  // (Program D reuses zones from A, B and C with its own run times). Precip rate is a property of the
+  // zone itself, so it stays keyed by zone number alone.
   const PROGRAMS = [
-    { key:'A', title:'Program A', area:'Front & East', zones:[ {z:1,min:20}, {z:2,min:20}, {z:3,min:20}, {z:4,min:20} ] },
-    { key:'B', title:'Program B', area:'Front West',   zones:[ {z:5,min:25}, {z:6,min:30}, {z:7,min:30}, {z:11,min:5} ] },
-    { key:'C', title:'Program C', area:'Backyard',     zones:[ {z:8,min:22}, {z:9,min:20}, {z:10,min:30} ] },
+    { key:'A', title:'Program A', area:'Front & East', legacy:true, zones:[ {z:1,min:20}, {z:2,min:20}, {z:3,min:20}, {z:4,min:20} ] },
+    { key:'B', title:'Program B', area:'Front West',   legacy:true, zones:[ {z:5,min:25}, {z:6,min:30}, {z:7,min:30}, {z:11,min:5} ] },
+    { key:'C', title:'Program C', area:'Backyard',     legacy:true, zones:[ {z:8,min:22}, {z:9,min:20}, {z:10,min:30} ] },
+    // Run times for D are PLACEHOLDERS (each zone's time from its other program) until real ones are entered.
+    { key:'D', title:'Program D', area:'Fescue', placeholder:true,
+      zones:[ {z:1,min:20}, {z:2,min:20}, {z:3,min:20}, {z:4,min:20}, {z:5,min:25}, {z:8,min:22}, {z:9,min:20} ] },
   ];
-  const ZONE_DEFAULT_MIN = {};
-  PROGRAMS.forEach(p => p.zones.forEach(zd => { ZONE_DEFAULT_MIN[zd.z] = zd.min; }));
+  const zk = (pk, z) => pk + ':' + z;
+  const DEFAULT_MIN = {};
+  PROGRAMS.forEach(p => p.zones.forEach(zd => { DEFAULT_MIN[zk(p.key, zd.z)] = zd.min; }));
   // Only used if the irrigation_zones table can't be read: 0.3 in/hr (catch-cup
   // tested) for sprinkler zones, 0.75 in/hr for the mister / flower beds.
   const FALLBACK_RATE = z => (z === 11 || z === 12) ? 0.75 : 0.3;
@@ -2967,16 +2974,24 @@ checkSession();
     winEnd: isTime(saved.winEnd) ? saved.winEnd : '12:00',            // end of the watering window (mowers head out at noon)
     mode:   saved.mode === 'queue' ? 'queue' : 'each',               // 'each' = own day, 'queue' = same morning, one after another
   };
+  PROGRAMS.filter(p => p.legacy).forEach(p => p.zones.forEach(zd => {
+    const old = String(zd.z), nk = zk(p.key, zd.z);
+    for (const field of ['base', 'count']) {
+      if (has(persist[field], old)) { if (!has(persist[field], nk)) persist[field][nk] = persist[field][old]; delete persist[field][old]; }
+    }
+  }));
   const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(persist)); } catch (e) {} };
 
   const state = { target: PROPERTY_TARGET, follow: 'bermuda', zoneInfo: {}, loadingZones: false, hist: {}, histState: 'loading', loadingHist: false };
 
   const cyclesOf  = k => (persist.cycles[k] > 0) ? persist.cycles[k] : DEFAULT_CYCLES;
   const gapOf     = k => (has(persist.gap, k) && persist.gap[k] >= 0) ? persist.gap[k] : 0;
-  const baseOf    = (z, def) => has(persist.base, z) ? persist.base[z] : def;
+  const baseOf    = (pk, z, def) => has(persist.base, zk(pk, z)) ? persist.base[zk(pk, z)] : def;
   const dbRate    = z => (state.zoneInfo[z] && state.zoneInfo[z].rate > 0) ? state.zoneInfo[z].rate : FALLBACK_RATE(z);
   const rateOf    = z => has(persist.rate, z) ? persist.rate[z] : dbRate(z);
-  const countedOf = z => has(persist.count, z) ? !!persist.count[z] : COUNT_DEFAULT(z);
+  const countedOf = (pk, z) => has(persist.count, zk(pk, z)) ? !!persist.count[zk(pk, z)] : COUNT_DEFAULT(z);
+  // A placeholder program (D) is "confirmed" once any of its run times or its cycle count has been entered.
+  const isPlaceholder = p => !!p.placeholder && !p.zones.some(zd => has(persist.base, zk(p.key, zd.z))) && !has(persist.cycles, p.key);
   const needOf    = which => { const n = window.TURF_WEEK_NEED; const v = n && n[which]; return v > 0 ? v : null; };
 
   const histOf = g => (state.hist[g] && state.hist[g].value > 0) ? state.hist[g].value : null;
@@ -2998,11 +3013,11 @@ checkSession();
     return PROGRAMS.map(p => {
       const cyc = cyclesOf(p.key);
       const rows = p.zones.map(zd => {
-        const z = zd.z, min = baseOf(z, zd.min), rate = rateOf(z);
+        const z = zd.z, min = baseOf(p.key, z, zd.min), rate = rateOf(z);
         const baseInDay = rate * min * cyc / 60;                      // in per watering day at 100%
         const needPct = baseInDay > 0 ? perDay / baseInDay * 100 : null;
         const info = state.zoneInfo[z] || {};
-        return { z, min, rate, baseInDay, needPct, counted: countedOf(z), name: info.name || '', grass: info.grass || '' };
+        return { z, min, rate, baseInDay, needPct, counted: countedOf(p.key, z), name: info.name || '', grass: info.grass || '' };
       });
       const vals = rows.filter(x => x.counted && x.needPct != null).map(x => x.needPct);
       let raw = null;
@@ -3017,7 +3032,7 @@ checkSession();
         x.atMin = pct == null ? null : x.min * pct / 100;                 // minutes per cycle at that budget
         x.atWk  = pct == null ? null : x.baseInDay * pct / 100 * days;    // inches per week at that budget
       });
-      return { p, cyc, rows, raw, pct, clamped: raw != null && (raw > MAX_PCT || raw < MIN_PCT) };
+      return { p, cyc, rows, raw, pct, placeholder: isPlaceholder(p), clamped: raw != null && (raw > MAX_PCT || raw < MIN_PCT) };
     });
   }
 
@@ -3104,6 +3119,7 @@ checkSession();
         <div class="bud-set"><div class="lbl">Set budget to</div><div class="big ${clamped ? 'warn' : ''}">${pct == null ? '—' : pct + '%'}</div>${t && t.end != null ? `<div class="bud-ends ${t.over ? 'warn' : ''}">ends ${fmtClock(t.end)}</div>` : ''}</div>
       </div>
       ${note ? `<div class="bud-note">${note}</div>` : ''}
+      ${r.placeholder ? `<div class="bud-note" style="color:var(--text-secondary);">Run times and cycles for ${esc(p.title)} are placeholders (copied from each zone's other program). Enter its real times in Zone setup below, or <a href="#" data-confirm-prog="${p.key}" style="color:var(--turf);font-weight:600;">use these as-is</a>.</div>` : ''}
       <div class="table-wrap" style="max-height:none;"><table class="data bud-table">
         <thead><tr><th>Zone</th><th>Baseline</th><th>Budget needed</th><th>At ${pct == null ? '—' : pct + '%'} budget</th></tr></thead>
         <tbody>${body}</tbody>
@@ -3121,7 +3137,7 @@ checkSession();
 
     document.querySelectorAll('#budMode button').forEach(b => b.classList.toggle('on', b.dataset.mode === persist.mode));
     el('budModeNote').textContent = persist.mode === 'queue'
-      ? `Everything is scheduled for the same morning: Program A starts at ${fmtClock(startMin)}, B starts when A finishes, then C.`
+      ? `Everything is scheduled for the same morning: Program A starts at ${fmtClock(startMin)}, B starts when A finishes, then C, then D.`
       : `Each program begins at ${fmtClock(startMin)} on its own watering day.`;
 
     const blocks = results.map((r, i) => {
@@ -3163,9 +3179,9 @@ checkSession();
         const sub = [info.name, info.grass ? cap(info.grass) : ''].filter(Boolean).map(esc).join(' · ');
         rows += `<tr>
           <td><b>Zone ${z}</b>${sub ? `<div class="bud-zsub">${sub}</div>` : ''}</td>
-          <td><input type="number" min="0" step="1" data-base="${z}" value="${baseOf(z, zd.min)}"></td>
+          <td><input type="number" min="0" step="1" data-base="${zk(p.key, z)}" value="${baseOf(p.key, z, zd.min)}"></td>
           <td><input type="number" min="0.05" step="0.05" data-rate="${z}" value="${rateOf(z)}"></td>
-          <td><input type="checkbox" data-count="${z}" ${countedOf(z) ? 'checked' : ''}></td>
+          <td><input type="checkbox" data-count="${zk(p.key, z)}" ${countedOf(p.key, z) ? 'checked' : ''}></td>
         </tr>`;
       });
     });
@@ -3269,22 +3285,26 @@ checkSession();
   setupHost.addEventListener('input', e => {
     const t = e.target, v = parseFloat(t.value);
     if (t.type === 'checkbox' || !(v >= 0)) return;
+    const prog = k => PROGRAMS.find(p => p.key === String(k).split(':')[0]);
     if (t.dataset.base !== undefined){
-      if (v === ZONE_DEFAULT_MIN[t.dataset.base]) delete persist.base[t.dataset.base]; else persist.base[t.dataset.base] = v;
+      // a placeholder program always stores what you type, so it counts as confirmed even if it equals the placeholder
+      if (v === DEFAULT_MIN[t.dataset.base] && !prog(t.dataset.base).placeholder) delete persist.base[t.dataset.base]; else persist.base[t.dataset.base] = v;
     } else if (t.dataset.rate !== undefined){
       if (v === dbRate(Number(t.dataset.rate))) delete persist.rate[t.dataset.rate]; else persist.rate[t.dataset.rate] = v;
+      // the same zone can appear under several programs: keep every copy of its rate input in step
+      setupHost.querySelectorAll(`[data-rate="${t.dataset.rate}"]`).forEach(i => { if (i !== t) i.value = t.value; });
     } else if (t.dataset.gap !== undefined){
       if (v === 0) delete persist.gap[t.dataset.gap]; else persist.gap[t.dataset.gap] = v;
     } else if (t.dataset.cyc !== undefined){
       if (v < 1) return;
-      if (v === DEFAULT_CYCLES) delete persist.cycles[t.dataset.cyc]; else persist.cycles[t.dataset.cyc] = Math.round(v);
+      if (v === DEFAULT_CYCLES && !PROGRAMS.find(p => p.key === t.dataset.cyc).placeholder) delete persist.cycles[t.dataset.cyc]; else persist.cycles[t.dataset.cyc] = Math.round(v);
     } else return;
     save(); renderOutputs();
   });
   setupHost.addEventListener('change', e => {
     const t = e.target;
     if (t.dataset.count !== undefined){
-      if (t.checked === COUNT_DEFAULT(Number(t.dataset.count))) delete persist.count[t.dataset.count]; else persist.count[t.dataset.count] = t.checked;
+      if (t.checked === COUNT_DEFAULT(Number(t.dataset.count.split(':')[1]))) delete persist.count[t.dataset.count]; else persist.count[t.dataset.count] = t.checked;
       save(); renderOutputs();
     }
   });
@@ -3293,6 +3313,15 @@ checkSession();
       persist.cycles = {}; persist.base = {}; persist.rate = {}; persist.count = {}; persist.gap = {};
       save(); renderSetup(); renderOutputs();
     }
+  });
+
+  el('budgetPrograms').addEventListener('click', e => {
+    const a = e.target.closest('[data-confirm-prog]'); if (!a) return;
+    e.preventDefault();
+    const p = PROGRAMS.find(x => x.key === a.dataset.confirmProg); if (!p) return;
+    p.zones.forEach(zd => { persist.base[zk(p.key, zd.z)] = baseOf(p.key, zd.z, zd.min); });
+    persist.cycles[p.key] = cyclesOf(p.key);
+    save(); renderAll();
   });
 
   // Called by renderOverviewKpis() once this week's Bermuda / Fescue need is known
