@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TurfOps">
+<meta name="turfops-build" content="2026-10-11 · build 6 (status-bar fix)">
 <!-- Chart.js, moment, the moment adapter, and supabase-js are bundled
      inline below instead of loaded from a CDN, so this page works even on
      networks that block those CDN domains. -->
@@ -440,6 +441,16 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
 .bud-tl-detail .warn{ color:var(--rust); font-weight:600; }
 .bud-tl-axis{ position:relative; height:16px; font-size:0.7rem; color:var(--text-tertiary); font-family:ui-monospace,monospace; }
 .bud-tl-axis span{ position:absolute; top:0; white-space:nowrap; }
+/* ---------- Status-bar safe area (page extends under the status bar since viewport-fit=cover) ---------- */
+#statusBarShade{ position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top, 0px); background:var(--turf); z-index:300; pointer-events:none; }
+header.top{ padding-top:calc(16px + env(safe-area-inset-top, 0px)); }
+.sticky-controls{ top:calc(112px + env(safe-area-inset-top, 0px)); }
+@media (max-width: 760px){
+  .sticky-controls{ top:calc(96px + env(safe-area-inset-top, 0px)); }
+  body.header-hidden .sticky-controls{ top:env(safe-area-inset-top, 0px); }
+}
+#pullToRefresh{ top:env(safe-area-inset-top, 0px); }
+#layoutPanel .lay-head{ padding-top:calc(16px + env(safe-area-inset-top, 0px)); }
 /* ---------- Bottom tab bar + tab visibility ---------- */
 main[data-active-tab="overview"]   [data-tab]:not([data-tab~="overview"]),
 main[data-active-tab="temps"]      [data-tab]:not([data-tab~="temps"]),
@@ -469,6 +480,7 @@ main{ padding-bottom:calc(112px + env(safe-area-inset-bottom, 0px)); }
 .bud-legendrow{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin:-4px 2px 14px; }
 .bud-legendrow .bud-legend{ margin:0; }
 .bud-legendrow .bud-mathbtn{ margin:0; padding:0; white-space:nowrap; }
+.lay-build{ text-align:center; font-size:0.72rem; color:var(--text-tertiary); padding:8px 16px 0; }
 .lay-tabhead{ font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-tertiary); padding:14px 4px 4px; }
 /* ---------- Layout settings drawer ---------- */
 .lay-hidden{ display:none !important; }
@@ -508,6 +520,7 @@ main{ padding-bottom:calc(112px + env(safe-area-inset-bottom, 0px)); }
 </head>
 
 <body>
+<div id="statusBarShade" aria-hidden="true"></div>
 
 <div id="pullToRefresh">
   <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2949,6 +2962,7 @@ checkSession();
   <div class="lay-head"><h2>Layout</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
   <p class="lay-help">Sections are grouped by the tab they appear on. Use the switch to show or hide one, and ▲ ▼ to reorder it within its tab. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device. Default day ranges are at the bottom.</p>
   <div id="layoutList"></div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-11 · build 6 (status-bar fix)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset to default</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
