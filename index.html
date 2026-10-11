@@ -440,6 +440,30 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
 .bud-tl-detail .warn{ color:var(--rust); font-weight:600; }
 .bud-tl-axis{ position:relative; height:16px; font-size:0.7rem; color:var(--text-tertiary); font-family:ui-monospace,monospace; }
 .bud-tl-axis span{ position:absolute; top:0; white-space:nowrap; }
+/* ---------- Bottom tab bar + tab visibility ---------- */
+main[data-active-tab="overview"]   [data-tab]:not([data-tab~="overview"]),
+main[data-active-tab="temps"]      [data-tab]:not([data-tab~="temps"]),
+main[data-active-tab="rain"]       [data-tab]:not([data-tab~="rain"]),
+main[data-active-tab="irrigation"] [data-tab]:not([data-tab~="irrigation"]),
+main[data-active-tab="calculator"] [data-tab]:not([data-tab~="calculator"]),
+main[data-active-tab="records"]    [data-tab]:not([data-tab~="records"]){ display:none !important; }
+.tab-hide{ display:none !important; }
+main{ padding-bottom:calc(92px + env(safe-area-inset-bottom, 0px)); }
+.bottom-tabs{ position:fixed; left:0; right:0; bottom:0; z-index:60; display:flex; background:var(--card); border-top:1px solid var(--line);
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); box-shadow:0 -4px 16px rgba(0,0,0,0.06); }
+.bottom-tabs button{ flex:1; min-width:0; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:5px 0 3px; color:var(--text-tertiary); font-size:0.64rem; font-family:inherit; cursor:pointer; border-radius:10px; -webkit-tap-highlight-color:transparent; }
+.bottom-tabs button svg{ width:22px; height:22px; }
+.bottom-tabs button.on{ color:var(--turf); font-weight:700; }
+.bottom-tabs button.on svg{ stroke-width:2.2; }
+@media (min-width:900px){ .bottom-tabs{ left:50%; right:auto; transform:translateX(-50%); width:560px; bottom:12px; border:1px solid var(--line); border-radius:16px; padding-bottom:6px; } }
+/* ---------- program zone math (collapsible) ---------- */
+.bud-mathbtn{ background:none; border:none; padding:4px 0 0; margin-top:4px; color:var(--turf); font-weight:600; font-size:0.8rem; cursor:pointer; font-family:inherit; text-align:left; }
+.bud-math[hidden]{ display:none; }
+.bud-legendrow{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin:-4px 2px 14px; }
+.bud-legendrow .bud-legend{ margin:0; }
+.bud-legendrow .bud-mathbtn{ margin:0; padding:0; white-space:nowrap; }
+.lay-tabhead{ font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-tertiary); padding:14px 4px 4px; }
 /* ---------- Layout settings drawer ---------- */
 .lay-hidden{ display:none !important; }
 .icon-btn{ background:var(--surface); border:none; color:var(--text-secondary); width:34px; height:34px; border-radius:50%; display:inline-grid; place-items:center; cursor:pointer; flex-shrink:0; padding:0; font-family:inherit; }
@@ -512,10 +536,10 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </div>
   </header>
 
-  <main>
+  <main data-active-tab="overview">
 
     <!-- ================= OVERVIEW KPIS ================= -->
-    <section class="collapsible" id="sec-overview">
+    <section class="collapsible" id="sec-overview" data-tab="overview">
       <button class="section-toggle" data-target="sec-overview" data-icon="gauge"><h2>Overview</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="kpi-row" id="overviewKpis"></div>
@@ -524,7 +548,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= ON THIS DAY ================= -->
-    <section class="collapsible" id="sec-on-this-day">
+    <section class="collapsible" id="sec-on-this-day" data-tab="overview">
       <button class="section-toggle" data-target="sec-on-this-day" data-icon="trend"><h2>On This Day</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel-sub" id="onThisDayLabel" style="margin-bottom:10px;"></div>
@@ -536,10 +560,10 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= SHARED CONTROLS (sticky) ================= -->
-    <div class="panel" id="rangeControlsHeading">
+    <div class="panel" id="rangeControlsHeading" data-tab="temps rain irrigation">
       <h2>Years &amp; range</h2>
     </div>
-    <div class="sticky-controls" id="rangeControls">
+    <div class="sticky-controls" id="rangeControls" data-tab="temps rain irrigation">
       <div class="year-controls" id="yc-shared"></div>
       <div class="year-controls" style="margin-top:10px;">
         <div class="year-group">
@@ -558,7 +582,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </div>
 
     <!-- ================= 1. DAILY HIGHS & LOWS ================= -->
-    <section class="collapsible" id="sec-daily-highs">
+    <section class="collapsible" id="sec-daily-highs" data-tab="temps">
       <button class="section-toggle" data-target="sec-daily-highs" data-icon="thermometer"><h2>Daily Highs &amp; Lows (°F)</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="two-col">
@@ -575,7 +599,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= 2. FEELS-LIKE HIGH & LOW ================= -->
-    <section class="collapsible" id="sec-feels-high">
+    <section class="collapsible" id="sec-feels-high" data-tab="temps">
       <button class="section-toggle" data-target="sec-feels-high" data-icon="thermometer"><h2>Daily Feels-Like High &amp; Low (°F)</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="two-col">
@@ -592,7 +616,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= 3. RAINFALL ================= -->
-    <section class="collapsible" id="sec-cum-rain">
+    <section class="collapsible" id="sec-cum-rain" data-tab="rain">
       <button class="section-toggle" data-target="sec-cum-rain" data-icon="droplet"><h2>Rainfall</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="two-col">
@@ -609,7 +633,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= 4. DEFICIT ================= -->
-    <section class="collapsible" id="sec-deficit-bermuda">
+    <section class="collapsible" id="sec-deficit-bermuda" data-tab="irrigation">
       <button class="section-toggle" data-target="sec-deficit-bermuda" data-icon="droplet"><h2>Running Water Deficit</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel-sub" style="margin-bottom:10px;">Inches per week</div>
@@ -627,7 +651,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= 5. ET WEEKLY ================= -->
-    <section class="collapsible" id="sec-etweekly-bermuda">
+    <section class="collapsible" id="sec-etweekly-bermuda" data-tab="irrigation">
       <button class="section-toggle" data-target="sec-etweekly-bermuda" data-icon="droplet"><h2>Water Needed — 7-Day Rolling Average</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel-sub" style="margin-bottom:10px;">Inches per week</div>
@@ -645,7 +669,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= 6. WHAT GRASS NEEDED VS GOT ================= -->
-    <section class="collapsible" id="sec-water-balance">
+    <section class="collapsible" id="sec-water-balance" data-tab="irrigation">
       <button class="section-toggle" data-target="sec-water-balance" data-icon="droplet"><h2>What the Grass Needed vs. What It Got</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="year-controls" style="margin-bottom:14px;">
@@ -686,7 +710,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= WATER APPLIED VS NEED (RADAR) ================= -->
-    <section class="collapsible" id="sec-water-radar">
+    <section class="collapsible" id="sec-water-radar" data-tab="irrigation">
       <button class="section-toggle" data-target="sec-water-radar" data-icon="droplet"><h2>Water Applied</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="two-col">
@@ -726,7 +750,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= IRRIGATION BUDGET CALCULATOR ================= -->
-    <section class="collapsible" id="sec-budget">
+    <section class="collapsible" id="sec-budget" data-tab="calculator">
       <button class="section-toggle" data-target="sec-budget" data-icon="droplet"><h2>Irrigation Budget Calculator</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="kpi-row" id="budgetNeedKpis"></div>
@@ -753,7 +777,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
           <div class="bud-summary" id="budSummary"></div>
         </div>
         <div id="budgetPrograms"></div>
-        <div class="bud-legend">"At budget" column: <span class="bud-ok">on target (±5%)</span> · <span class="bud-lo">short</span> · <span class="bud-hi">over</span></div>
+        <div class="bud-legendrow"><div class="bud-legend" id="budLegend">"At budget" column: <span class="bud-ok">on target (±5%)</span> · <span class="bud-lo">short</span> · <span class="bud-hi">over</span></div><button type="button" class="bud-mathbtn" id="budMathAll">Show all zone detail</button></div>
         <div class="panel" id="budTimelinePanel">
           <h3 style="font-size:1rem; margin-bottom:2px;">When each program finishes</h3>
           <div class="panel-sub" style="margin-bottom:12px;">Run time = each zone's baseline × the budget above, added up for one cycle, × the cycles per day (plus any gap between cycles set in Zone setup).</div>
@@ -776,7 +800,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= RECORDS ================= -->
-    <section class="collapsible" id="sec-records">
+    <section class="collapsible" id="sec-records" data-tab="records">
       <button class="section-toggle" data-target="sec-records" data-icon="trend"><h2>Records</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel-sub" style="margin-bottom:10px;">Solid bars run through today; light bars show the rest of each year. Lowest full year is blue, highest is red.</div>
@@ -809,7 +833,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
 
     <!-- ================= ON THIS DAY ================= -->
     <!-- ================= REFERENCE ================= -->
-    <section class="collapsible collapsed" id="sec-reference">
+    <section class="collapsible collapsed" id="sec-reference" data-tab="records">
       <button class="section-toggle" data-target="sec-reference" data-icon="book"><h2>Reference</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel">
@@ -907,7 +931,7 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
     </section>
 
     <!-- ================= EXPLORER ================= -->
-    <section class="collapsible collapsed" id="sec-explorer">
+    <section class="collapsible collapsed" id="sec-explorer" data-tab="records">
       <button class="section-toggle" data-target="sec-explorer" data-icon="search"><h2>Explorer</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel">
@@ -942,7 +966,21 @@ details.bud-setup > summary{ cursor:pointer; font-weight:600; font-size:0.92rem;
       </div>
     </section>
 
+
+  <div class="panel" id="tabEmpty" hidden>
+    <h3 style="font-size:1rem; margin-bottom:6px;">Nothing to show here</h3>
+    <div class="panel-sub">Every section in this tab is hidden. Turn them back on from the Layout button in the header.</div>
+  </div>
   </main>
+
+  <nav id="bottomTabs" class="bottom-tabs" role="tablist" aria-label="Dashboard pages">
+    <button type="button" role="tab" data-tab="overview" class="on" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Overview</span></button>
+    <button type="button" role="tab" data-tab="temps" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg><span>Temps</span></button>
+    <button type="button" role="tab" data-tab="rain" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13v6M8 13v6M12 15v6"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg><span>Rain</span></button>
+    <button type="button" role="tab" data-tab="irrigation" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7s6 6.3 6 11a6 6 0 0 1-12 0c0-4.7 6-11 6-11z"/></svg><span>Irrigation</span></button>
+    <button type="button" role="tab" data-tab="calculator" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg><span>Calculator</span></button>
+    <button type="button" role="tab" data-tab="records" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Records</span></button>
+  </nav>
 </div>
 <script>
 /* ============================================================
@@ -2903,7 +2941,7 @@ checkSession();
 <div id="layoutOverlay"></div>
 <aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
   <div class="lay-head"><h2>Layout</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
-  <p class="lay-help">Use the switch to show or hide a section, and ▲ ▼ to reorder. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device. Default day ranges are at the bottom.</p>
+  <p class="lay-help">Sections are grouped by the tab they appear on. Use the switch to show or hide one, and ▲ ▼ to reorder it within its tab. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device. Default day ranges are at the bottom.</p>
   <div id="layoutList"></div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset to default</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
@@ -2973,6 +3011,7 @@ checkSession();
     start:  isTime(saved.start) ? saved.start : '04:00',              // when programs start
     winEnd: isTime(saved.winEnd) ? saved.winEnd : '12:00',            // end of the watering window (mowers head out at noon)
     mode:   saved.mode === 'queue' ? 'queue' : 'each',               // 'each' = own day, 'queue' = same morning, one after another
+    open:   (saved.open && typeof saved.open === 'object') ? saved.open : {},   // which program cards show their by-zone math
   };
   PROGRAMS.filter(p => p.legacy).forEach(p => p.zones.forEach(zd => {
     const old = String(zd.z), nk = zk(p.key, zd.z);
@@ -3094,6 +3133,7 @@ checkSession();
 
   function programHtml(r, t){
     const { p, cyc, rows, pct, raw, clamped } = r;
+    const open = !!persist.open[p.key];
     let note = '';
     if (clamped) note = raw > MAX_PCT
       ? `Needs ${raw}% — over the ${MAX_PCT}% cap. Add a watering day to bring it in range.`
@@ -3115,15 +3155,16 @@ checkSession();
 
     return `<div class="panel">
       <div class="bud-prog-head">
-        <div><h3>${esc(p.title)}</h3><div class="bud-area">${esc(p.area)} · ${cyc} cycles per watering day (times are per cycle)</div></div>
+        <div><h3>${esc(p.title)}</h3><div class="bud-area">${esc(p.area)} · ${cyc} cycles per watering day (times are per cycle)</div>
+          <button type="button" class="bud-mathbtn" data-math="${p.key}" aria-expanded="${open}">${open ? '▾ Hide' : '▸ Show'} zone detail · ${rows.length} zones</button></div>
         <div class="bud-set"><div class="lbl">Set budget to</div><div class="big ${clamped ? 'warn' : ''}">${pct == null ? '—' : pct + '%'}</div>${t && t.end != null ? `<div class="bud-ends ${t.over ? 'warn' : ''}">ends ${fmtClock(t.end)}</div>` : ''}</div>
       </div>
       ${note ? `<div class="bud-note">${note}</div>` : ''}
       ${r.placeholder ? `<div class="bud-note" style="color:var(--text-secondary);">Run times and cycles for ${esc(p.title)} are placeholders (copied from each zone's other program). Enter its real times in Zone setup below, or <a href="#" data-confirm-prog="${p.key}" style="color:var(--turf);font-weight:600;">use these as-is</a>.</div>` : ''}
-      <div class="table-wrap" style="max-height:none;"><table class="data bud-table">
+      <div class="bud-math" ${open ? '' : 'hidden'}><div class="table-wrap" style="max-height:none;"><table class="data bud-table">
         <thead><tr><th>Zone</th><th>Baseline</th><th>Budget needed</th><th>At ${pct == null ? '—' : pct + '%'} budget</th></tr></thead>
         <tbody>${body}</tbody>
-      </table></div>
+      </table></div></div>
     </div>`;
   }
 
@@ -3166,6 +3207,10 @@ checkSession();
     renderTiles(); renderChips(); renderSummary();
     el('budgetPrograms').innerHTML = results.map((r, i) => programHtml(r, tl[i])).join('');
     renderTimeline(results, tl);
+    const openCount = PROGRAMS.filter(p => persist.open[p.key]).length;
+    const legend = el('budLegend'), all = el('budMathAll');
+    if (legend) legend.hidden = openCount === 0;
+    if (all) all.textContent = openCount === PROGRAMS.length ? 'Hide all zone detail' : 'Show all zone detail';
   }
 
   function renderSetup(){
@@ -3315,7 +3360,14 @@ checkSession();
     }
   });
 
+  el('budMathAll').addEventListener('click', () => {
+    const allOpen = PROGRAMS.every(p => persist.open[p.key]);
+    PROGRAMS.forEach(p => { persist.open[p.key] = !allOpen; });
+    save(); renderOutputs();
+  });
   el('budgetPrograms').addEventListener('click', e => {
+    const mb = e.target.closest('[data-math]');
+    if (mb) { persist.open[mb.dataset.math] = !persist.open[mb.dataset.math]; save(); renderOutputs(); return; }
     const a = e.target.closest('[data-confirm-prog]'); if (!a) return;
     e.preventDefault();
     const p = PROGRAMS.find(x => x.key === a.dataset.confirmProg); if (!p) return;
@@ -3409,7 +3461,17 @@ checkSession();
 
   const isHidden = s => s.classList.contains('lay-hidden');
 
+  // Which page (bottom tab) each section lives on is fixed by its data-tab attribute; the drawer groups
+  // sections by tab and only reorders within a tab.
+  const TAB_ORDER = ['overview', 'temps', 'rain', 'irrigation', 'calculator', 'records'];
+  const TAB_LABELS = { overview: 'Overview', temps: 'Temps', rain: 'Rain', irrigation: 'Irrigation', calculator: 'Calculator', records: 'Records, reference & explorer' };
+  const tabOf = s => (s.dataset.tab || 'overview').split(' ')[0];
+
   function placeRangeControls(){
+    _placeRangeControls();
+    document.dispatchEvent(new Event('turfops:layout'));
+  }
+  function _placeRangeControls(){
     const head = document.getElementById('rangeControlsHeading');
     const ctl = document.getElementById('rangeControls');
     if (!head || !ctl) return;
@@ -3475,18 +3537,19 @@ checkSession();
 
   function render(){
     const secs = secEls();
-    list.innerHTML = secs.map((s, i) => {
+    const groups = TAB_ORDER.map(t => ({ tab: t, secs: secs.filter(s => tabOf(s) === t) })).filter(g => g.secs.length);
+    list.innerHTML = groups.map(g => `<div class="lay-tabhead">${esc(TAB_LABELS[g.tab])}</div>` + g.secs.map((s, i) => {
       const charts = chartPanels(s), multi = charts.length > 1, open = multi && expanded.has(s.id);
       const hid = isHidden(s);
       let h = `<div class="lay-sec ${hid ? 'is-hidden' : ''}" data-sec="${esc(s.id)}"><div class="lay-row">
         <button type="button" class="lay-exp" data-act="toggle" ${multi ? '' : 'disabled'} aria-label="Show charts">${open ? '▾' : '▸'}</button>
         <div class="lay-name">${esc(secTitle(s))}${multi ? `<span class="lay-count">${charts.length} charts</span>` : ''}</div>
         <button type="button" class="lay-vis ${hid ? '' : 'on'}" data-act="vis" role="switch" aria-checked="${!hid}" aria-label="${hid ? 'Show' : 'Hide'} ${esc(secTitle(s))}"><span></span></button>
-        ${arrows('sec', i === 0, i === secs.length - 1)}</div>`;
+        ${arrows('sec', i === 0, i === g.secs.length - 1)}</div>`;
       if (open) h += charts.map((p, j) => `<div class="lay-row lay-chart" data-key="${esc(panelKey(p))}">
         <div class="lay-name">${esc(panelTitle(p))}</div>${arrows('chart', j === 0, j === charts.length - 1)}</div>`).join('');
       return h + '</div>';
-    }).join('') + `<div class="lay-ranges"><h3>Default day ranges</h3>
+    }).join('')).join('') + `<div class="lay-ranges"><h3>Default day ranges</h3>
       <p>What each chart group shows when the page opens. Changing one also switches the view now; the range chips on the page still change it on the fly.</p>` +
       RANGE_UI.map(u => `<label for="layRange-${u.key}">${esc(u.label)}</label>
         <select id="layRange-${u.key}" data-range="${u.key}">${u.opts.map(o => `<option value="${o[0]}" ${o[0] === rangeDefaults[u.key] ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`).join('') +
@@ -3501,8 +3564,12 @@ checkSession();
   }
 
   function moveSection(id, dir){
-    const cur = secEls(), i = cur.findIndex(s => s.id === id), j = i + dir;
-    if (i < 0 || j < 0 || j >= cur.length) return;
+    const cur = secEls(), me = cur.find(s => s.id === id);
+    if (!me) return;
+    const group = cur.filter(s => tabOf(s) === tabOf(me));          // neighbours on the SAME tab only
+    const gj = group.indexOf(me) + dir;
+    if (gj < 0 || gj >= group.length) return;
+    const i = cur.indexOf(me), j = cur.indexOf(group[gj]);
     const next = cur.slice(); [next[i], next[j]] = [next[j], next[i]];
     permute(cur, next); placeRangeControls(); persist(); render(); refreshCharts([next[i], next[j]]);
   }
@@ -3564,6 +3631,72 @@ checkSession();
     panel.addEventListener(t, e => e.stopPropagation(), { passive: true });
     overlay.addEventListener(t, e => e.stopPropagation(), { passive: true });
   });
+})();
+</script>
+<script>
+/* ============================================================
+   BOTTOM TABS -- Overview | Temps | Rain | Irrigation | Calculator | Records
+   Every section carries data-tab; CSS hides the sections that aren't on the active tab, so nothing is
+   removed from the page (charts, controls and the Layout drawer keep working). Sections hidden in the
+   Layout drawer stay hidden on their tab.
+   ============================================================ */
+(function bottomTabs(){
+  'use strict';
+  const TABS = ['overview', 'temps', 'rain', 'irrigation', 'calculator', 'records'];
+  const RANGE_TABS = ['temps', 'rain', 'irrigation'];            // tabs whose charts follow the shared Years & range bar
+  const RANGE_SECTIONS = ['sec-daily-highs', 'sec-feels-high', 'sec-cum-rain', 'sec-deficit-bermuda', 'sec-etweekly-bermuda'];
+  const KEY = 'turfops.tab';
+  const main = document.querySelector('main'), nav = document.getElementById('bottomTabs'), empty = document.getElementById('tabEmpty');
+  if (!main || !nav) return;
+  let current = 'overview';
+
+  const secsOn = tab => Array.from(main.children).filter(e => e.matches('section.collapsible') && (e.dataset.tab || '').split(' ').includes(tab));
+  const hiddenByLayout = s => s.classList.contains('lay-hidden');
+
+  // The shared range bar only appears when the active tab has a visible chart that uses it;
+  // an empty tab shows a short explanation instead of a blank page.
+  function sync(){
+    const visible = secsOn(current).filter(s => !hiddenByLayout(s));
+    const showRange = RANGE_TABS.includes(current) && visible.some(s => RANGE_SECTIONS.includes(s.id));
+    ['rangeControlsHeading', 'rangeControls'].forEach(id => { const e = document.getElementById(id); if (e) e.classList.toggle('tab-hide', !showRange); });
+    if (empty) empty.hidden = visible.length > 0;
+  }
+
+  // Charts built while their tab was hidden measured 0x0; re-measure the ones that just appeared.
+  function remeasure(){
+    requestAnimationFrame(() => secsOn(current).forEach(sec => {
+      if (hiddenByLayout(sec)) return;
+      sec.querySelectorAll('canvas').forEach(c => {
+        const ch = window.Chart && Chart.getChart && Chart.getChart(c);
+        if (ch) { try { ch.resize(); } catch (e) {} }
+      });
+    }));
+  }
+
+  function activate(tab, opts){
+    opts = opts || {};
+    if (!TABS.includes(tab)) tab = 'overview';
+    current = tab;
+    main.dataset.activeTab = tab;
+    nav.querySelectorAll('button[data-tab]').forEach(b => {
+      const on = b.dataset.tab === tab;
+      b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on));
+    });
+    sync(); remeasure();
+    if (opts.scroll !== false) { try { window.scrollTo(0, 0); } catch (e) {} }
+    try { sessionStorage.setItem(KEY, tab); } catch (e) {}      // a pull-to-refresh reload keeps you on the same tab
+    try { history.replaceState(null, '', '#' + tab); } catch (e) {} // and #temps etc. can be bookmarked
+  }
+
+  nav.addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) activate(b.dataset.tab); });
+  document.addEventListener('turfops:layout', sync);
+  window.addEventListener('hashchange', () => { const t = location.hash.slice(1); if (TABS.includes(t) && t !== current) activate(t); });
+
+  let start = 'overview';
+  try { const s = sessionStorage.getItem(KEY); if (TABS.includes(s)) start = s; } catch (e) {}
+  const fromHash = (location.hash || '').slice(1);
+  if (TABS.includes(fromHash)) start = fromHash;
+  activate(start, { scroll: false });
 })();
 </script>
 </body>
