@@ -519,6 +519,23 @@ main{ padding-bottom:calc(112px + env(safe-area-inset-bottom, 0px)); }
 .lay-btns button:active{ background:var(--turf-light); }
 .lay-btns button:disabled{ opacity:0.3; cursor:default; }
 .lay-foot{ display:flex; gap:10px; justify-content:space-between; padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line-soft); }
+.pm-eq{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;
+  font-family:'Cambria Math', 'STIX Two Math', 'Times New Roman', serif; font-size:1.15rem; color:var(--text);
+  background:var(--surface-2); border-radius:var(--radius-sm); padding:18px 12px; overflow-x:auto; }
+.pm-frac{ display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; }
+.pm-frac > .pm-num{ padding:0 6px 4px; white-space:nowrap; }
+.pm-frac > .pm-den{ border-top:1.5px solid currentColor; padding:4px 6px 0; white-space:nowrap; }
+.pm-frac.pm-small{ font-size:0.8em; margin:0 2px; }
+.pm-frac.pm-small > .pm-den{ border-top-width:1px; }
+.pm-lhs{ white-space:nowrap; }
+.pm-th-sub{ font-weight:400; font-size:0.75em; color:var(--text-tertiary); }
+table.pm-week tr.pm-on td{ background:var(--turf-light); }
+table.pm-week tr.pm-total td{ border-top:2px solid var(--text-tertiary); }
+table.pm-steps tr.pm-group td{ border-top:1.5px solid rgba(43,43,43,0.14); }
+table.pm-legend td:first-child{ font-family:'Cambria Math','Times New Roman',serif; font-size:1rem; }
+@media (max-width:600px){ .pm-eq{ font-size:0.92rem; justify-content:flex-start; }
+  table.pm-steps th:first-child, table.pm-steps td:first-child, table.pm-steps th:last-child, table.pm-steps td:last-child{ display:none; }
+  table.pm-week td{ white-space:nowrap; } }
 </style>
 </head>
 
@@ -889,6 +906,55 @@ main{ padding-bottom:calc(112px + env(safe-area-inset-bottom, 0px)); }
             FAO Irrigation and Drainage Paper 56. —
             <a href="https://www.fao.org/4/x0490e/x0490e00.htm" target="_blank" rel="noopener">fao.org/4/x0490e/x0490e00.htm</a>
           </p>
+        </div>
+        <div class="panel" id="pmPanel">
+          <h3 style="font-size:1rem; margin-bottom:8px;">The Penman-Monteith equation</h3>
+          <div class="panel-sub">FAO-56 Eq. 6: daily reference ET₀ in mm/day for clipped grass</div>
+          <div class="pm-eq" role="math" aria-label="ET0 equals 0.408 Delta times Rn minus G, plus gamma times 900 over T plus 273 times u2 times es minus ea, all divided by Delta plus gamma times 1 plus 0.34 u2">
+            <span class="pm-lhs">ET₀ =</span>
+            <span class="pm-frac">
+              <span class="pm-num">0.408 Δ (R<sub>n</sub> − G) + γ <span class="pm-frac pm-small"><span class="pm-num">900</span><span class="pm-den">T + 273</span></span> u<sub>2</sub> (e<sub>s</sub> − e<sub>a</sub>)</span>
+              <span class="pm-den">Δ + γ (1 + 0.34 u<sub>2</sub>)</span>
+            </span>
+          </div>
+          <div class="table-wrap" style="max-height:none; margin-top:14px;">
+            <table class="data pm-legend">
+              <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+              <tbody>
+                <tr><td>Δ</td><td>Slope of the saturation vapor-pressure curve at mean air temperature</td><td>kPa/°C</td></tr>
+                <tr><td>R<sub>n</sub></td><td>Net radiation at the grass surface (incoming sunlight minus reflection and outgoing heat)</td><td>MJ/m²/day</td></tr>
+                <tr><td>G</td><td>Soil heat flux, 0 for a daily time step</td><td>MJ/m²/day</td></tr>
+                <tr><td>γ</td><td>Psychrometric constant, set by air pressure (elevation)</td><td>kPa/°C</td></tr>
+                <tr><td>T</td><td>Mean daily air temperature at 2 m</td><td>°C</td></tr>
+                <tr><td>u<sub>2</sub></td><td>Wind speed at 2 m</td><td>m/s</td></tr>
+                <tr><td>e<sub>s</sub> − e<sub>a</sub></td><td>Vapor pressure deficit: how much drier the air is than saturated</td><td>kPa</td></tr>
+                <tr><td>0.408</td><td>Converts MJ/m² of energy into mm of evaporated water</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="max-width:70ch; line-height:1.6; color:var(--text-secondary); font-size:0.88rem; margin-top:14px;">
+            The left half of the top line is the energy-driven part (sunlight). The right half is the
+            wind-and-dry-air part. Then: <b>ET₀ × Kc = ETc</b> (water needed that day, per zone). Each day's ETc is
+            averaged across a grass type's zones, and seven days are added up to get <b>inches per week</b>.
+          </p>
+        </div>
+        <div class="panel">
+          <h3 style="font-size:1rem; margin-bottom:8px;">Worked example: the last 7 days</h3>
+          <div class="panel-sub" id="pmWeekSummary">Loading…</div>
+          <div class="table-wrap" style="max-height:none;">
+            <table class="data pm-week">
+              <thead><tr><th>Day</th><th>Hi / Lo °F</th><th>RH %</th><th>Wind mph</th><th>Sun W/m²</th><th>ET₀ in<br><span class="pm-th-sub">recomputed</span></th><th>ET₀ in<br><span class="pm-th-sub">stored</span></th><th>Bermuda<br><span class="pm-th-sub">Kc → ETc in</span></th><th>Fescue<br><span class="pm-th-sub">Kc → ETc in</span></th></tr></thead>
+              <tbody id="pmWeekTable"><tr><td colspan="9">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="panel-sub" style="margin-top:10px;">Tap a day to step through its calculation below. The weekly total uses the stored ETc values, the same numbers the Water Needed chart uses.</div>
+          <h3 style="font-size:0.95rem; margin:18px 0 8px;">Step by step: <span id="pmSampleTitle">—</span></h3>
+          <div class="table-wrap" style="max-height:none;">
+            <table class="data pm-steps">
+              <thead><tr><th></th><th>Calculation</th><th>Value</th><th>FAO-56</th></tr></thead>
+              <tbody id="pmSteps"></tbody>
+            </table>
+          </div>
         </div>
         <div class="panel">
           <h3 style="font-size:1rem; margin-bottom:8px;">Crop coefficients (Kc)</h3>
@@ -1398,6 +1464,7 @@ async function initApp(){
   // untouched -- this is just the one call that would query them.
   await safely('explorer', initExplorerSection);
   await safely('reference', renderReferenceKc);
+  await safely('reference ET0 worked example', renderPenmanMonteithReference);
   await safely('records', initRecordsSection);
   await safely('on this day scatter', initOnThisDayScatterSection);
 
@@ -1651,6 +1718,172 @@ async function renderReferenceKc(){
   tbody.innerHTML = Array.from({length:12}, (_,i)=>i+1).map(m => `
     <tr><td>${monthName(m-1)}</td><td>${num(byMonth[m]?.bermuda,2)}</td><td>${num(byMonth[m]?.fescue,2)}</td></tr>
   `).join('');
+}
+
+/* ============================================================
+   REFERENCE -- FAO-56 Penman-Monteith worked example on real data.
+   Recomputes ET0 in the browser from weather_daily inputs, step by
+   step, and shows it next to the stored et0_in so any drift between
+   this walkthrough and the server-side calculation is visible. The
+   inches-per-week total uses the STORED etc_in (same numbers and same
+   zone-averaging as the Water Needed chart).
+   ============================================================ */
+const FAO56_SITE = { latDeg: 35.7, elevM: 333.756, windHeightM: 1.97 };
+
+// Pure calculation -- every intermediate is returned so the page can show it.
+// eaOverride / u2Override / rsOverride exist only so the math can be checked
+// against FAO-56's own worked examples.
+function fao56Daily({ tmaxC, tminC, rhMeanPct, windMs, rsMJ, doy, latDeg, elevM, windHeightM, eaOverride, u2Override }){
+  const tmean = (tmaxC + tminC) / 2;                                     // Eq 9
+  const P = 101.3 * Math.pow((293 - 0.0065 * elevM) / 293, 5.26);        // Eq 7
+  const gamma = 0.000665 * P;                                            // Eq 8
+  const e0 = (T) => 0.6108 * Math.exp(17.27 * T / (T + 237.3));          // Eq 11
+  const delta = 4098 * e0(tmean) / Math.pow(tmean + 237.3, 2);           // Eq 13
+  const es = (e0(tmaxC) + e0(tminC)) / 2;                                // Eq 12
+  const ea = eaOverride ?? (rhMeanPct / 100) * es;                       // Eq 19
+  const u2 = u2Override ?? windMs * 4.87 / Math.log(67.8 * windHeightM - 5.42); // Eq 47
+  const phi = latDeg * Math.PI / 180;
+  const dr = 1 + 0.033 * Math.cos(2 * Math.PI * doy / 365);              // Eq 23
+  const decl = 0.409 * Math.sin(2 * Math.PI * doy / 365 - 1.39);          // Eq 24
+  const ws = Math.acos(-Math.tan(phi) * Math.tan(decl));                 // Eq 25
+  const Ra = (24 * 60 / Math.PI) * 0.0820 * dr *
+    (ws * Math.sin(phi) * Math.sin(decl) + Math.cos(phi) * Math.cos(decl) * Math.sin(ws)); // Eq 21
+  const Rso = (0.75 + 2e-5 * elevM) * Ra;                                // Eq 37
+  const Rns = (1 - 0.23) * rsMJ;                                         // Eq 38
+  const sigma = 4.903e-9;
+  const rsRso = Math.min(1, rsMJ / Rso);
+  const Rnl = sigma * ((Math.pow(tmaxC + 273.16, 4) + Math.pow(tminC + 273.16, 4)) / 2) *
+    (0.34 - 0.14 * Math.sqrt(ea)) * (1.35 * rsRso - 0.35);               // Eq 39
+  const Rn = Rns - Rnl;                                                  // Eq 40
+  const G = 0;                                                           // Eq 42 (daily step)
+  const radTerm = 0.408 * delta * (Rn - G);
+  const aeroTerm = gamma * (900 / (tmean + 273)) * u2 * (es - ea);
+  const denom = delta + gamma * (1 + 0.34 * u2);
+  const et0mm = (radTerm + aeroTerm) / denom;                            // Eq 6
+  return { tmean, P, gamma, delta, es, ea, u2, dr, decl, ws, Ra, Rso, Rns, rsRso, Rnl, Rn, G,
+           radTerm, aeroTerm, denom, et0mm, et0in: et0mm / 25.4 };
+}
+
+const fToC = (f) => (f - 32) * 5 / 9;
+const mphToMs = (mph) => mph * 0.44704;
+const wm2ToMJday = (w) => w * 0.0864;   // 24-h mean W/m² -> MJ/m²/day
+
+const __fao = { days: [], sel: null };
+
+async function renderPenmanMonteithReference(){
+  const host = $('#pmWeekTable');
+  if (!host) return;
+  // Latest 7 days that have BOTH weather inputs and water-need rows -- the same
+  // window the Water Needed chart's most recent point covers.
+  const { data: wx } = await supa.from('weather_daily')
+    .select('weather_date,temp_high_f,temp_low_f,rh_mean_pct,wind_avg_mph,solar_rad_avg_wm2,et0_in')
+    .order('weather_date', { ascending:false }).limit(14);
+  if (!wx || !wx.length){ host.innerHTML = '<tr><td colspan="9">No weather data yet.</td></tr>'; return; }
+  const dates = wx.map(r => r.weather_date);
+  const minDate = dates[dates.length - 1];
+  const [{ data: bal }, { data: kcRows }] = await Promise.all([
+    supa.from('et_balance_by_zone').select('weather_date,grass_type,etc_in').gte('weather_date', minDate),
+    supa.from('turf_kc_monthly').select('grass_type,month,kc'),
+  ]);
+  const kc = {}; (kcRows||[]).forEach(r => { (kc[r.grass_type] = kc[r.grass_type] || {})[r.month] = r.kc; });
+  const need = {};   // date -> grass -> [etc_in by zone]
+  (bal||[]).forEach(r => { if (r.etc_in == null) return; ((need[r.weather_date] = need[r.weather_date] || {})[r.grass_type] = need[r.weather_date][r.grass_type] || []).push(r.etc_in); });
+
+  const usable = wx.filter(r => need[r.weather_date] && r.temp_high_f != null && r.temp_low_f != null)
+                   .slice(0, 7).reverse();
+  if (!usable.length){ host.innerHTML = '<tr><td colspan="9">No overlapping weather + water-need data yet.</td></tr>'; return; }
+
+  __fao.days = usable.map(r => {
+    const month = Number(r.weather_date.slice(5, 7));
+    const inputsOk = r.rh_mean_pct != null && r.wind_avg_mph != null && r.solar_rad_avg_wm2 != null;
+    const calc = inputsOk ? fao56Daily({
+      tmaxC: fToC(r.temp_high_f), tminC: fToC(r.temp_low_f), rhMeanPct: r.rh_mean_pct,
+      windMs: mphToMs(r.wind_avg_mph), rsMJ: wm2ToMJday(r.solar_rad_avg_wm2),
+      doy: dayOfYear(r.weather_date), ...FAO56_SITE,
+    }) : null;
+    const etcB = need[r.weather_date].bermuda ? avg(need[r.weather_date].bermuda) : null;
+    const etcF = need[r.weather_date].fescue ? avg(need[r.weather_date].fescue) : null;
+    return { row: r, month, calc, kcB: kc.bermuda?.[month], kcF: kc.fescue?.[month], etcB, etcF };
+  });
+
+  const sum = (k) => { const v = __fao.days.map(d => d[k]).filter(x => x != null); return v.length ? v.reduce((a,b)=>a+b,0) : null; };
+  const n = __fao.days.length;
+  const totB = sum('etcB'), totF = sum('etcF');
+  // Same math as the chart: mean daily need x 7 (equals the plain sum when all 7 days are present).
+  const wkB = totB != null ? totB / __fao.days.filter(d=>d.etcB!=null).length * 7 : null;
+  const wkF = totF != null ? totF / __fao.days.filter(d=>d.etcF!=null).length * 7 : null;
+  const shortD = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-US', { weekday:'short', month:'numeric', day:'numeric' });
+
+  host.innerHTML = __fao.days.map((d, i) => `
+    <tr class="pm-row" data-i="${i}" style="cursor:pointer">
+      <td>${shortD(d.row.weather_date)}</td>
+      <td>${num(d.row.temp_high_f,0)} / ${num(d.row.temp_low_f,0)}</td>
+      <td>${num(d.row.rh_mean_pct,0)}</td>
+      <td>${num(d.row.wind_avg_mph,1)}</td>
+      <td>${num(d.row.solar_rad_avg_wm2,0)}</td>
+      <td>${d.calc ? num(d.calc.et0in,3) : '—'}</td>
+      <td>${num(d.row.et0_in,3)}</td>
+      <td>${num(d.kcB,2)} → ${num(d.etcB,3)}</td>
+      <td>${num(d.kcF,2)} → ${num(d.etcF,3)}</td>
+    </tr>`).join('') + `
+    <tr class="pm-total">
+      <td colspan="7" style="text-align:right; font-family:inherit; font-weight:600;">${n === 7 ? '7-day total' : `${n} days → scaled to 7 days`}</td>
+      <td style="font-weight:700;">${num(wkB,2)} in/wk</td>
+      <td style="font-weight:700;">${num(wkF,2)} in/wk</td>
+    </tr>`;
+
+  const sumLine = $('#pmWeekSummary');
+  if (sumLine){
+    const first = __fao.days[0].row.weather_date, last = __fao.days[n-1].row.weather_date;
+    sumLine.innerHTML = `${shortD(first)} – ${shortD(last)}: Bermuda needed <b>${num(wkB,2)} in</b>, Fescue needed <b>${num(wkF,2)} in</b>. ` +
+      `This is the Water Needed chart's value for ${shortD(last)}, and what gets compared to the 1.5 in/week target.`;
+  }
+
+  host.querySelectorAll('.pm-row').forEach(tr => tr.addEventListener('click', () => selectPmDay(Number(tr.dataset.i))));
+  selectPmDay(n - 1);
+}
+
+function selectPmDay(i){
+  const d = __fao.days[i]; if (!d) return;
+  $$('#pmWeekTable .pm-row').forEach(tr => tr.classList.toggle('pm-on', Number(tr.dataset.i) === i));
+  const out = $('#pmSteps'); if (!out) return;
+  const r = d.row, c = d.calc;
+  const title = $('#pmSampleTitle');
+  if (title) title.textContent = new Date(r.weather_date + 'T00:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  if (!c){ out.innerHTML = '<tr><td colspan="4">Humidity, wind or sunlight is missing for this day, so it can\'t be recomputed.</td></tr>'; return; }
+  const tmaxC = fToC(r.temp_high_f), tminC = fToC(r.temp_low_f), uz = mphToMs(r.wind_avg_mph), rs = wm2ToMJday(r.solar_rad_avg_wm2);
+  const f = (v, dp=3) => num(v, dp);
+  const diff = r.et0_in != null ? c.et0in - r.et0_in : null;
+  const steps = [
+    ['Inputs', 'T<sub>max</sub>, T<sub>min</sub>', `${f(r.temp_high_f,1)} °F, ${f(r.temp_low_f,1)} °F → ${f(tmaxC,2)} °C, ${f(tminC,2)} °C`, 'weather_daily'],
+    ['', 'RH<sub>mean</sub>', `${f(r.rh_mean_pct,1)} %`, 'weather_daily'],
+    ['', 'Wind u<sub>z</sub> at 1.97 m', `${f(r.wind_avg_mph,2)} mph → ${f(uz,3)} m/s`, 'weather_daily'],
+    ['', 'Solar R<sub>s</sub>', `${f(r.solar_rad_avg_wm2,1)} W/m² × 0.0864 → ${f(rs,2)} MJ/m²/day`, '24-h mean'],
+    ['Air', 'T<sub>mean</sub> = (T<sub>max</sub> + T<sub>min</sub>) / 2', `${f(c.tmean,2)} °C`, 'Eq 9'],
+    ['', 'P = 101.3 · ((293 − 0.0065z) / 293)<sup>5.26</sup>', `${f(c.P,2)} kPa`, 'Eq 7'],
+    ['', 'γ = 0.000665 · P', `${f(c.gamma,4)} kPa/°C`, 'Eq 8'],
+    ['', 'Δ = 4098 · e°(T<sub>mean</sub>) / (T<sub>mean</sub> + 237.3)²', `${f(c.delta,4)} kPa/°C`, 'Eq 13'],
+    ['Humidity', 'e<sub>s</sub> = [e°(T<sub>max</sub>) + e°(T<sub>min</sub>)] / 2', `${f(c.es,3)} kPa`, 'Eq 11–12'],
+    ['', 'e<sub>a</sub> = RH<sub>mean</sub>/100 · e<sub>s</sub>', `${f(c.ea,3)} kPa`, 'Eq 19'],
+    ['', 'Vapor pressure deficit e<sub>s</sub> − e<sub>a</sub>', `${f(c.es - c.ea,3)} kPa`, ''],
+    ['Wind', 'u<sub>2</sub> = u<sub>z</sub> · 4.87 / ln(67.8z − 5.42)', `${f(c.u2,3)} m/s`, 'Eq 47'],
+    ['Radiation', 'Day of year J, latitude φ', `J = ${dayOfYear(r.weather_date)}, φ = ${FAO56_SITE.latDeg.toFixed(4)}°`, ''],
+    ['', 'Extraterrestrial R<sub>a</sub>', `${f(c.Ra,2)} MJ/m²/day`, 'Eq 21–25'],
+    ['', 'Clear-sky R<sub>so</sub> = (0.75 + 2×10⁻⁵ z) · R<sub>a</sub>', `${f(c.Rso,2)} MJ/m²/day (R<sub>s</sub>/R<sub>so</sub> = ${f(c.rsRso,2)})`, 'Eq 37'],
+    ['', 'Net shortwave R<sub>ns</sub> = 0.77 · R<sub>s</sub>', `${f(c.Rns,2)} MJ/m²/day`, 'Eq 38'],
+    ['', 'Net longwave R<sub>nl</sub>', `${f(c.Rnl,2)} MJ/m²/day`, 'Eq 39'],
+    ['', 'Net radiation R<sub>n</sub> = R<sub>ns</sub> − R<sub>nl</sub>; G = 0', `${f(c.Rn,2)} MJ/m²/day`, 'Eq 40, 42'],
+    ['Combine', 'Radiation term 0.408 Δ (R<sub>n</sub> − G)', f(c.radTerm,3), 'Eq 6'],
+    ['', 'Wind/humidity term γ · 900/(T+273) · u<sub>2</sub> · (e<sub>s</sub> − e<sub>a</sub>)', f(c.aeroTerm,3), ''],
+    ['', 'Denominator Δ + γ (1 + 0.34 u<sub>2</sub>)', f(c.denom,4), ''],
+    ['ET₀', '(radiation + wind/humidity) / denominator', `<b>${f(c.et0mm,2)} mm = ${f(c.et0in,3)} in</b>`, '÷ 25.4'],
+    ['', 'Stored et0_in (server calculation)', `${f(r.et0_in,3)} in${diff != null ? ` (difference ${diff >= 0 ? '+' : ''}${f(diff,3)})` : ''}`, 'weather_daily'],
+    ['Water needed', `Bermuda: ET₀ × Kc (${monthName(d.month-1)} ${f(d.kcB,2)})`, `${r.et0_in != null && d.kcB != null ? f(r.et0_in * d.kcB,3) : '—'} in → stored avg ${f(d.etcB,3)} in`, 'ETc'],
+    ['', `Fescue: ET₀ × Kc (${monthName(d.month-1)} ${f(d.kcF,2)})`, `${r.et0_in != null && d.kcF != null ? f(r.et0_in * d.kcF,3) : '—'} in → stored avg ${f(d.etcF,3)} in`, 'ETc'],
+  ];
+  out.innerHTML = steps.map(([g, what, val, ref]) => `
+    <tr${g ? ' class="pm-group"' : ''}><td style="font-family:inherit; font-weight:600; color:var(--text-secondary)">${g}</td>
+    <td style="font-family:inherit">${what}</td><td>${val}</td><td style="color:var(--text-tertiary)">${ref}</td></tr>`).join('');
 }
 
 async function loadZoneOptions(){
