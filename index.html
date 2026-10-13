@@ -689,6 +689,41 @@ table.pm-legend td:first-child{ font-family:'Cambria Math','Times New Roman',ser
       </div>
     </section>
 
+    <!-- ================= CUMULATIVE WATER DEFICIT ================= -->
+    <section class="collapsible" id="sec-cumdef-year" data-tab="irrigation">
+      <button class="section-toggle" data-target="sec-cumdef-year" data-icon="droplet"><h2>Cumulative Water Deficit — Year to Date</h2><span class="chevron">︿</span></button>
+      <div class="section-body">
+        <div class="panel-sub" style="margin-bottom:10px;">Inches, running total of need − rain − irrigation since Jan 1 (not floored at 0). <span style="color:#b5522f; font-weight:600;">Above 0 = behind</span> · <span style="color:#2e4a34; font-weight:600;">below 0 = ahead</span>. Current year.</div>
+        <div class="two-col">
+          <div class="panel">
+            <h3 style="font-size:0.9rem; margin-bottom:6px;">Bermuda</h3>
+            <div class="chart-wrap tall"><canvas id="chartCumDefYearBermuda"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3 style="font-size:0.9rem; margin-bottom:6px;">Fescue</h3>
+            <div class="chart-wrap tall"><canvas id="chartCumDefYearFescue"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="collapsible" id="sec-cumdef-month" data-tab="irrigation">
+      <button class="section-toggle" data-target="sec-cumdef-month" data-icon="droplet"><h2>Cumulative Water Deficit — By Month</h2><span class="chevron">︿</span></button>
+      <div class="section-body">
+        <div class="panel-sub" style="margin-bottom:10px;">Inches, same running total but restarting at 0 on the 1st of each month. <span style="color:#b5522f; font-weight:600;">Above 0 = behind</span> · <span style="color:#2e4a34; font-weight:600;">below 0 = ahead</span>. Current year.</div>
+        <div class="two-col">
+          <div class="panel">
+            <h3 style="font-size:0.9rem; margin-bottom:6px;">Bermuda</h3>
+            <div class="chart-wrap tall"><canvas id="chartCumDefMonthBermuda"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3 style="font-size:0.9rem; margin-bottom:6px;">Fescue</h3>
+            <div class="chart-wrap tall"><canvas id="chartCumDefMonthFescue"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= 5. ET WEEKLY ================= -->
     <section class="collapsible" id="sec-etweekly-bermuda" data-tab="irrigation">
       <button class="section-toggle" data-target="sec-etweekly-bermuda" data-icon="droplet"><h2>Water Needed — 7-Day Rolling Average</h2><span class="chevron">︿</span></button>
@@ -2175,6 +2210,88 @@ async function buildDeficitChart(grassType, chartId, sliderContainerId){
   draw();
 }
 
+// Cumulative water deficit -- the TRUE running sum of (need - rain - irrigation),
+// NOT floored at 0, so wet stretches bank against later dry ones. Above 0 = the
+// grass is behind on water for the period; below 0 = ahead (surplus).
+// Two views per grass type, current year only (irrigation logging doesn't cover
+// past years, so their totals would overstate the deficit):
+//   - year to date: resets Jan 1
+//   - by month:     resets on the 1st of each month
+// Uses the same per-zone net_deficit_in, averaged across the grass type's zones
+// per day, as the Running Water Deficit chart above.
+function cumulativeDeficitPoints(dailyRows, resetBy){
+  let running = 0, curKey = null;
+  const out = [];
+  dailyRows.forEach(r => {
+    const key = resetBy === 'month' ? r.date.slice(0, 7) : r.date.slice(0, 4);
+    if (key !== curKey){
+      // Break the line at a month boundary instead of drawing a vertical drop back to 0.
+      if (curKey !== null && resetBy === 'month') out.push({ x: dayOfYear(r.date) - 0.5, y: null });
+      curKey = key; running = 0;
+    }
+    running += r.value;
+    out.push({ x: dayOfYear(r.date), y: Number(running.toFixed(3)), date: r.date, day: r.value });
+  });
+  return out;
+}
+
+async function buildCumulativeDeficitCharts(grassType, yearChartId, monthChartId){
+  const data = await fetchAllRows(() => supa.from('et_balance_by_zone')
+    .select('weather_date,grass_type,net_deficit_in').eq('grass_type', grassType).order('weather_date'));
+  if (!data || !data.length){ emptyState(yearChartId, 'No data yet.'); emptyState(monthChartId, 'No data yet.'); return; }
+
+  const byDate = {};
+  data.forEach(r => { if (r.net_deficit_in == null) return; (byDate[r.weather_date] = byDate[r.weather_date] || []).push(r.net_deficit_in); });
+  const dates = Object.keys(byDate).sort();
+  if (!dates.length){ emptyState(yearChartId, 'No data yet.'); emptyState(monthChartId, 'No data yet.'); return; }
+  const cy = String(new Date().getFullYear());
+  const showYear = dates.some(d => yearOf(d) === cy) ? cy : yearOf(dates[dates.length - 1]);
+  const daily = dates.filter(d => yearOf(d) === showYear).map(d => ({ date: d, value: avg(byDate[d]) || 0 }));
+
+  const views = [
+    { chartId: yearChartId,  points: cumulativeDeficitPoints(daily, 'year'),  periodLabel: 'Year to date' },
+    { chartId: monthChartId, points: cumulativeDeficitPoints(daily, 'month'), periodLabel: 'Month to date' },
+  ];
+  const DEF = '#b5522f', SUR = '#2e4a34';
+
+  views.forEach(v => {
+    function draw(){
+      const visY = v.points.filter(p => p.y != null && p.x >= globalDoyRange.min - 1 && p.x <= globalDoyRange.max + 1).map(p => p.y);
+      const allY = (visY.length ? visY : v.points.filter(p => p.y != null).map(p => p.y)).concat([0]);
+      const yRange = computeYRange(Math.min(...allY), Math.max(...allY));
+      makeChart(v.chartId, {
+        type: 'line',
+        data: { datasets: [
+          { label: v.periodLabel, data: v.points, pointRadius: 0, pointHitRadius: 6, tension: .15, borderWidth: 2.5, spanGaps: false,
+            segment: { borderColor: ctx => (ctx.p1.parsed.y > 0 ? DEF : SUR) },
+            fill: { target: 'origin', above: 'rgba(181,82,47,0.14)', below: 'rgba(46,74,52,0.14)' } },
+          { label: 'Even', data: [{ x: globalDoyRange.min, y: 0 }, { x: globalDoyRange.max, y: 0 }],
+            borderColor: '#8b8478', borderWidth: 1, borderDash: [4, 4], pointRadius: 0, pointHitRadius: 0, fill: false },
+        ]},
+        options: { responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'nearest', intersect: false, axis: 'x' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              filter: (item) => item.datasetIndex === 0 && item.raw && item.raw.y != null,
+              callbacks: {
+                title: (items) => items.length ? new Date(items[0].raw.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '',
+                label: (ctx) => {
+                  const y = ctx.raw.y;
+                  return `${v.periodLabel}: ${y > 0 ? num(y, 2) + ' in behind' : (y < 0 ? num(-y, 2) + ' in ahead' : 'even')}`;
+                },
+                afterLabel: (ctx) => `That day: ${ctx.raw.day > 0 ? '+' : ''}${num(ctx.raw.day, 2)} in`,
+              } },
+            zoom: zoomPanConfig() },
+          scales: { x: monthWeekXAxis(globalDoyRange.min, globalDoyRange.max),
+                    y: yScaleOptions(yRange, false) } }
+      });
+    }
+    registeredDeficitCharts.push(draw);
+    draw();
+  });
+}
+
 // Default reference period for the Average line and min/max band --
 // independent of which years are toggled on for display, so switching
 // "Show years" doesn't change what the average is computed from.
@@ -2350,6 +2467,8 @@ async function initTrendCharts(){
     }),
     buildDeficitChart('bermuda', 'chartDeficitBermuda', 'sl-deficit-bermuda'),
     buildDeficitChart('fescue', 'chartDeficitFescue', 'sl-deficit-fescue'),
+    buildCumulativeDeficitCharts('bermuda', 'chartCumDefYearBermuda', 'chartCumDefMonthBermuda'),
+    buildCumulativeDeficitCharts('fescue', 'chartCumDefYearFescue', 'chartCumDefMonthFescue'),
     buildMultiYearChart({
       chartId:'chartEtWeeklyBermuda', sliderContainerId:'sl-etweekly-bermuda', cumulative:false, yLabel:'inches / week', zeroFloorY:true,
       fetchRows: async () => rollingWeeklyRows('bermuda')
@@ -3683,7 +3802,7 @@ checkSession();
 
   // Sections that read the shared "Years & range" controls. Those controls
   // always sit directly above whichever of these is currently first.
-  const RANGE_SECTIONS = ['sec-daily-highs', 'sec-feels-high', 'sec-cum-rain', 'sec-deficit-bermuda', 'sec-etweekly-bermuda'];
+  const RANGE_SECTIONS = ['sec-daily-highs', 'sec-feels-high', 'sec-cum-rain', 'sec-deficit-bermuda', 'sec-cumdef-year', 'sec-cumdef-month', 'sec-etweekly-bermuda'];
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const secEls = () => Array.from(main.children).filter(e => e.matches('section.collapsible'));
@@ -3915,7 +4034,7 @@ checkSession();
   'use strict';
   const TABS = ['overview', 'temps', 'rain', 'irrigation', 'calculator', 'records'];
   const RANGE_TABS = ['temps', 'rain', 'irrigation'];            // tabs whose charts follow the shared Years & range bar
-  const RANGE_SECTIONS = ['sec-daily-highs', 'sec-feels-high', 'sec-cum-rain', 'sec-deficit-bermuda', 'sec-etweekly-bermuda'];
+  const RANGE_SECTIONS = ['sec-daily-highs', 'sec-feels-high', 'sec-cum-rain', 'sec-deficit-bermuda', 'sec-cumdef-year', 'sec-cumdef-month', 'sec-etweekly-bermuda'];
   const KEY = 'turfops.tab';
   const main = document.querySelector('main'), nav = document.getElementById('bottomTabs'), empty = document.getElementById('tabEmpty');
   if (!main || !nav) return;
