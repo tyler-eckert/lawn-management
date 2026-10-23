@@ -378,16 +378,19 @@ table.data tr:hover td{ background:var(--surface-2); }
 }
 .section-toggle .chevron{ color:var(--text-tertiary); font-size:0.9rem; transition:transform 0.2s ease; }
 .collapsible.collapsed .section-toggle .chevron{ transform:rotate(180deg); }
-.sec-head{ display:flex; align-items:center; gap:4px; }
-.sec-head .section-toggle{ flex:1; min-width:0; }
 .pin-btn{ flex-shrink:0; width:32px; height:32px; display:inline-grid; place-items:center; padding:0; border:none; border-radius:50%;
   background:none; color:var(--text-tertiary); cursor:pointer; opacity:.55; transition:opacity .15s ease, color .15s ease, background .15s ease; }
 .pin-btn:hover{ opacity:1; background:var(--line-soft); }
 .pin-btn svg{ width:16px; height:16px; }
 .pin-btn.on{ color:var(--turf); opacity:1; }
 .pin-btn.on svg path{ fill:currentColor; }
-.lay-pin{ width:34px; height:34px; border:1px solid var(--line); background:var(--surface-2); border-radius:8px; }
-.lay-pin.on{ background:var(--turf-light); border-color:var(--turf); }
+.panel.pinnable{ position:relative; }
+.panel.pinnable > .panel-pin{ position:absolute; top:12px; right:12px; z-index:2; }
+.panel.pinnable > h3:first-of-type{ padding-right:34px; }
+.pin-sec .section-toggle h2 .pin-from{ margin-left:8px; font-size:0.72rem; font-weight:500; color:var(--text-tertiary); letter-spacing:.02em; }
+.pin-sec .pin-sub{ margin-bottom:10px; }
+.pin-slot{ display:none !important; }
+.lay-pinned{ margin-left:6px; font-size:0.68rem; font-weight:600; color:var(--turf); }
 .collapsible .section-body{ display:block; }
 .collapsible.collapsed .section-body{ display:none; }
 
@@ -3370,9 +3373,9 @@ checkSession();
 <div id="layoutOverlay"></div>
 <aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
   <div class="lay-head"><h2>Layout</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
-  <p class="lay-help">Sections are grouped by the tab they appear on. Use the switch to show or hide one, and ▲ ▼ to reorder it within its tab. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device. Tap the pin (here or next to any section's title) to also show that section on the Overview tab — it stays on its own tab too. Default day ranges are at the bottom.</p>
+  <p class="lay-help">Sections are grouped by the tab they appear on. Use the switch to show or hide one, and ▲ ▼ to reorder it within its tab. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device. Tap the pin in the corner of any chart to add it to Overview (it still shows on its own tab too). Pinned charts are listed under Overview here and reorder like any other section. Default day ranges are at the bottom.</p>
   <div id="layoutList"></div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-23 · build 9 (pin to Overview, radar historical need)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-23 · build 10 (pin individual charts, reorder Overview)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset to default</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
@@ -3820,6 +3823,167 @@ checkSession();
 </script>
 <script>
 /* ============================================================
+   PIN CHARTS TO OVERVIEW
+   Any chart panel on another tab can be pinned. Each pinned chart gets its own small section on the
+   Overview tab (id "pin-<canvas id>", data-tab="overview"), so the Layout drawer lists it under
+   Overview and it reorders like any other section there.
+   A chart can't be in two places at once, so the panel itself moves: while Overview is the active
+   tab, pinned panels sit in their Overview sections; on any other tab they go back to the hidden
+   slot they came from. The chart object, its controls and its data refreshes travel with the panel.
+   Runs before the Layout script so a saved Overview order can include the pinned sections.
+   Saved on this device.
+   ============================================================ */
+(function pinCharts(){
+  'use strict';
+  const KEY = 'turfops.pins.v2', OLD_KEY = 'turfops.pins.v1';
+  const main = document.querySelector('main'); if (!main) return;
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z"/><path d="M12 15v6"/></svg>';
+  const TAB_LABELS = { temps: 'Temps', rain: 'Rain', irrigation: 'Irrigation', calculator: 'Calculator', records: 'Records' };
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const sections = () => Array.from(main.children).filter(e => e.matches('section.collapsible'));
+  const tabOf = sec => (sec.dataset.tab || 'overview').split(' ')[0];
+
+  // Every chart panel outside Overview, keyed by its canvas id (stored on the panel, because
+  // "No data yet" replaces the canvas).
+  const panels = {};   // key -> { panel, sec, slot }
+  sections().filter(sec => tabOf(sec) !== 'overview').forEach(sec => {
+    sec.querySelectorAll('.panel').forEach(p => {
+      const c = p.querySelector('canvas');
+      if (!c || !c.id || (p.parentElement && p.parentElement.closest('.panel'))) return;
+      p.dataset.pinKey = c.id;
+      p.classList.add('pinnable');
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'pin-btn panel-pin'; b.innerHTML = ICON;
+      b.addEventListener('click', e => { e.stopPropagation(); toggle(c.id); });
+      p.insertBefore(b, p.firstChild);
+      panels[c.id] = { panel: p, sec, slot: null };
+    });
+  });
+
+  let pins = [];
+  try { pins = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { pins = []; }
+  if (!Array.isArray(pins)) pins = [];
+  // One-time carry-over from the earlier whole-section pins: pin every chart in those sections.
+  try {
+    const old = JSON.parse(localStorage.getItem(OLD_KEY));
+    if (Array.isArray(old) && old.length){
+      Object.keys(panels).forEach(k => { if (old.includes(panels[k].sec.id) && !pins.includes(k)) pins.push(k); });
+      localStorage.setItem(KEY, JSON.stringify(pins));
+    }
+    localStorage.removeItem(OLD_KEY);
+  } catch (e) {}
+  pins = pins.filter(k => panels[k]);
+
+  let activeTab = (main.dataset.activeTab || 'overview');
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(pins)); } catch (e) {} };
+  const pinSecId = k => 'pin-' + k;
+  const panelTitle = p => { const h = p.querySelector(':scope > h3'); return h ? h.textContent.trim() : ''; };
+  const secTitle = sec => { const h = sec.querySelector('.section-toggle h2'); return h ? h.textContent.trim() : sec.id; };
+
+  function syncButtons(){
+    Object.keys(panels).forEach(k => {
+      const b = panels[k].panel.querySelector(':scope > .panel-pin'); if (!b) return;
+      const on = pins.includes(k);
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+      b.title = on ? 'Unpin from Overview' : 'Pin to Overview'; b.setAttribute('aria-label', b.title);
+    });
+  }
+
+  // Overview sections end where the first section from another tab begins.
+  function overviewInsertPoint(){
+    const secs = sections();
+    const lastOv = secs.filter(s => tabOf(s) === 'overview').pop();
+    return lastOv ? lastOv.nextSibling : main.firstChild;
+  }
+
+  function makePinSection(k){
+    const { panel, sec } = panels[k];
+    const id = pinSecId(k);
+    let ps = document.getElementById(id);
+    if (ps) return ps;
+    const home = secTitle(sec), chart = panelTitle(panel);
+    ps = document.createElement('section');
+    ps.className = 'collapsible pin-sec'; ps.id = id; ps.dataset.tab = 'overview';
+    ps.dataset.pinKey = k;
+    ps.dataset.pinTitle = chart && chart !== home ? `${home} — ${chart}` : home;
+    // the home section's own subtitle (e.g. "Inches per week") when it sits above its chart grid
+    const sub = sec.querySelector(':scope > .section-body > .panel-sub');
+    const icon = sec.querySelector('.section-toggle .sec-icon');
+    ps.innerHTML = `<button class="section-toggle" type="button"><h2>${icon ? icon.outerHTML : ''}${esc(home)}<span class="pin-from">${esc(TAB_LABELS[tabOf(sec)] || '')}</span></h2><span class="chevron">︿</span></button>
+      <div class="section-body">${sub ? `<div class="panel-sub pin-sub">${sub.innerHTML}</div>` : ''}<div class="pin-host"></div></div>`;
+    ps.querySelector('.section-toggle').addEventListener('click', () => {
+      const was = ps.classList.contains('collapsed');
+      ps.classList.toggle('collapsed');
+      if (was) remeasure(ps);
+    });
+    main.insertBefore(ps, overviewInsertPoint());
+    return ps;
+  }
+
+  function remeasure(root){
+    requestAnimationFrame(() => root.querySelectorAll('canvas').forEach(c => {
+      const ch = window.Chart && Chart.getChart && Chart.getChart(c);
+      if (ch) { try { ch.resize(); } catch (e) {} }
+    }));
+  }
+
+  // Leave a hidden marker where the panel lives on its own tab, so it can always go back.
+  function ensureSlot(k){
+    const rec = panels[k];
+    if (rec.slot && rec.slot.isConnected) return rec.slot;
+    rec.slot = document.createElement('div');
+    rec.slot.className = 'pin-slot'; rec.slot.hidden = true; rec.slot.dataset.pinSlot = k;
+    rec.panel.before(rec.slot);
+    return rec.slot;
+  }
+  function sendHome(k){
+    const rec = panels[k];
+    if (rec.slot && rec.slot.isConnected && rec.panel.previousElementSibling !== rec.slot) rec.slot.after(rec.panel);
+  }
+  function sendToOverview(k){
+    const ps = makePinSection(k);
+    ensureSlot(k);
+    const host = ps.querySelector('.pin-host');
+    if (panels[k].panel.parentElement !== host) host.appendChild(panels[k].panel);
+  }
+
+  function place(){
+    pins.forEach(k => activeTab === 'overview' ? sendToOverview(k) : sendHome(k));
+    remeasure(main);
+  }
+
+  function toggle(k){
+    if (!panels[k]) return;
+    if (pins.includes(k)){
+      pins = pins.filter(x => x !== k);
+      sendHome(k);
+      const ps = document.getElementById(pinSecId(k)); if (ps) ps.remove();
+      remeasure(panels[k].sec);
+    } else {
+      pins.push(k);
+      makePinSection(k);
+      if (activeTab === 'overview') sendToOverview(k);
+    }
+    save(); syncButtons();
+    document.dispatchEvent(new Event('turfops:layout'));   // empty-tab message + range bar re-check
+  }
+  function clear(){
+    pins.slice().forEach(k => { sendHome(k); const ps = document.getElementById(pinSecId(k)); if (ps) ps.remove(); });
+    pins = []; save(); syncButtons();
+    document.dispatchEvent(new Event('turfops:layout'));
+  }
+
+  // Build the Overview sections now (so the Layout script sees them when it restores a saved order);
+  // the panels themselves move when the bottom tabs announce which tab is showing.
+  pins.forEach(makePinSection);
+  syncButtons();
+  document.addEventListener('turfops:tab', e => { activeTab = (e.detail && e.detail.tab) || 'overview'; place(); });
+
+  window.turfopsPins = { toggle, clear, isPinned: k => pins.includes(k) };
+})();
+</script>
+<script>
+/* ============================================================
    LAYOUT SETTINGS -- reorder sections, and the charts inside them.
    Saved per device in localStorage. Sections swap places; charts swap
    places within their section's existing grid (two-up rows stay two-up,
@@ -3864,7 +4028,7 @@ checkSession();
   const chartPanels = sec => Array.from(sec.querySelectorAll('.panel'))
     .filter(p => p.querySelector('canvas') && !(p.parentElement && p.parentElement.closest('.panel')));
   const panelKey = p => p.querySelector('canvas').id;
-  const secTitle = s => { const h = s.querySelector('.section-toggle h2'); return h ? h.textContent.trim() : s.id; };
+  const secTitle = s => { if (s.dataset.pinTitle) return s.dataset.pinTitle; const h = s.querySelector('.section-toggle h2'); return h ? h.textContent.trim() : s.id; };
   const panelTitle = p => { const h = p.querySelector('h3'); return (h && h.textContent.trim()) || panelKey(p); };
 
   // Capture the shipped order before any saved layout is applied (used by Reset,
@@ -3926,7 +4090,8 @@ checkSession();
   function applySectionOrder(ids){
     const cur = secEls(), byId = {};
     cur.forEach(s => { byId[s.id] = s; });
-    permute(cur, mergeOrder(ids, DEFAULT.sections).map(id => byId[id]));
+    // base = what's on the page now (shipped sections + any pinned-chart sections), in DOM order
+    permute(cur, mergeOrder(ids, cur.map(s => s.id)).map(id => byId[id]));
     placeRangeControls();
   }
   function applyChartOrder(secId, keys){
@@ -3973,8 +4138,7 @@ checkSession();
       const hid = isHidden(s);
       let h = `<div class="lay-sec ${hid ? 'is-hidden' : ''}" data-sec="${esc(s.id)}"><div class="lay-row">
         <button type="button" class="lay-exp" data-act="toggle" ${multi ? '' : 'disabled'} aria-label="Show charts">${open ? '▾' : '▸'}</button>
-        <div class="lay-name">${esc(secTitle(s))}${multi ? `<span class="lay-count">${charts.length} charts</span>` : ''}</div>
-        ${window.turfopsPins && window.turfopsPins.pinnable(s) ? `<button type="button" class="pin-btn lay-pin ${window.turfopsPins.isPinned(s.id) ? 'on' : ''}" data-act="pin" aria-pressed="${window.turfopsPins.isPinned(s.id)}" title="${window.turfopsPins.isPinned(s.id) ? 'Unpin from' : 'Pin to'} Overview">${window.turfopsPins.icon}</button>` : ''}
+        <div class="lay-name">${esc(secTitle(s))}${s.classList.contains('pin-sec') ? '<span class="lay-pinned">PINNED</span>' : ''}${multi ? `<span class="lay-count">${charts.length} charts</span>` : ''}</div>
         <button type="button" class="lay-vis ${hid ? '' : 'on'}" data-act="vis" role="switch" aria-checked="${!hid}" aria-label="${hid ? 'Show' : 'Hide'} ${esc(secTitle(s))}"><span></span></button>
         ${arrows('sec', i === 0, i === g.secs.length - 1)}</div>`;
       if (open) h += charts.map((p, j) => `<div class="lay-row lay-chart" data-key="${esc(panelKey(p))}">
@@ -4017,7 +4181,6 @@ checkSession();
     const row = b.closest('.lay-row'), secId = b.closest('.lay-sec').dataset.sec, act = b.dataset.act;
     if (act === 'toggle'){ expanded.has(secId) ? expanded.delete(secId) : expanded.add(secId); render(); }
     else if (act === 'vis') toggleSection(secId);
-    else if (act === 'pin'){ if (window.turfopsPins) window.turfopsPins.toggle(secId); render(); }
     else if (act === 'sec-up') moveSection(secId, -1);
     else if (act === 'sec-down') moveSection(secId, 1);
     else if (act === 'chart-up') moveChart(secId, row.dataset.key, -1);
@@ -4034,12 +4197,12 @@ checkSession();
   });
 
   document.getElementById('layoutReset').addEventListener('click', () => {
+    if (window.turfopsPins) window.turfopsPins.clear();   // removes the pinned-chart sections first
     applySectionOrder(DEFAULT.sections);
     Object.keys(DEFAULT.charts).forEach(id => applyChartOrder(id, DEFAULT.charts[id]));
     secEls().forEach(s => s.classList.remove('lay-hidden'));
     placeRangeControls();
     try { localStorage.removeItem(LS_KEY); } catch (e) {}
-    if (window.turfopsPins) window.turfopsPins.clear();
     render(); refreshCharts();
   });
 
@@ -4079,68 +4242,6 @@ checkSession();
     panel.addEventListener(t, e => e.stopPropagation(), { passive: true });
     overlay.addEventListener(t, e => e.stopPropagation(), { passive: true });
   });
-})();
-</script>
-<script>
-/* ============================================================
-   PIN TO OVERVIEW
-   Any section that lives on another tab can be pinned: it gets "overview" added to its data-tab,
-   so it shows on Overview as well as its own tab (the tab CSS already matches data-tab~="overview").
-   Pinned sections appear below the built-in Overview sections, in the page's section order.
-   Saved on this device.
-   ============================================================ */
-(function pinToOverview(){
-  'use strict';
-  const KEY = 'turfops.pins.v1';
-  const main = document.querySelector('main'); if (!main) return;
-  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z"/><path d="M12 15v6" fill="none"/></svg>';
-  const secs = () => Array.from(main.querySelectorAll('section.collapsible'));
-  const homeTab = s => (s.dataset.homeTab || s.dataset.tab || 'overview').split(' ')[0];
-  const pinnable = s => homeTab(s) !== 'overview';
-  let pins = [];
-  try { pins = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { pins = []; }
-  if (!Array.isArray(pins)) pins = [];
-
-  function apply(s){
-    if (!s.dataset.homeTab) s.dataset.homeTab = s.dataset.tab || 'overview';
-    const on = pins.includes(s.id);
-    s.dataset.tab = on ? `${s.dataset.homeTab} overview` : s.dataset.homeTab;
-    const b = s.querySelector(':scope > .sec-head > .pin-btn');
-    if (b){
-      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
-      b.title = on ? 'Unpin from Overview' : 'Pin to Overview';
-      b.setAttribute('aria-label', b.title);
-    }
-  }
-  function save(){ try { localStorage.setItem(KEY, JSON.stringify(pins)); } catch (e) {} }
-  function remeasure(s){
-    requestAnimationFrame(() => s.querySelectorAll('canvas').forEach(c => {
-      const ch = window.Chart && Chart.getChart && Chart.getChart(c);
-      if (ch) { try { ch.resize(); } catch (e) {} }
-    }));
-  }
-  function toggle(id){
-    const s = document.getElementById(id); if (!s || !pinnable(s)) return;
-    pins = pins.includes(id) ? pins.filter(x => x !== id) : pins.concat(id);
-    save(); apply(s); remeasure(s);
-    document.dispatchEvent(new Event('turfops:layout'));   // bottom tabs re-check the empty-tab message
-  }
-  function clear(){ pins = []; save(); secs().forEach(apply); document.dispatchEvent(new Event('turfops:layout')); }
-
-  // Put a pin button beside each pinnable section's title (it can't go inside the toggle button itself).
-  secs().forEach(s => {
-    if (!pinnable(s)) return;
-    const t = s.querySelector(':scope > .section-toggle'); if (!t) return;
-    const head = document.createElement('div'); head.className = 'sec-head';
-    t.replaceWith(head); head.appendChild(t);
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'pin-btn'; b.innerHTML = ICON;
-    b.addEventListener('click', e => { e.stopPropagation(); toggle(s.id); });
-    head.appendChild(b);
-  });
-  secs().forEach(apply);
-
-  window.turfopsPins = { toggle, clear, pinnable, icon: ICON, isPinned: id => pins.includes(id) };
 })();
 </script>
 <script>
@@ -4192,6 +4293,7 @@ checkSession();
       const on = b.dataset.tab === tab;
       b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on));
     });
+    document.dispatchEvent(new CustomEvent('turfops:tab', { detail: { tab } }));   // pinned charts move to wherever they're being viewed
     sync(); remeasure();
     if (opts.scroll !== false) { try { window.scrollTo(0, 0); } catch (e) {} }
     try { sessionStorage.setItem(KEY, tab); } catch (e) {}      // a pull-to-refresh reload keeps you on the same tab
