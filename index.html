@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#f4f6f5" id="themeColor">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400..800&display=swap" rel="stylesheet">
@@ -975,6 +976,39 @@ body:not(.range-open) #rangeControls{ display:none !important; }
 /* stale data shows in the page header too (the sidebar dot is hidden on phones) */
 body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not updating'; color:var(--neg); font-weight:600; }
 @media (max-width:860px){ .fc-strip{ gap:4px; } .wt-head{ font-size:var(--fs-xl); } }
+
+/* ---- build 19: notifications ---- */
+.nt-box{ border-bottom:1px solid var(--line-soft); padding:16px 0 16px; margin:0 16px 4px; }
+.nt-box:empty{ display:none; }
+.nt-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; border-top:1px solid var(--line-soft); font-size:0.88rem; }
+.nt-row:first-of-type{ border-top:0; }
+.nt-row small{ display:block; color:var(--text-secondary); font-size:0.74rem; margin-top:1px; }
+.nt-sw{ position:relative; width:42px; height:24px; flex:none; }
+.nt-sw input{ opacity:0; width:0; height:0; position:absolute; }
+.nt-sw span{ position:absolute; inset:0; border-radius:99px; background:var(--line); transition:background .15s; cursor:pointer; }
+.nt-sw span::after{ content:""; position:absolute; left:3px; top:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .15s; }
+.nt-sw input:checked + span{ background:var(--brand-500, #1a8f4e); }
+.nt-sw input:checked + span::after{ transform:translateX(18px); }
+.nt-sw input:disabled + span{ opacity:.45; cursor:default; }
+.nt-box input.nt-in{ width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); color:var(--text); font-size:0.9rem; font-family:inherit; box-sizing:border-box; }
+.nt-btns{ display:flex; gap:8px; margin-top:12px; }
+.nt-btns .btn{ flex:1; height:36px; font-size:0.84rem; padding:0 10px; }
+.nt-msg{ font-size:0.76rem; color:var(--text-secondary); line-height:1.45; margin-top:8px; }
+.nt-msg.err{ color:#d14343; }
+.nt-dev{ font-size:0.74rem; color:var(--text-secondary); }
+
+/* ---- build 18 ---- */
+.mc-ctl .seg-right{ margin-left:auto; }
+/* By Zone range: one row */
+#zoneBarRangeChips, #wbRangeChips{ flex-wrap:nowrap; gap:4px; overflow-x:auto; scrollbar-width:none; }
+#zoneBarRangeChips::-webkit-scrollbar, #wbRangeChips::-webkit-scrollbar{ display:none; }
+#zoneBarRangeChips .year-chip, #wbRangeChips .year-chip{ padding:5px 10px; flex:none; }
+/* calculator inputs never overflow their card */
+.bud-controls{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; }
+.bud-controls .filter-field{ min-width:0 !important; }
+.bud-controls .filter-field input, .bud-controls .filter-field select{ width:100%; min-width:0; box-sizing:border-box; }
+.bud-controls input[type=time]{ -webkit-appearance:none; appearance:none; }
+.bud-chips .filter-field{ min-width:0 !important; }
 </style>
 </head>
 
@@ -1268,7 +1302,7 @@ body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not 
               <div class="year-group">
                 <div class="yg-label">Range</div>
                 <div class="year-chip-row" id="zoneBarRangeChips">
-                  <span class="year-chip on" data-r="0">Today</span>
+                  <span class="year-chip on" data-r="0">Tdy</span>
                   <span class="year-chip" data-r="thisweek">This wk</span>
                   <span class="year-chip" data-r="30">1 mo</span>
                   <span class="year-chip" data-r="180">6 mo</span>
@@ -1955,10 +1989,27 @@ async function checkSession(){
   }
 }
 function showLogin(){ $('#loginScreen').style.display='flex'; $('#app').style.display='none'; }
-function showApp(){
+// Only accounts listed in turfops_members may use TurfOps (other apps share this Supabase project).
+async function hasTurfAccess(){
+  try {
+    const { data: u } = await supa.auth.getUser(); if (!u || !u.user) return false;
+    const { data, error } = await supa.from('turfops_members').select('user_id').eq('user_id', u.user.id).maybeSingle();
+    if (error) return true;   // table not set up yet or a network hiccup: don't lock anyone out
+    return !!data;
+  } catch (e) { return true; }
+}
+async function showApp(){
+  if (!(await hasTurfAccess())) { showNoAccess(); return; }
   $('#loginScreen').style.display='none'; $('#app').style.display='block';
   if (window.turfopsLayout) { window.turfopsLayout.render(); window.turfopsLayout.pull(); }
   initApp();
+}
+function showNoAccess(){
+  $('#app').style.display='none'; $('#loginScreen').style.display='flex';
+  const f = document.querySelector('#loginScreen .login-form');
+  if (f) f.innerHTML = `<h2>No access</h2><p class="sub">This account isn't set up for TurfOps. Ask the owner to add you.</p><button id="noAccessOut" type="button">Sign out</button>`;
+  const b = document.getElementById('noAccessOut');
+  if (b) b.addEventListener('click', async () => { try { clearHistoryCache(); await supa.auth.signOut(); } catch (e) {} location.reload(); });
 }
 $('#loginBtn').addEventListener('click', async () => {
   if (!supa) return;
@@ -2199,9 +2250,11 @@ async function renderOverviewKpis(){
   // needs the full multi-year history, so the tiles render right away with
   // this week's number and the comparison fills in when it arrives.
   let needIdx = -1, needVals = null;
-  const needCard = (label, v, hist) => hist
+  // "~": this week's need is a projection (the week so far, extended to 7 days)
+  const approx = c => (c.value && c.value !== 'n/a' ? { ...c, value: '~' + c.value } : c);
+  const needCard = (label, v, hist) => approx(hist
     ? compareCard(label, v, hist.value, 'in', 2, `vs hist. avg (${num(hist.value, 2)})`)
-    : { label, value: num(v, 2), unit: 'in', sub: hist === undefined ? 'vs hist. avg: loading…' : 'hist. avg unavailable' };
+    : { label, value: num(v, 2), unit: 'in', sub: hist === undefined ? 'vs hist. avg: loading…' : 'hist. avg unavailable' });
   try {
     const { start: thisStart, end: thisEnd } = currentWeekRange();
 
@@ -2238,14 +2291,14 @@ async function renderOverviewKpis(){
     const fescueThis = weeklyNeedTotal(GUIDE_STATIONS.fescue, thisStart, thisEnd, true);
 
     needIdx = kpis.length; needVals = { bermuda: bermudaThis, fescue: fescueThis };
-    kpis.push(needCard('Bermuda water need (wk proj.)', bermudaThis));
-    kpis.push(needCard('Fescue water need (wk proj.)', fescueThis));
+    kpis.push(needCard('Bermuda need', bermudaThis));
+    kpis.push(needCard('Fescue need', fescueThis));
     window.TURF_WEEK_NEED = { bermuda: bermudaThis, fescue: fescueThis };   // read by the budget calculator
   } catch (e) {
     window.TURF_WEEK_NEED = null;
     console.error('Bermuda/Fescue water-need KPIs failed:', e);
-    kpis.push({label:'Bermuda water need (wk proj.)', value:'n/a'});
-    kpis.push({label:'Fescue water need (wk proj.)', value:'n/a'});
+    kpis.push({label:'Bermuda need', value:'n/a'});
+    kpis.push({label:'Fescue need', value:'n/a'});
   }
 
   renderKpiCards('overviewKpis', kpis);
@@ -2254,8 +2307,8 @@ async function renderOverviewKpis(){
   // Fill in the historical-average comparison once the multi-year data is in.
   if (needIdx >= 0){
     const apply = (hb, hf) => {
-      kpis[needIdx]     = needCard('Bermuda water need (wk proj.)', needVals.bermuda, hb);
-      kpis[needIdx + 1] = needCard('Fescue water need (wk proj.)',  needVals.fescue,  hf);
+      kpis[needIdx]     = needCard('Bermuda need', needVals.bermuda, hb);
+      kpis[needIdx + 1] = needCard('Fescue need',  needVals.fescue,  hf);
       renderKpiCards('overviewKpis', kpis);
     };
     try { const [hb, hf] = await Promise.all([historicalWeekNeed('bermuda'), historicalWeekNeed('fescue')]); apply(hb, hf); }
@@ -3416,7 +3469,7 @@ async function buildGrassBalanceChart(grassType, chartId, from, to){
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{position:'bottom'}},
-      scales:{ x:{type:'time', time:{unit: weeks.length>26?'month':'week'}, stacked:true},
+      scales:{ x:{type:'time', time:{unit: weeks.length>26?'month':'week', tooltipFormat:'MMM D', displayFormats:{ day:'MMM D', week:'MMM D', month:'MMM D' }}, stacked:true},
                y:{title:{display:false}, stacked:true} } }
   });
 }
@@ -3775,7 +3828,7 @@ async function initOnThisDayScatterSection(){
       // layout padding, which just adds dead space below the legend.
       layout:{ padding:{ right:20, top:24, bottom:4 } },
       plugins:{
-        legend:{ position:'bottom', labels:{
+        legend:{ display:false, position:'bottom', labels:{
           filter:(item) => !item.text.startsWith('Median') && item.text !== 'Other years',
           boxWidth:12, padding:8, font:{size:10},
         } },
@@ -3801,8 +3854,9 @@ checkSession();
 <aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
   <div class="lay-head"><h2>Page settings</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
   <p class="lay-help">Show, hide, pin and reorder every card. Press <b>Layout</b> on a page to drag and resize.</p>
+  <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 16 (merged cards, water today, forecast, controller push, saved layouts)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 19 (daily digest + push)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
@@ -4077,6 +4131,7 @@ checkSession();
     window.TURF_BUDGETS = results.map(r => ({ key: r.p.key, title: r.p.title, area: r.p.area, pct: r.pct, raw: r.raw, cycles: r.cyc,
       zones: r.p.zones.map(zd => ({ z: zd.z, min: baseOf(r.p.key, zd.z, zd.min) })) }));
     document.dispatchEvent(new Event('turfops:budgets'));
+    if (window.turfNotify) window.turfNotify.saveCalc(window.TURF_BUDGETS);
     renderTimeline(results, tl);
     const openCount = PROGRAMS.filter(p => persist.open[p.key]).length;
     const legend = el('budLegend'), all = el('budMathAll');
@@ -4486,7 +4541,7 @@ async function onCtlClick(e){
     { key: 'wb',   label: 'What the Grass Needed vs. What It Got', row: '#wbRangeChips',
       opts: [['7','1 wk'],['30','1 mo'],['90','3 mo'],['180','6 mo'],['365','1 yr']] },
     { key: 'zone', label: 'Water Applied by Zone',           row: '#zoneBarRangeChips',
-      opts: [['0','Today'],['thisweek','This wk'],['30','1 mo'],['180','6 mo'],['365','1 yr']] },
+      opts: [['0','Tdy'],['thisweek','This wk'],['30','1 mo'],['180','6 mo'],['365','1 yr']] },
   ];
   const rangeDefaults = Object.assign({}, RANGE_FALLBACK);
   try {
@@ -4561,8 +4616,8 @@ async function onCtlClick(e){
   const GRASSES = [['bermuda', 'Bermuda'], ['fescue', 'Fescue']];
   const MERGES = [
     { key: 'deficit', title: 'Water deficit', grass: true, views: [
-        ['running', 'Running', { bermuda: 'chartDeficitBermuda', fescue: 'chartDeficitFescue' }],
-        ['ytd', 'Year to date', { bermuda: 'chartCumDefYearBermuda', fescue: 'chartCumDefYearFescue' }],
+        ['running', 'Cum', { bermuda: 'chartDeficitBermuda', fescue: 'chartDeficitFescue' }],
+        ['ytd', 'YTD', { bermuda: 'chartCumDefYearBermuda', fescue: 'chartCumDefYearFescue' }],
         ['monthly', 'By month', { bermuda: 'chartCumDefMonthBermuda', fescue: 'chartCumDefMonthFescue' }]] },
     { key: 'etweekly', title: 'Water needed, 7-day rolling avg', grass: true, views: [['all', '', { bermuda: 'chartEtWeeklyBermuda', fescue: 'chartEtWeeklyFescue' }]] },
     { key: 'balance', title: 'What the grass needed vs. what it got', grass: true, extra: '#wbRangeChips', views: [['all', '', { bermuda: 'chartBalanceBermuda', fescue: 'chartBalanceFescue' }]] },
@@ -4586,8 +4641,9 @@ async function onCtlClick(e){
     const ctl = $('.mc-ctl', card), panes = $('.mc-panes', card);
     if (m.extra) { const ex = document.querySelector(m.extra), exCard = ex && ex.closest('.card');
       if (exCard) { MERGED_FROM[exCard.dataset.cid] = m.key; const body = toPane(exCard); body.classList.remove('mpane'); body.classList.add('mc-extra'); card.insertBefore(body, panes); } }
-    if (m.views.length > 1) ctl.insertAdjacentHTML('beforeend', segHtml('view', m.views.map(v => [v[0], v[1]])));
+    // grass switch first, so it sits in the same spot on every card; the view switch goes to the right
     if (m.grass) ctl.insertAdjacentHTML('beforeend', segHtml('grass', GRASSES));
+    if (m.views.length > 1) ctl.insertAdjacentHTML('beforeend', segHtml('view', m.views.map(v => [v[0], v[1]])).replace('class="seg sm"', 'class="seg sm seg-right"'));
     m.views.forEach(([vid, , ids]) => GRASSES.forEach(([g]) => {
       const cv = document.getElementById(ids[g]), src = cv && cv.closest('.card'); if (!src) return;
       MERGED_FROM[src.dataset.cid] = m.key;
@@ -5168,6 +5224,133 @@ async function onCtlClick(e){
   const fromHash = (location.hash || '').slice(1);
   if (TABS.includes(fromHash)) start = fromHash;
   activate(start, { scroll: false });
+})();
+</script>
+<script>
+/* ============================================================
+   NOTIFICATIONS (build 19): daily digest email + phone push.
+   Settings live in public.turfops_notify (your row only); each phone/browser that turns on
+   push is a row in public.turfops_push_subs. The turf-digest edge function sends them.
+   ============================================================ */
+window.turfNotify = (() => {
+  const FN = SUPABASE_URL + '/functions/v1/turf-digest';
+  const box = document.getElementById('notifyBox');
+  const ST = { me: null, row: null, sub: null, busy: false, msg: '', err: false, loaded: false, calcSent: '' };
+  const h = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const pushOK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  const HOURS = [4, 5, 6, 7, 8, 9];
+  const hourLbl = x => `${x % 12 || 12}:00 ${x < 12 ? 'AM' : 'PM'}`;
+
+  async function me(){ if (ST.me) return ST.me; const { data } = await supa.auth.getUser(); ST.me = data && data.user; return ST.me; }
+  async function reg(){ if (!pushOK) return null; return (await navigator.serviceWorker.getRegistration('./')) || navigator.serviceWorker.register('sw.js', { scope: './' }); }
+  async function load(){
+    const u = await me(); if (!u) return;
+    const { data, error } = await supa.from('turfops_notify').select('*').eq('user_id', u.id).maybeSingle();
+    if (error) { ST.msg = 'Notifications aren\'t set up on the server yet (run the notifications SQL).'; ST.err = true; }
+    ST.row = data || null;
+    try { const r = pushOK ? await navigator.serviceWorker.getRegistration('./') : null; ST.sub = r ? await r.pushManager.getSubscription() : null; } catch (e) { ST.sub = null; }
+    ST.loaded = true;
+  }
+  async function save(patch){
+    const u = await me(); if (!u) return;
+    const row = Object.assign({ user_id: u.id, email_on: false, push_on: true, push_mode: 'daily', send_hour: 6 }, ST.row || {}, patch, { updated_at: new Date().toISOString() });
+    delete row.last_sent_on;
+    const { data, error } = await supa.from('turfops_notify').upsert(row, { onConflict: 'user_id' }).select().maybeSingle();
+    if (error) { ST.msg = 'Could not save: ' + error.message; ST.err = true; } else { ST.row = data; ST.msg = 'Saved.'; ST.err = false; }
+    render();
+  }
+  const b64 = s => { const p = '='.repeat((4 - s.length % 4) % 4), raw = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); };
+  async function pushOn(){
+    ST.busy = true; ST.msg = 'Asking for permission…'; ST.err = false; render();
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') throw new Error(perm === 'denied' ? 'Notifications are blocked for this site. Allow them in the browser or phone settings, then try again.' : 'Permission was not given.');
+      const r = await reg(); await navigator.serviceWorker.ready;
+      const { key } = await (await fetch(FN + '?vapid=1')).json(); if (!key) throw new Error('The server has no push key.');
+      const sub = (await r.pushManager.getSubscription()) || await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(key) });
+      const j = sub.toJSON(), u = await me();
+      const { error } = await supa.from('turfops_push_subs').upsert({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_id: u.id, ua: navigator.userAgent.slice(0, 200) }, { onConflict: 'endpoint' });
+      if (error) throw new Error(error.message);
+      ST.sub = sub; if (!ST.row || !ST.row.push_on) await save({ push_on: true });
+      ST.msg = 'Push is on for this device.'; ST.err = false;
+    } catch (e) { ST.msg = e.message; ST.err = true; }
+    ST.busy = false; render();
+  }
+  async function pushOff(){
+    ST.busy = true; render();
+    try { if (ST.sub) { const ep = ST.sub.endpoint; await ST.sub.unsubscribe(); await supa.from('turfops_push_subs').delete().eq('endpoint', ep); } ST.sub = null; ST.msg = 'Push is off for this device.'; ST.err = false; }
+    catch (e) { ST.msg = e.message; ST.err = true; }
+    ST.busy = false; render();
+  }
+  async function call(action){
+    const { data, error } = await supa.functions.invoke('turf-digest', { body: { action } });
+    if (error) { let m = error.message; try { const j = await error.context.json(); m = j.error || m; } catch (e) {} throw new Error(m); }
+    return data;
+  }
+  async function test(){
+    ST.busy = true; ST.msg = 'Sending…'; ST.err = false; render();
+    try { const r = await call('test'); const bits = [];
+      if (r.email) bits.push('Email: ' + r.email); if (r.push) bits.push(typeof r.push === 'string' ? 'Push: ' + r.push : `Push: sent to ${r.push.sent} of ${r.push.devices} device${r.push.devices === 1 ? '' : 's'}${r.push.errs && r.push.errs.length ? ' (' + r.push.errs.join(', ') + ')' : ''}`);
+      ST.msg = bits.join(' · ') || 'Nothing is turned on.'; ST.err = /failed/.test(ST.msg); }
+    catch (e) { ST.msg = 'Test failed: ' + e.message; ST.err = true; }
+    ST.busy = false; render();
+  }
+  async function preview(){
+    const w = window.open('', '_blank'); if (w) w.document.write('<p style="font-family:sans-serif;padding:20px">Building the digest…</p>');
+    try { const r = await call('preview'); if (w) { w.document.open(); w.document.write(r.html); w.document.close(); } }
+    catch (e) { if (w) w.close(); ST.msg = 'Preview failed: ' + e.message; ST.err = true; render(); }
+  }
+  function render(){
+    if (!box) return;
+    if (!ST.loaded) { box.innerHTML = '<h3>Notifications</h3><p>Loading…</p>'; return; }
+    const r = ST.row || {}, em = !!r.email_on, pu = r.push_on !== false, dis = ST.busy ? 'disabled' : '';
+    const sw = (id, on, d) => `<label class="nt-sw"><input type="checkbox" id="${id}" ${on ? 'checked' : ''} ${d || ''}><span></span></label>`;
+    let dev;
+    if (!pushOK) dev = isIOS && !standalone ? 'On iPhone, add TurfOps to your Home Screen (Share → Add to Home Screen) and open it from there to turn on push.' : 'This browser can\'t receive push notifications.';
+    else if (Notification.permission === 'denied') dev = 'Notifications are blocked for this site in this browser.';
+    else dev = ST.sub ? 'This device gets the push.' : 'This device is not getting the push yet.';
+    box.innerHTML = `<h3>Notifications</h3><p>A morning digest: water today or not, yesterday, the week, rain coming, and the controller.</p>
+      <div class="nt-row"><div>Email digest<small>${h(r.email || (ST.me && ST.me.email) || '')}</small></div>${sw('ntEmail', em, dis)}</div>
+      <div class="nt-row"><div>Push to this device<small class="nt-dev">${h(dev)}</small></div>${sw('ntPush', pushOK && !!ST.sub, (!pushOK || ST.busy) ? 'disabled' : '')}</div>
+      <label for="ntMode">Push</label><select id="ntMode" ${dis}><option value="daily" ${r.push_mode !== 'alerts' ? 'selected' : ''}>Every morning</option><option value="alerts" ${r.push_mode === 'alerts' ? 'selected' : ''}>Only when there's something to do</option></select>
+      <label for="ntHour">Send at (Central)</label><select id="ntHour" ${dis}>${HOURS.map(x => `<option value="${x}" ${(r.send_hour ?? 6) === x ? 'selected' : ''}>${hourLbl(x)}</option>`).join('')}</select>
+      <label for="ntAddr">Send email to</label><input class="nt-in" id="ntAddr" type="email" placeholder="${h((ST.me && ST.me.email) || 'your sign-in email')}" value="${h(r.email || '')}" ${dis}>
+      <div class="nt-btns"><button type="button" class="btn ghost" id="ntPreview" ${dis}>Preview email</button><button type="button" class="btn" id="ntTest" ${dis}>Send test now</button></div>
+      ${ST.msg ? `<div class="nt-msg ${ST.err ? 'err' : ''}">${h(ST.msg)}</div>` : ''}`;
+  }
+  if (box) {
+    box.addEventListener('change', e => {
+      const t = e.target;
+      if (t.id === 'ntEmail') save({ email_on: t.checked });
+      else if (t.id === 'ntPush') (t.checked ? pushOn() : pushOff());
+      else if (t.id === 'ntMode') save({ push_mode: t.value });
+      else if (t.id === 'ntHour') save({ send_hour: Number(t.value) });
+      else if (t.id === 'ntAddr') save({ email: t.value.trim() || null });
+    });
+    box.addEventListener('click', e => { if (e.target.closest('#ntTest')) test(); else if (e.target.closest('#ntPreview')) preview(); });
+    const sb = document.getElementById('settingsBtn');
+    if (sb) sb.addEventListener('click', async () => { ST.msg = ''; render(); await load(); render(); });
+  }
+  // keep the service worker registered on devices that already turned push on
+  if (pushOK) navigator.serviceWorker.getRegistration('./').then(r => { if (r) r.update().catch(() => {}); }).catch(() => {});
+
+  // The digest shows "calc 38%" next to each controller budget: save the calculator's latest numbers (only when they change).
+  let cT = 0;
+  function saveCalc(list){
+    clearTimeout(cT);
+    cT = setTimeout(async () => {
+      try {
+        const slim = (list || []).map(x => ({ title: x.title, area: x.area, pct: x.pct == null ? null : Math.round(x.pct) })), sig = JSON.stringify(slim);
+        if (!slim.length || sig === ST.calcSent) return;
+        const u = await me(); if (!u) return;
+        const { error } = await supa.from('turfops_notify').update({ calc: slim, calc_at: new Date().toISOString() }).eq('user_id', u.id);
+        if (!error) ST.calcSent = sig;
+      } catch (e) {}
+    }, 3000);
+  }
+  return { saveCalc, load, render };
 })();
 </script>
 </body>
