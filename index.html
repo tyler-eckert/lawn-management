@@ -702,7 +702,7 @@ a{ color:var(--brand-500); }
 .empty-state .big{ color:var(--text); font-weight:600; }
 
 /* ---- KPI tiles (first one is the hero card, like finance) ---- */
-.kpi-row{ grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; margin-bottom:12px; }
+.kpi-row{ grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:12px; }
 .kpi-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--shadow); padding:18px 20px; position:relative; overflow:hidden; }
 .kpi-card .label{ font-size:var(--fs-sm); color:var(--text-tertiary); font-weight:500; margin-bottom:0; }
 .kpi-card .value{ font-size:var(--fs-3xl); font-weight:600; letter-spacing:-.03em; margin-top:8px; line-height:1.1; }
@@ -853,7 +853,7 @@ body.lay-on .card.lay-tall-scroll{ overflow:hidden; }
 .grid.free > .card{ align-self:start; }
 .free-ghost{ position:absolute; border:2px dashed var(--brand-500); border-radius:var(--r-lg); background:color-mix(in srgb,var(--brand-500) 8%,transparent); pointer-events:none; z-index:1; }
 .free-ghost.pushed{ border-color:var(--warn); background:color-mix(in srgb,var(--warn) 10%,transparent); }
-.free-ghost.pushed::after{ content:'Lands here — the spot under the pointer is taken'; position:absolute; left:10px; top:8px; font-size:var(--fs-xs); font-weight:700; color:var(--warn); }
+.free-ghost.pushed::after{ content:'Spot taken, it lands here'; position:absolute; left:10px; top:8px; font-size:var(--fs-xs); font-weight:700; color:var(--warn); }
 .card.free-moving{ z-index:20; opacity:.9; box-shadow:0 18px 40px rgba(0,0,0,.18); pointer-events:none; transition:none; }
 body.lay-on .grid.free{
   background-image:
@@ -890,6 +890,91 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
   .lay-rs::after{ left:9px; } .lay-rh::after{ top:9px; }
   .toast{ bottom:calc(96px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* ---- build 15 ---- */
+/* Years & range: a slim, collapsible bar */
+#rangeControlsHeading{ padding:0 !important; margin:0 0 12px !important; background:var(--card) !important; border:1px solid var(--border) !important; box-shadow:var(--shadow) !important; border-radius:var(--r-lg) !important; }
+.range-toggle{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 18px; background:none; border:0; cursor:pointer; font:inherit; color:var(--text); text-align:left; }
+.range-toggle h2{ font-size:var(--fs-md) !important; font-weight:600; margin:0; white-space:nowrap; }
+.range-sum{ flex:1; min-width:0; font-size:var(--fs-sm); font-weight:600; color:var(--brand-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.range-chev{ width:28px; height:28px; display:grid; place-items:center; border-radius:var(--r-sm); color:var(--text-tertiary); flex:none; transition:transform .2s ease; }
+.range-chev svg{ width:16px; height:16px; }
+.range-toggle:hover .range-chev{ background:var(--surface); color:var(--text); }
+body.range-open .range-chev{ transform:rotate(180deg); }
+body:not(.range-open) #rangeControls{ display:none !important; }
+/* calculator: one dropdown for where the weekly target comes from */
+.bud-controls .bud-chips{ display:contents; }
+.bud-chips .filter-field{ min-width:260px; }
+
+/* ---- build 16 ---- */
+.seg{ display:inline-flex; background:var(--surface); border-radius:var(--r-pill); padding:3px; gap:2px; max-width:100%; overflow-x:auto; scrollbar-width:none; }
+.seg::-webkit-scrollbar{ display:none; }
+.seg button{ padding:6px 14px; border-radius:var(--r-pill); font:inherit; font-size:var(--fs-sm); font-weight:600; color:var(--text-tertiary); white-space:nowrap; background:none; border:0; cursor:pointer; }
+.seg button.on{ background:var(--card); color:var(--text); box-shadow:var(--shadow); }
+.seg.sm button{ padding:5px 12px; font-size:var(--fs-xs); }
+/* merged cards: view / grass switches */
+.mc-ctl{ display:flex; gap:8px; flex-wrap:wrap; margin:-2px 0 12px; }
+.mc-ctl:empty{ display:none; }
+.mc-panes{ flex:1 0 auto; display:flex; flex-direction:column; }
+.mc-panes > .mpane{ flex:1 0 auto; display:flex; flex-direction:column; }
+.mc-panes > .mpane[hidden]{ display:none !important; }
+.mc-panes > .mpane > .chart-wrap{ flex:1 0 auto; }
+.mc-extra{ margin-bottom:6px; }
+.mc-extra .year-controls{ margin-bottom:8px !important; }
+.mcard .mpane > h3{ display:none; }
+#g-records .mcard .mpane{ font-size:var(--fs-base); line-height:1.55; }
+/* Water today? */
+.wt-msg{ color:var(--text-tertiary); font-size:var(--fs-sm); padding:8px 0; }
+.wt-head{ font-size:var(--fs-2xl); font-weight:600; letter-spacing:-.03em; margin:2px 0 14px; }
+.wt-row{ display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-top:1px solid var(--border); }
+.wt-chip{ flex:none; min-width:56px; text-align:center; font-size:var(--fs-xs); font-weight:700; padding:5px 8px; border-radius:var(--r-pill); background:var(--surface); color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; }
+.wt-water .wt-chip{ background:color-mix(in srgb,var(--neg) 16%,transparent); color:var(--neg); }
+.wt-hold .wt-chip{ background:color-mix(in srgb,#4472C4 18%,transparent); color:#4472C4; }
+.wt-watch .wt-chip{ background:var(--amber-light); color:var(--amber-deep); }
+.wt-ok .wt-chip{ background:var(--brand-100); color:var(--brand-500); }
+.wt-main{ flex:1; min-width:0; }
+.wt-g{ font-weight:600; display:flex; justify-content:space-between; gap:8px; }
+.wt-g span{ font-weight:500; color:var(--text-tertiary); font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
+.wt-meter{ position:relative; height:6px; border-radius:var(--r-pill); background:var(--surface); margin:7px 0 6px; overflow:visible; }
+.wt-meter span{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-pill); background:var(--brand-500); }
+.wt-water .wt-meter span{ background:var(--neg); } .wt-watch .wt-meter span{ background:var(--warn); } .wt-hold .wt-meter span{ background:#4472C4; }
+.wt-meter i{ position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--text-tertiary); border-radius:2px; }
+.wt-line{ font-size:var(--fs-sm); color:var(--text-secondary); }
+.wt-foot{ font-size:var(--fs-xs); color:var(--text-tertiary); margin-top:8px; }
+/* rain forecast strip */
+.fc-strip{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; flex:1 0 auto; min-height:170px; }
+.fc-day{ display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0; }
+.fc-amt{ font-size:var(--fs-sm); font-weight:600; font-variant-numeric:tabular-nums; }
+.fc-bar{ flex:1; width:100%; max-width:34px; background:var(--surface); border-radius:8px; position:relative; overflow:hidden; min-height:80px; }
+.fc-bar span{ position:absolute; left:0; right:0; bottom:0; background:#4472C4; border-radius:8px; }
+.fc-pop{ font-size:var(--fs-2xs); font-weight:600; color:#4472C4; }
+.fc-lbl{ font-size:var(--fs-xs); color:var(--text-tertiary); font-weight:600; }
+/* push to controller */
+.ctl-status{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; font-size:var(--fs-base); }
+.ctl-status > span:not(.dot){ color:var(--text-tertiary); font-size:var(--fs-sm); }
+.ctl-status .btn{ margin-left:auto; }
+.btn.sm{ height:30px; padding:0 12px; font-size:var(--fs-sm); }
+.btn:disabled{ opacity:.5; cursor:default; filter:none; box-shadow:none; }
+.ctl-table td{ vertical-align:middle; }
+.ctl-table tr.ctl-off td{ color:var(--text-tertiary); }
+.ctl-warn{ color:var(--amber-deep); font-weight:600; }
+.chip{ display:inline-flex; align-items:center; font-size:var(--fs-2xs); font-weight:700; padding:2px 7px; border-radius:var(--r-pill); background:var(--surface); color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; }
+.muted{ color:var(--text-tertiary); }
+.ctl-note{ margin-top:12px; padding:10px 12px; border-radius:var(--r-md); background:var(--amber-light); font-size:var(--fs-sm); line-height:1.5; }
+.ctl-note .btn{ margin-top:8px; }
+.ctl-actions, .ctl-rain{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:14px; }
+.ctl-rain label{ font-size:var(--fs-sm); font-weight:600; color:var(--text-secondary); }
+.ctl-sel{ height:38px; border-radius:var(--r-md); border:1px solid var(--border-strong); background:var(--card); color:var(--text); font:inherit; font-size:var(--fs-base); padding:0 10px; }
+.ctl-confirm{ font-size:var(--fs-sm); font-weight:600; }
+.ctl-hint{ font-size:var(--fs-xs); color:#4472C4; font-weight:600; }
+.ctl-msg{ margin-top:10px; font-size:var(--fs-sm); color:var(--text-secondary); }
+/* saved layouts */
+.pre-save{ display:flex; gap:8px; margin:8px 0 6px; }
+.pre-in{ flex:1; min-width:0; height:38px; border-radius:var(--r-md); border:1px solid var(--border-strong); background:var(--card); color:var(--text); font:inherit; font-size:var(--fs-base); padding:0 12px; }
+.pre-btn{ height:32px; padding:0 12px; }
+/* stale data shows in the page header too (the sidebar dot is hidden on phones) */
+body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not updating'; color:var(--neg); font-weight:600; }
+@media (max-width:860px){ .fc-strip{ gap:4px; } .wt-head{ font-size:var(--fs-xl); } }
 </style>
 </head>
 
@@ -941,7 +1026,6 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
     <div class="header-row">
       <div><h1 id="pageTitle">Overview</h1><p class="page-sub" id="pageSub"></p></div>
       <div class="top-actions">
-        <label class="speed" title="How fast the charts draw in">Animation <input type="range" id="animSpeedSlider" min="0" max="30" value="3" step="0.5"></label>
         <button class="btn ghost mob-only" type="button" id="themeMob" aria-label="Switch light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg></button>
         <button class="btn ghost icon-only" type="button" id="settingsBtn" aria-label="Page settings" title="Cards on every page, default ranges"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
         <button id="layoutBtn" class="btn ghost" type="button" aria-pressed="false" title="Move, resize, hide or pin the cards on this page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M10 9v12"/></svg><span>Layout</span></button>
@@ -953,6 +1037,16 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
   <main data-active-tab="overview">
 
     <!-- ================= OVERVIEW KPIS ================= -->
+    <section class="collapsible" id="sec-today" data-tab="overview">
+      <button class="section-toggle" data-target="sec-today" data-icon="droplet"><h2>Today</h2><span class="chevron">︿</span></button>
+      <div class="section-body">
+        <div class="two-col">
+          <div class="panel" id="waterTodayPanel"><h3>Water today?</h3><div id="waterToday" class="wt"><div class="wt-msg">Checking the deficit…</div></div></div>
+          <div class="panel" id="forecastPanel"><h3>Rain forecast</h3><div class="panel-sub" id="forecastSub">Next 7 days · National Weather Service</div><div id="rainForecast" class="fc-strip"><div class="wt-msg">Loading forecast…</div></div></div>
+        </div>
+      </div>
+    </section>
+
     <section class="collapsible" id="sec-overview" data-tab="overview">
       <button class="section-toggle" data-target="sec-overview" data-icon="gauge"><h2>At a glance</h2><span class="chevron">︿</span></button>
       <div class="section-body">
@@ -967,7 +1061,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
       <div class="section-body">
         <div class="panel-sub" id="onThisDayLabel" style="margin-bottom:10px;"></div>
         <div class="panel">
-          <h3 style="font-size:0.95rem; margin-bottom:6px;">High &amp; Low Spread — Every Year</h3>
+          <h3 style="font-size:0.95rem; margin-bottom:6px;">High &amp; Low Spread by Year</h3>
           <div class="chart-wrap scatter-tall"><canvas id="chartOnThisDayScatter"></canvas></div>
         </div>
       </div>
@@ -975,7 +1069,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
 
     <!-- ================= SHARED CONTROLS (sticky) ================= -->
     <div class="panel" id="rangeControlsHeading" data-tab="temps rain irrigation">
-      <h2>Years &amp; range</h2>
+      <button type="button" class="range-toggle" id="rangeToggle" aria-expanded="false" aria-controls="rangeControls"><h2>Years &amp; range</h2><span class="range-sum" id="rangeSummary"></span><span class="range-chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
     </div>
     <div class="sticky-controls" id="rangeControls" data-tab="temps rain irrigation">
       <div class="year-controls" id="yc-shared"></div>
@@ -984,12 +1078,12 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
           <div class="yg-label">Day range (centered on today, across all shown years)</div>
           <div class="year-chip-row" id="doyRangeChips">
             <span class="year-chip" data-r="today">Today</span>
-            <span class="year-chip" data-r="lastweek">Last week</span>
-            <span class="year-chip" data-r="thisweek">This week</span>
-            <span class="year-chip" data-r="1month">1 month</span>
-            <span class="year-chip" data-r="3month">3 months</span>
-            <span class="year-chip" data-r="6month">6 months</span>
-            <span class="year-chip on" data-r="full">Full year</span>
+            <span class="year-chip" data-r="lastweek">Last wk</span>
+            <span class="year-chip" data-r="thisweek">This wk</span>
+            <span class="year-chip" data-r="1month">1 mo</span>
+            <span class="year-chip" data-r="3month">3 mo</span>
+            <span class="year-chip" data-r="6month">6 mo</span>
+            <span class="year-chip on" data-r="full">Full yr</span>
           </div>
         </div>
       </div>
@@ -1050,7 +1144,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
     <section class="collapsible" id="sec-deficit-bermuda" data-tab="irrigation">
       <button class="section-toggle" data-target="sec-deficit-bermuda" data-icon="droplet"><h2>Running Water Deficit</h2><span class="chevron">︿</span></button>
       <div class="section-body">
-        <div class="panel-sub" style="margin-bottom:10px;">Inches per week</div>
+        <div class="panel-sub" style="margin-bottom:10px;">Inches. Shortfall carried day to day, never below 0.</div>
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Bermuda</h3>
@@ -1066,9 +1160,9 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
 
     <!-- ================= CUMULATIVE WATER DEFICIT ================= -->
     <section class="collapsible" id="sec-cumdef-year" data-tab="irrigation">
-      <button class="section-toggle" data-target="sec-cumdef-year" data-icon="droplet"><h2>Cumulative Water Deficit — Year to Date</h2><span class="chevron">︿</span></button>
+      <button class="section-toggle" data-target="sec-cumdef-year" data-icon="droplet"><h2>Cumulative Water Deficit, YTD</h2><span class="chevron">︿</span></button>
       <div class="section-body">
-        <div class="panel-sub" style="margin-bottom:10px;">Inches, running total of need − rain − irrigation since Jan 1 (not floored at 0). <span style="color:var(--neg); font-weight:600;">Above 0 = behind</span> · <span style="color:var(--pos); font-weight:600;">below 0 = ahead</span>. Current year.</div>
+        <div class="panel-sub" style="margin-bottom:10px;">Inches. Need minus rain and irrigation, summed since Jan 1. <span style="color:var(--neg); font-weight:600;">Above 0 = behind</span> · <span style="color:var(--pos); font-weight:600;">below 0 = ahead</span>. Current year.</div>
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Bermuda</h3>
@@ -1083,9 +1177,9 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
     </section>
 
     <section class="collapsible" id="sec-cumdef-month" data-tab="irrigation">
-      <button class="section-toggle" data-target="sec-cumdef-month" data-icon="droplet"><h2>Cumulative Water Deficit — By Month</h2><span class="chevron">︿</span></button>
+      <button class="section-toggle" data-target="sec-cumdef-month" data-icon="droplet"><h2>Cumulative Water Deficit by Month</h2><span class="chevron">︿</span></button>
       <div class="section-body">
-        <div class="panel-sub" style="margin-bottom:10px;">Inches, same running total but restarting at 0 on the 1st of each month. <span style="color:var(--neg); font-weight:600;">Above 0 = behind</span> · <span style="color:var(--pos); font-weight:600;">below 0 = ahead</span>. Current year.</div>
+        <div class="panel-sub" style="margin-bottom:10px;">Inches. Same total, reset on the 1st of each month. <span style="color:var(--neg); font-weight:600;">Above 0 = behind</span> · <span style="color:var(--pos); font-weight:600;">below 0 = ahead</span>. Current year.</div>
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.9rem; margin-bottom:6px;">Bermuda</h3>
@@ -1101,7 +1195,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
 
     <!-- ================= 5. ET WEEKLY ================= -->
     <section class="collapsible" id="sec-etweekly-bermuda" data-tab="irrigation">
-      <button class="section-toggle" data-target="sec-etweekly-bermuda" data-icon="droplet"><h2>Water Needed — 7-Day Rolling Average</h2><span class="chevron">︿</span></button>
+      <button class="section-toggle" data-target="sec-etweekly-bermuda" data-icon="droplet"><h2>Water Needed, 7-Day Rolling Avg</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel-sub" style="margin-bottom:10px;">Inches per week</div>
         <div class="two-col">
@@ -1125,11 +1219,11 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
           <div class="year-group">
             <div class="yg-label">Range</div>
             <div class="year-chip-row" id="wbRangeChips">
-              <span class="year-chip" data-r="7">1 week</span>
-              <span class="year-chip" data-r="30">1 month</span>
-              <span class="year-chip on" data-r="90">3 months</span>
-              <span class="year-chip" data-r="180">6 months</span>
-              <span class="year-chip" data-r="365">1 year</span>
+              <span class="year-chip" data-r="7">1 wk</span>
+              <span class="year-chip" data-r="30">1 mo</span>
+              <span class="year-chip on" data-r="90">3 mo</span>
+              <span class="year-chip" data-r="180">6 mo</span>
+              <span class="year-chip" data-r="365">1 yr</span>
               <span class="year-chip" data-r="custom">Custom…</span>
             </div>
           </div>
@@ -1137,7 +1231,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
             <div class="yg-label">Custom dates</div>
             <div style="display:flex; gap:6px; align-items:center;">
               <input type="date" id="wbFrom" style="padding:6px 8px; border:1px solid var(--line); border-radius:8px; font-size:0.8rem; background:var(--surface-2);">
-              <span style="color:var(--text-tertiary);">–</span>
+              <span style="color:var(--text-tertiary);">-</span>
               <input type="date" id="wbTo" style="padding:6px 8px; border:1px solid var(--line); border-radius:8px; font-size:0.8rem; background:var(--surface-2);">
               <button class="btn" id="wbApply" style="padding:6px 14px; font-size:0.8rem;">Go</button>
             </div>
@@ -1164,9 +1258,9 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
       <div class="section-body">
         <div class="two-col">
           <div class="panel">
-            <h3 style="font-size:0.95rem; margin-bottom:6px;">vs. Need — This Week (inches)</h3>
+            <h3 style="font-size:0.95rem; margin-bottom:6px;">vs. Need This Week (inches)</h3>
             <div class="panel-sub" id="waterRadarWeekLabel" style="margin-bottom:10px;"></div>
-            <div class="chart-wrap tall"><canvas id="chartWaterRadar"></canvas></div>
+            <div class="chart-wrap zone-tall"><canvas id="chartWaterRadar"></canvas></div>
           </div>
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">By Zone (total inches)</h3>
@@ -1175,10 +1269,10 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
                 <div class="yg-label">Range</div>
                 <div class="year-chip-row" id="zoneBarRangeChips">
                   <span class="year-chip on" data-r="0">Today</span>
-                  <span class="year-chip" data-r="thisweek">This week</span>
-                  <span class="year-chip" data-r="30">1 month</span>
-                  <span class="year-chip" data-r="180">6 months</span>
-                  <span class="year-chip" data-r="365">1 year</span>
+                  <span class="year-chip" data-r="thisweek">This wk</span>
+                  <span class="year-chip" data-r="30">1 mo</span>
+                  <span class="year-chip" data-r="180">6 mo</span>
+                  <span class="year-chip" data-r="365">1 yr</span>
                   <span class="year-chip" data-r="custom">Custom…</span>
                 </div>
               </div>
@@ -1186,7 +1280,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
                 <div class="yg-label">Custom dates</div>
                 <div style="display:flex; gap:6px; align-items:center;">
                   <input type="date" id="zoneBarFrom" style="padding:6px 8px; border:1px solid var(--line); border-radius:8px; font-size:0.8rem; background:var(--surface-2);">
-                  <span style="color:var(--text-tertiary);">–</span>
+                  <span style="color:var(--text-tertiary);">-</span>
                   <input type="date" id="zoneBarTo" style="padding:6px 8px; border:1px solid var(--line); border-radius:8px; font-size:0.8rem; background:var(--surface-2);">
                   <button class="btn" id="zoneBarApply" style="padding:6px 14px; font-size:0.8rem;">Go</button>
                 </div>
@@ -1205,6 +1299,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
         <div class="kpi-row" id="budgetNeedKpis"></div>
         <div class="panel">
           <div class="bud-controls">
+            <div class="bud-chips" id="budChips"></div>
             <div class="filter-field">
               <label for="budTarget">Water needed (in / week)</label>
               <input id="budTarget" type="number" inputmode="decimal" step="0.05" min="0" value="1.50">
@@ -1222,14 +1317,18 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
               </select>
             </div>
           </div>
-          <div class="bud-chips" id="budChips"></div>
           <div class="bud-summary" id="budSummary"></div>
         </div>
         <div id="budgetPrograms"></div>
         <div class="bud-legendrow"><div class="bud-legend" id="budLegend">"At budget" column: <span class="bud-ok">on target (±5%)</span> · <span class="bud-lo">short</span> · <span class="bud-hi">over</span></div><button type="button" class="bud-mathbtn" id="budMathAll">Show all zone detail</button></div>
+        <div class="panel" id="ctlPanel">
+          <h3>Push to controller</h3>
+          <div class="panel-sub">Send the budgets above or a rain delay to the B-hyve. Nothing changes until you confirm.</div>
+          <div id="ctlBody"><div class="wt-msg">Connecting to the controller…</div></div>
+        </div>
         <div class="panel" id="budTimelinePanel">
           <h3 style="font-size:1rem; margin-bottom:2px;">When each program finishes</h3>
-          <div class="panel-sub" style="margin-bottom:12px;">Run time = each zone's baseline × the budget above, added up for one cycle, × the cycles per day (plus any gap between cycles set in Zone setup).</div>
+          <div class="panel-sub" style="margin-bottom:12px;">Run time = baseline × budget × cycles per day, plus any gap between cycles.</div>
           <div class="bud-controls">
             <div class="filter-field"><label for="budStart">Programs start at</label><input id="budStart" type="time" value="04:00"></div>
             <div class="filter-field"><label for="budWinEnd">Watering window ends</label><input id="budWinEnd" type="time" value="12:00"></div>
@@ -1242,7 +1341,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
           <div id="budTimeline" style="margin-top:14px;"></div>
         </div>
         <details class="panel bud-setup" id="budSetup">
-          <summary>Zone setup — baseline times, cycles &amp; precip rates</summary>
+          <summary>Zone setup: baseline times, cycles &amp; precip rates</summary>
           <div id="budSetupBody"></div>
         </details>
       </div>
@@ -1252,7 +1351,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
     <section class="collapsible" id="sec-records" data-tab="records">
       <button class="section-toggle" data-target="sec-records" data-icon="trend"><h2>Records</h2><span class="chevron">︿</span></button>
       <div class="section-body">
-        <div class="panel-sub" style="margin-bottom:10px;">Solid bars run through today; light bars show the rest of each year. Lowest full year is blue, highest is red.</div>
+        <div class="panel-sub" style="margin-bottom:10px;">Solid = through today, light = rest of year. Blue = lowest full year, red = highest.</div>
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:0.95rem; margin-bottom:6px;">Days at or above 100°F</h3>
@@ -1287,7 +1386,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
       <div class="section-body">
         <div class="panel">
           <h3 style="font-size:1rem; margin-bottom:8px;">Property constants</h3>
-          <div class="panel-sub">Hard-coded inputs to the ET₀ calculation — physical facts about the property, not tunable settings</div>
+          <div class="panel-sub">Fixed inputs to the ET₀ calculation (property facts, not settings)</div>
           <div class="table-wrap">
             <table class="data">
               <thead><tr><th>Constant</th><th>Value</th><th>Used for</th></tr></thead>
@@ -1304,7 +1403,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
           <h3 style="font-size:1rem; margin-bottom:8px;">What is ET₀?</h3>
           <p style="max-width:70ch; line-height:1.6; color:var(--text-secondary); font-size:0.92rem;">
             ET₀ is the depth of water, in inches per day, that would evaporate and transpire from a
-            standardized reference surface — a short, uniform, well-watered grass — under the day's actual
+            standardized reference surface, a short, uniform, well-watered grass, under the day's actual
             weather. Multiply ET₀ by a crop coefficient (Kc) specific to the grass type and the calendar
             month, and you get ETc: the actual water need for that grass, that day. The formula here is
             FAO-56 Penman-Monteith, the internationally standard method for computing ET₀.
@@ -1312,8 +1411,8 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
           <div class="panel-sub" style="margin-top:14px;">Source</div>
           <p style="font-size:0.85rem;">
             Allen, R.G., Pereira, L.S., Raes, D., Smith, M. (1998).
-            <em>Crop Evapotranspiration — Guidelines for Computing Crop Water Requirements</em>,
-            FAO Irrigation and Drainage Paper 56. —
+            <em>Crop Evapotranspiration, Guidelines for Computing Crop Water Requirements</em>,
+            FAO Irrigation and Drainage Paper 56. -
             <a href="https://www.fao.org/4/x0490e/x0490e00.htm" target="_blank" rel="noopener">fao.org/4/x0490e/x0490e00.htm</a>
           </p>
         </div>
@@ -1338,7 +1437,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
                 <tr><td>T</td><td>Mean daily air temperature at 2 m</td><td>°C</td></tr>
                 <tr><td>u<sub>2</sub></td><td>Wind speed at 2 m</td><td>m/s</td></tr>
                 <tr><td>e<sub>s</sub> − e<sub>a</sub></td><td>Vapor pressure deficit: how much drier the air is than saturated</td><td>kPa</td></tr>
-                <tr><td>0.408</td><td>Converts MJ/m² of energy into mm of evaporated water</td><td>—</td></tr>
+                <tr><td>0.408</td><td>Converts MJ/m² of energy into mm of evaporated water</td><td>n/a</td></tr>
               </tbody>
             </table>
           </div>
@@ -1357,8 +1456,8 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
               <tbody id="pmWeekTable"><tr><td colspan="9">Loading…</td></tr></tbody>
             </table>
           </div>
-          <div class="panel-sub" style="margin-top:10px;">Tap a day to step through its calculation below. The weekly total uses the stored ETc values, the same numbers the Water Needed chart uses.</div>
-          <h3 style="font-size:0.95rem; margin:18px 0 8px;">Step by step: <span id="pmSampleTitle">—</span></h3>
+          <div class="panel-sub" style="margin-top:10px;">Tap a day to see its calculation. Weekly totals use the stored ETc values from the Water Needed chart.</div>
+          <h3 style="font-size:0.95rem; margin:18px 0 8px;">Step by step: <span id="pmSampleTitle">n/a</span></h3>
           <div class="table-wrap" style="max-height:none;">
             <table class="data pm-steps">
               <thead><tr><th></th><th>Calculation</th><th>Value</th><th>FAO-56</th></tr></thead>
@@ -1368,7 +1467,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
         </div>
         <div class="panel">
           <h3 style="font-size:1rem; margin-bottom:8px;">Crop coefficients (Kc)</h3>
-          <div class="panel-sub">Monthly multipliers applied to ET₀ to get each grass type's actual water need (ETc = ET₀ × Kc)</div>
+          <div class="panel-sub">Monthly multipliers: ETc = ET₀ × Kc</div>
           <div class="table-wrap">
             <table class="data">
               <thead><tr><th>Month</th><th>Bermuda</th><th>Fescue</th></tr></thead>
@@ -1385,7 +1484,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
               <thead><tr><th>Constant</th><th>Value</th><th>Where it lives</th><th>Meaning</th></tr></thead>
               <tbody>
                 <tr><td>Bermuda deficit threshold</td><td>0.65 in (80% watch: 0.52 in)</td><td>Dashboard script (DEFICIT_THRESHOLD_IN)</td><td>Shortfall level treated as needing irrigation for Bermuda</td></tr>
-                <tr><td>Fescue deficit threshold</td><td>0.45 in (80% watch: 0.36 in)</td><td>Dashboard script (DEFICIT_THRESHOLD_IN)</td><td>Same, for Fescue — cool-season turf shows stress sooner</td></tr>
+                <tr><td>Fescue deficit threshold</td><td>0.45 in (80% watch: 0.36 in)</td><td>Dashboard script (DEFICIT_THRESHOLD_IN)</td><td>Same, for Fescue, cool-season turf shows stress sooner</td></tr>
                 <tr><td>Bermuda guide stations</td><td>1, 2, 6, 7</td><td>Dashboard script</td><td>Representative zones for the water-balance chart</td></tr>
                 <tr><td>Fescue guide stations</td><td>3, 4</td><td>Dashboard script</td><td>Representative zones for the water-balance chart</td></tr>
                 <tr><td>Default precip rate</td><td>0.3 in/hr</td><td>irrigation_zones.precip_rate_in_per_hr</td><td>From catch-cup testing; converts sprinkler runtime to inches applied</td></tr>
@@ -1401,9 +1500,9 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
             <table class="data">
               <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
               <tbody>
-                <tr><td>ET₀</td><td>Reference evapotranspiration — water loss from a standardized grass surface, in/day</td></tr>
-                <tr><td>ETc (shown as "water needed")</td><td>Crop evapotranspiration — ET₀ × Kc, the actual water need for a specific grass type</td></tr>
-                <tr><td>Kc</td><td>Crop coefficient — monthly multiplier converting ET₀ into ETc for a given grass type</td></tr>
+                <tr><td>ET₀</td><td>Reference evapotranspiration, water loss from a standardized grass surface, in/day</td></tr>
+                <tr><td>ETc (shown as "water needed")</td><td>Crop evapotranspiration, ET₀ × Kc, the actual water need for a specific grass type</td></tr>
+                <tr><td>Kc</td><td>Crop coefficient, monthly multiplier converting ET₀ into ETc for a given grass type</td></tr>
                 <tr><td>Shortfall / deficit</td><td>Running total of (ETc − rain − irrigation), floored at 0 each day</td></tr>
                 <tr><td>Feels-like (high/low)</td><td>Heat index (high) and wind chill (low)</td></tr>
                 <tr><td>Precip rate</td><td>How fast a zone's sprinklers apply water, in inches per hour</td></tr>
@@ -1419,8 +1518,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
               <thead><tr><th>Source</th><th>Feeds</th><th>Docs</th></tr></thead>
               <tbody>
                 <tr><td>Ambient Weather station</td><td>weather_daily</td><td><a href="https://ambientweather.docs.apiary.io/" target="_blank" rel="noopener">ambientweather.docs.apiary.io</a></td></tr>
-                <tr><td>Orbit B-hyve</td><td>irrigation_runs</td><td>Unofficial API — no public docs</td></tr>
-                <tr><td>Kress fleet.kress.com</td><td>mower_activity</td><td>Unofficial, reverse-engineered — no public docs</td></tr>
+                <tr><td>Orbit B-hyve</td><td>irrigation_runs</td><td>Unofficial API, no public docs</td></tr>
               </tbody>
             </table>
           </div>
@@ -1433,15 +1531,14 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
       <button class="section-toggle" data-target="sec-explorer" data-icon="search"><h2>Explorer</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="panel">
-          <div class="panel-sub">Pick a data source, a date range, and a metric — chart and table update together. Export what you see as CSV.</div>
+          <div class="panel-sub">Pick a source, date range and metric. Export to CSV.</div>
           <div class="filter-row">
             <div class="filter-field">
               <label>Source</label>
               <select id="exSource">
-                <option value="weather_daily">Weather — day by day</option>
-                <option value="et_balance_by_zone">Irrigation — water needed vs. given, by zone</option>
-                <option value="mower_zone_daily">Mowers — minutes per zone</option>
-                <option value="irrigation_runs">Irrigation — watering log</option>
+                <option value="weather_daily">Weather (daily)</option>
+                <option value="et_balance_by_zone">Irrigation: need vs. applied, by zone</option>
+                <option value="irrigation_runs">Irrigation: watering log</option>
               </select>
             </div>
             <div class="filter-field"><label>Metric</label><select id="exMetric"></select></div>
@@ -1467,7 +1564,7 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
 
   <div class="panel" id="tabEmpty" hidden>
     <h3 style="font-size:1rem; margin-bottom:6px;">Nothing to show here</h3>
-    <div class="panel-sub">Every section in this tab is hidden. Turn them back on from the Layout button in the header.</div>
+    <div class="panel-sub">Every card on this page is hidden. Bring them back with Layout or the gear.</div>
   </div>
   </main>
   </div>
@@ -1501,7 +1598,7 @@ const HISTORICAL_MONTHLY = {
 const supa = (function initSupabase(){
   if (typeof window.supabase === 'undefined') {
     const el = document.getElementById('loginError');
-    if (el) el.textContent = 'Could not load the Supabase library — check your internet connection.';
+    if (el) el.textContent = 'Could not load the Supabase library. Check your connection.';
     return null;
   }
   if (typeof window.ChartDataLabels !== 'undefined') {
@@ -1529,7 +1626,7 @@ const fmtDate = (d) => {
 const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate()-n); return d; };
 const startOfYear = () => new Date(new Date().getFullYear(), 0, 1);
 const monthName = (i) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i];
-const num = (v, d=1) => (v === null || v === undefined || isNaN(v)) ? '—' : Number(v).toFixed(d);
+const num = (v, d=1) => (v === null || v === undefined || isNaN(v)) ? 'n/a' : Number(v).toFixed(d);
 const yearOf = (dateStr) => dateStr.slice(0,4);
 function dayOfYear(dateStr){
   const d = new Date(dateStr+'T00:00:00Z');
@@ -1702,13 +1799,12 @@ function emptyState(canvasId, msg){
 }
 
 const charts = {};
-let ANIMATION_SPEED_MS = 3;
+let ANIMATION_SPEED_MS = (() => { try { const v = parseFloat(localStorage.getItem('turfops.anim')); return isFinite(v) ? v : 0; } catch (e) { return 0; } })();   // 0 = charts appear instantly (set in the gear menu)
 
 // Minimalist line icons for section headers (20x20, stroke=currentColor)
 const ICONS = {
   droplet: `<svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5C10 2.5 4.5 9 4.5 13a5.5 5.5 0 0 0 11 0c0-4-5.5-10.5-5.5-10.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`,
   thermometer: `<svg viewBox="0 0 20 20" fill="none"><path d="M11.5 11.6V4.5a1.5 1.5 0 0 0-3 0v7.1a3 3 0 1 0 3 0Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="14.5" r="1" fill="currentColor"/></svg>`,
-  mower: `<svg viewBox="0 0 20 20" fill="none"><circle cx="6" cy="15" r="2" stroke="currentColor" stroke-width="1.6"/><circle cx="15" cy="15" r="2" stroke="currentColor" stroke-width="1.6"/><path d="M6 13V8a2 2 0 0 1 2-2h5.5L17 9.5V13" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 13h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
   trend: `<svg viewBox="0 0 20 20" fill="none"><path d="M3 14l4.5-5 3.5 3 6-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 5h3.5v3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   gauge: `<svg viewBox="0 0 20 20" fill="none"><path d="M3.5 14a6.5 6.5 0 1 1 13 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 14 13 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
   search: `<svg viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l-3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
@@ -1761,7 +1857,9 @@ function makeChart(id, config){
   }
   const stepMs = Math.max(1, ANIMATION_SPEED_MS);
 
-  if (config.type === 'line'){
+  if (!ANIMATION_SPEED_MS) {
+    config.options.animation = false;   // "Instant" in the gear menu: no draw-in, and no replay on every resize
+  } else if (config.type === 'line'){
     // Chart.js's actual documented "Progressive Line" pattern (not a
     // generic per-point delay): X comes in from NaN (point starts
     // skipped/invisible) and Y interpolates from the PREVIOUS point's own
@@ -1877,7 +1975,6 @@ $('#loginBtn').addEventListener('click', async () => {
 });
 $('#loginPassword').addEventListener('keydown', (e) => { if (e.key==='Enter') $('#loginBtn').click(); });
 $('#logoutBtn').addEventListener('click', async () => { clearHistoryCache(); await supa.auth.signOut(); showLogin(); });
-$('#animSpeedSlider').addEventListener('input', (e) => { ANIMATION_SPEED_MS = Number(e.target.value); });
 
 (function setupPullToRefresh(){
   const THRESHOLD = 70; // px of pull before it commits to refreshing
@@ -1986,11 +2083,9 @@ async function initApp(){
     safely('water balance', initWaterBalanceSection),
     safely('water radar', buildWaterRadarChart),
     safely('zone bar chart', initZoneBarSection),
-  // Mower section disconnected -- Kress telemetry can't be automated
-  // (hourly manual cookie refresh), so this queried mower_activity /
-  // mower_zone_daily for data that was never going to stay current.
-  // The HTML sections, JS functions, and table data are all still there
-  // untouched -- this is just the one call that would query them.
+    safely('rain forecast', renderRainForecast),
+    safely('water today', renderWaterToday),
+    safely('controller', initController),
     safely('explorer', initExplorerSection),
     safely('reference', renderReferenceKc),
     safely('reference ET0 worked example', renderPenmanMonteithReference),
@@ -2020,9 +2115,9 @@ async function initApp(){
    today's equivalent calendar date, not full prior years)
    ============================================================ */
 function compareCard(label, actual, base, unit, decimals=0, vsText='vs avg'){
-  if (actual == null || base == null) return {label, value:'—'};
+  if (actual == null || base == null) return {label, value:'n/a'};
   const diff = actual - base;
-  const arrow = diff > 0 ? '▲' : (diff < 0 ? '▼' : '—');
+  const arrow = diff > 0 ? '▲' : (diff < 0 ? '▼' : '=');
   return { label, value:num(actual,decimals), unit,
     sub:`${arrow} ${diff>0?'+':''}${num(diff,decimals)} ${vsText}`,
     subClass: diff===0 ? '' : (diff>0 ? 'neg' : 'pos') };
@@ -2064,8 +2159,12 @@ async function renderDataFreshness(){
   const el = $('#dataFreshness');
   if (el) el.textContent = parts.join('   ·   ');
   const syncTxt = $('#syncTxt'), syncDot = $('#syncDot');
-  if (syncTxt) syncTxt.textContent = wx && wx.updated_at ? `Synced ${fmtCentral(wx.updated_at)}` : 'Sync time unknown';
-  if (syncDot) syncDot.className = 'dot' + (wx ? '' : ' err');
+  // amber after 12 h without a weather update, red after 36 h (the weather puller normally runs every 5 minutes)
+  const ageH = wx && wx.updated_at ? (Date.now() - new Date(wx.updated_at).getTime()) / 36e5 : Infinity;
+  const ageTxt = ageH < 1 ? 'Synced ' + fmtCentral(wx.updated_at) : ageH < 48 ? `Weather data ${Math.round(ageH)} h old` : `Weather data ${Math.round(ageH / 24)} days old`;
+  if (syncTxt) syncTxt.textContent = !wx ? 'No weather data' : ageH < 12 ? `Synced ${fmtCentral(wx.updated_at)}` : ageTxt;
+  if (syncDot) { syncDot.className = 'dot' + (ageH >= 36 ? ' err' : ageH >= 12 ? ' busy' : ''); syncDot.title = ageH >= 12 ? 'Weather data is not updating. Check the weather-puller function.' : ''; }
+  document.body.classList.toggle('data-stale', ageH >= 36);
 }
 
 async function renderOverviewKpis(){
@@ -2087,12 +2186,9 @@ async function renderOverviewKpis(){
     kpis.push(compareCard('Low today', today.temp_low_f, avgLow30, '°F', 0, 'vs 30d avg'));
     kpis.push(compareCard('Rain today', today.rain_in, totalRain30, 'in', 2, 'vs 30d total'));
     kpis.push({label:'Rain this week', value:num(weekRows.reduce((s,r)=>s+(r.rain_in||0),0),2), unit:'in'});
-    kpis.push({label:'Avg high (30d)', value:num(avgHigh30,0), unit:'°F'});
-    kpis.push({label:'Avg low (30d)', value:num(avgLow30,0), unit:'°F'});
-    kpis.push({label:'Total rain (30d)', value:num(totalRain30,2), unit:'in'});
   } else {
-    ['High today','Low today','Rain today','Rain this week','Avg high (30d)','Avg low (30d)','Total rain (30d)']
-      .forEach(l=>kpis.push({label:l,value:'—'}));
+    ['High today','Low today','Rain today','Rain this week']
+      .forEach(l=>kpis.push({label:l,value:'n/a'}));
   }
 
   // Bermuda/Fescue water need (ETc, averaged across each grass type's
@@ -2148,8 +2244,8 @@ async function renderOverviewKpis(){
   } catch (e) {
     window.TURF_WEEK_NEED = null;
     console.error('Bermuda/Fescue water-need KPIs failed:', e);
-    kpis.push({label:'Bermuda water need (wk proj.)', value:'—'});
-    kpis.push({label:'Fescue water need (wk proj.)', value:'—'});
+    kpis.push({label:'Bermuda water need (wk proj.)', value:'n/a'});
+    kpis.push({label:'Fescue water need (wk proj.)', value:'n/a'});
   }
 
   renderKpiCards('overviewKpis', kpis);
@@ -2234,7 +2330,7 @@ async function renderCompareKpiGroups(){
     {label:'Rain this week', value:num(sumOf(weekRows,'rain_in'),2), unit:'in'},
     {label:'Rain this month', value:num(sumOf(monthRows,'rain_in'),2), unit:'in'},
     {label:`Rain this year (thru ${monthName(now_month())} ${todayDD})`, value:num(sumOf(yearRows,'rain_in'),2), unit:'in'},
-    {label:`Last year (thru same date)`, value: lastYearYtd!=null ? num(lastYearYtd,2) : '—', unit: lastYearYtd!=null ? 'in' : ''},
+    {label:`Last year (thru same date)`, value: lastYearYtd!=null ? num(lastYearYtd,2) : 'n/a', unit: lastYearYtd!=null ? 'in' : ''},
     {label:'5-yr avg (thru same date)', value: num(avgOverYears(5),2), unit:'in'},
     {label:'10-yr avg (thru same date)', value: num(avgOverYears(10),2), unit:'in'},
   ]);
@@ -2354,7 +2450,7 @@ async function renderPenmanMonteithReference(){
       <td>${num(d.row.rh_mean_pct,0)}</td>
       <td>${num(d.row.wind_avg_mph,1)}</td>
       <td>${num(d.row.solar_rad_avg_wm2,0)}</td>
-      <td>${d.calc ? num(d.calc.et0in,3) : '—'}</td>
+      <td>${d.calc ? num(d.calc.et0in,3) : 'n/a'}</td>
       <td>${num(d.row.et0_in,3)}</td>
       <td>${num(d.kcB,2)} → ${num(d.etcB,3)}</td>
       <td>${num(d.kcF,2)} → ${num(d.etcF,3)}</td>
@@ -2368,7 +2464,7 @@ async function renderPenmanMonteithReference(){
   const sumLine = $('#pmWeekSummary');
   if (sumLine){
     const first = __fao.days[0].row.weather_date, last = __fao.days[n-1].row.weather_date;
-    sumLine.innerHTML = `${shortD(first)} – ${shortD(last)}: Bermuda needed <b>${num(wkB,2)} in</b>, Fescue needed <b>${num(wkF,2)} in</b>. ` +
+    sumLine.innerHTML = `${shortD(first)} - ${shortD(last)}: Bermuda needed <b>${num(wkB,2)} in</b>, Fescue needed <b>${num(wkF,2)} in</b>. ` +
       `This is the Water Needed chart's value for ${shortD(last)}, and what gets compared to the 1.5 in/week target.`;
   }
 
@@ -2396,12 +2492,12 @@ function selectPmDay(i){
     ['', 'P = 101.3 · ((293 − 0.0065z) / 293)<sup>5.26</sup>', `${f(c.P,2)} kPa`, 'Eq 7'],
     ['', 'γ = 0.000665 · P', `${f(c.gamma,4)} kPa/°C`, 'Eq 8'],
     ['', 'Δ = 4098 · e°(T<sub>mean</sub>) / (T<sub>mean</sub> + 237.3)²', `${f(c.delta,4)} kPa/°C`, 'Eq 13'],
-    ['Humidity', 'e<sub>s</sub> = [e°(T<sub>max</sub>) + e°(T<sub>min</sub>)] / 2', `${f(c.es,3)} kPa`, 'Eq 11–12'],
+    ['Humidity', 'e<sub>s</sub> = [e°(T<sub>max</sub>) + e°(T<sub>min</sub>)] / 2', `${f(c.es,3)} kPa`, 'Eq 11-12'],
     ['', 'e<sub>a</sub> = RH<sub>mean</sub>/100 · e<sub>s</sub>', `${f(c.ea,3)} kPa`, 'Eq 19'],
     ['', 'Vapor pressure deficit e<sub>s</sub> − e<sub>a</sub>', `${f(c.es - c.ea,3)} kPa`, ''],
     ['Wind', 'u<sub>2</sub> = u<sub>z</sub> · 4.87 / ln(67.8z − 5.42)', `${f(c.u2,3)} m/s`, 'Eq 47'],
     ['Radiation', 'Day of year J, latitude φ', `J = ${dayOfYear(r.weather_date)}, φ = ${FAO56_SITE.latDeg.toFixed(4)}°`, ''],
-    ['', 'Extraterrestrial R<sub>a</sub>', `${f(c.Ra,2)} MJ/m²/day`, 'Eq 21–25'],
+    ['', 'Extraterrestrial R<sub>a</sub>', `${f(c.Ra,2)} MJ/m²/day`, 'Eq 21-25'],
     ['', 'Clear-sky R<sub>so</sub> = (0.75 + 2×10⁻⁵ z) · R<sub>a</sub>', `${f(c.Rso,2)} MJ/m²/day (R<sub>s</sub>/R<sub>so</sub> = ${f(c.rsRso,2)})`, 'Eq 37'],
     ['', 'Net shortwave R<sub>ns</sub> = 0.77 · R<sub>s</sub>', `${f(c.Rns,2)} MJ/m²/day`, 'Eq 38'],
     ['', 'Net longwave R<sub>nl</sub>', `${f(c.Rnl,2)} MJ/m²/day`, 'Eq 39'],
@@ -2411,8 +2507,8 @@ function selectPmDay(i){
     ['', 'Denominator Δ + γ (1 + 0.34 u<sub>2</sub>)', f(c.denom,4), ''],
     ['ET₀', '(radiation + wind/humidity) / denominator', `<b>${f(c.et0mm,2)} mm = ${f(c.et0in,3)} in</b>`, '÷ 25.4'],
     ['', 'Stored et0_in (server calculation)', `${f(r.et0_in,3)} in${diff != null ? ` (difference ${diff >= 0 ? '+' : ''}${f(diff,3)})` : ''}`, 'weather_daily'],
-    ['Water needed', `Bermuda: ET₀ × Kc (${monthName(d.month-1)} ${f(d.kcB,2)})`, `${r.et0_in != null && d.kcB != null ? f(r.et0_in * d.kcB,3) : '—'} in → stored avg ${f(d.etcB,3)} in`, 'ETc'],
-    ['', `Fescue: ET₀ × Kc (${monthName(d.month-1)} ${f(d.kcF,2)})`, `${r.et0_in != null && d.kcF != null ? f(r.et0_in * d.kcF,3) : '—'} in → stored avg ${f(d.etcF,3)} in`, 'ETc'],
+    ['Water needed', `Bermuda: ET₀ × Kc (${monthName(d.month-1)} ${f(d.kcB,2)})`, `${r.et0_in != null && d.kcB != null ? f(r.et0_in * d.kcB,3) : 'n/a'} in → stored avg ${f(d.etcB,3)} in`, 'ETc'],
+    ['', `Fescue: ET₀ × Kc (${monthName(d.month-1)} ${f(d.kcF,2)})`, `${r.et0_in != null && d.kcF != null ? f(r.et0_in * d.kcF,3) : 'n/a'} in → stored avg ${f(d.etcF,3)} in`, 'ETc'],
   ];
   out.innerHTML = steps.map(([g, what, val, ref]) => `
     <tr${g ? ' class="pm-group"' : ''}><td style="font-family:inherit; font-weight:600; color:var(--text-secondary)">${g}</td>
@@ -2426,7 +2522,7 @@ async function loadZoneOptions(){
 </script>
 <script>
 /* ============================================================
-   TREND CHARTS — shared year range (condensed control), shared
+   TREND CHARTS, shared year range (condensed control), shared
    day-of-year zoom slider that actually persists across redraws,
    day-by-day min/max band, fill-between via Chart.js native fill.
    ============================================================ */
@@ -2801,8 +2897,8 @@ function dayOfYearMinMaxDatasets(doyGroups){
   const minPts = doys.map(d => ({x:d, y:Math.min(...doyGroups[d])}));
   const maxPts = doys.map(d => ({x:d, y:Math.max(...doyGroups[d])}));
   return [
-    { label:'Historical min', data:minPts, borderColor:'#b9c2bd', borderWidth:1, pointRadius:0, pointStyle:'line', tension:.1, fill:false, order:99 },
-    { label:'Historical max', data:maxPts, borderColor:'#b9c2bd', borderWidth:1, pointRadius:0, pointStyle:'line', tension:.1, order:99,
+    { label:'Min', data:minPts, borderColor:'#b9c2bd', borderWidth:1, pointRadius:0, pointStyle:'line', tension:.1, fill:false, order:99 },
+    { label:'Max', data:maxPts, borderColor:'#b9c2bd', borderWidth:1, pointRadius:0, pointStyle:'line', tension:.1, order:99,
       fill:{ target:'-1', above:'rgba(138,148,142,0.16)', below:'rgba(138,148,142,0.16)' } },
   ];
 }
@@ -2847,7 +2943,7 @@ async function buildMultiYearChart(opts){
     });
     datasets.push(...(showMinMax ? dayOfYearMinMaxDatasets(avgByDoy) : []));
     const avgPoints = Object.keys(avgByDoy).map(Number).sort((a,b)=>a-b).map(doy => ({x:doy, y:Number(avg(avgByDoy[doy]).toFixed(3))}));
-    if (avgPoints.length) datasets.push({ label:'Average', data:avgPoints, borderColor:'#7d8781', borderDash:[6,4], pointRadius:0, pointStyle:'line', tension:.15, fill:false });
+    if (avgPoints.length) datasets.push({ label:'Avg', data:avgPoints, borderColor:'#7d8781', borderDash:[6,4], pointRadius:0, pointStyle:'line', tension:.15, fill:false });
 
     // Y-axis fit to only what's VISIBLE within the current day-of-year
     // window (across whichever datasets are shown, including the average/
@@ -3010,7 +3106,7 @@ async function buildWaterRadarChart(){
   const { start, end, sunday, saturday } = currentWeekRange();
   const weekFmt = (d) => d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
   const labelEl = $('#waterRadarWeekLabel');
-  if (labelEl) labelEl.textContent = `Week of ${weekFmt(sunday)} – ${weekFmt(saturday)} (Sun–Sat)`;
+  if (labelEl) labelEl.textContent = `Week of ${weekFmt(sunday)} - ${weekFmt(saturday)} (Sun-Sat)`;
 
   const { data } = await supa.from('et_balance_by_zone')
     .select('zone_number,grass_type,weather_date,etc_in,irrigation_applied_in')
@@ -3079,9 +3175,16 @@ async function buildWaterRadarChart(){
     },
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom' },
-        tooltip:{ callbacks:{ label:(ctx) => `${ctx.dataset.label}: ${num(ctx.raw, 2)} in` } } },
-      scales:{ r:{ beginAtZero:true, ticks:{ precision:1 }, pointLabels:{ font:{ size:11 } } } },
+      layout:{ padding:0 },
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:18, padding:10 } },
+        tooltip:{ callbacks:{ title:(items) => items.length ? labels[items[0].dataIndex] : '', label:(ctx) => `${ctx.dataset.label}: ${num(ctx.raw, 2)} in` } } },
+      // long group names wrap onto two lines, so the web itself can use more of the card
+      scales:{ r:{ beginAtZero:true, ticks:{ precision:1, backdropColor:'transparent' },
+        pointLabels:{ font:{ size:11, weight:'600' }, padding:6, callback:(l) => {
+          if (l.length <= 12) return l;
+          const w = l.split(' '); let best = [l], gap = 1e9;
+          for (let i = 1; i < w.length; i++){ const a = w.slice(0, i).join(' '), b = w.slice(i).join(' '), d = Math.abs(a.length - b.length); if (d < gap) { gap = d; best = [a, b]; } }
+          return best; } } } },
     },
   });
 }
@@ -3121,50 +3224,84 @@ function initZoneBarSection(){
 // Same 5 buckets (and colors) as the radar chart, so a zone reads as the
 // same "group" in both places. Zones not in any radar group (11/12 --
 // mister, flower bed) get a neutral color.
-const RADAR_GROUP_COLORS = ['#1a8f4e', '#0e9aa7', '#eda100', '#d14343', '#6250d6'];
+const RADAR_GROUP_COLORS = ['#1a8f4e', '#0e9aa7', '#c2185b', '#d14343', '#6250d6'];   // amber is kept for the historical-need benchmark
 const ZONE_GROUP_COLOR = {};
 RADAR_GROUPS.forEach((g, i) => { g.zones.forEach(z => { ZONE_GROUP_COLOR[z] = RADAR_GROUP_COLORS[i]; }); });
 const ZONE_UNGROUPED_COLOR = '#8a948e';
 
+// Historical need for one grass type over the same calendar window [from, to] (shifted into each
+// reference year): the avg over AVG_REF_YEARS of the summed daily need. Same history and years as the
+// "Historical avg" figures in the calculator and the radar chart.
+async function historicalNeedForWindow(grassType, from, to){
+  const rows = await grassHistory(grassType);
+  const span = Number(to.slice(0, 4)) - Number(from.slice(0, 4));
+  const totals = [];
+  for (let y = Number(AVG_REF_YEARS.from); y <= Number(AVG_REF_YEARS.to); y++){
+    const f = `${y - span}${from.slice(4)}`, t = `${y}${to.slice(4)}`;
+    let sum = 0, n = 0;
+    rows.forEach(r => { if (r.weather_date >= f && r.weather_date <= t && r.etc_in != null) { sum += r.etc_in; n++; } });
+    if (n) totals.push(sum);
+  }
+  return totals.length ? avg(totals) : null;
+}
+
 async function buildZoneBarChart(from, to){
   const { data, error } = await supa.from('et_balance_by_zone')
-    .select('zone_number,irrigation_applied_in')
+    .select('zone_number,grass_type,irrigation_applied_in,etc_in')
     .gte('weather_date', from).lte('weather_date', to);
 
-  if (error) { console.error('Zone bar chart query failed:', error); emptyState('chartZoneBar', 'Error loading zone data — see console.'); return; }
+  if (error) { console.error('Zone bar chart query failed:', error); emptyState('chartZoneBar', 'Error loading zone data.'); return; }
   if (!data || !data.length){ emptyState('chartZoneBar', 'No data in this range.'); return; }
 
-  const totals = {};
-  for (let z = 1; z <= 12; z++) totals[z] = 0;
+  const totals = {}, need = {}, grassOf = {};
+  for (let z = 1; z <= 12; z++) { totals[z] = 0; need[z] = null; }
   data.forEach(r => {
     if (r.zone_number == null) return;
     totals[r.zone_number] = (totals[r.zone_number] || 0) + (r.irrigation_applied_in || 0);
+    if (r.etc_in != null) need[r.zone_number] = (need[r.zone_number] || 0) + r.etc_in;
+    if (r.grass_type) grassOf[r.zone_number] = r.grass_type;
   });
+  // benchmark: what each zone's grass typically needs over these same dates
+  const grasses = [...new Set(Object.values(grassOf))].filter(g => g === 'bermuda' || g === 'fescue');
+  const histByGrass = {};
+  await Promise.all(grasses.map(async g => { try { histByGrass[g] = await historicalNeedForWindow(g, from, to); } catch (e) { console.error('zone historical need', g, e); } }));
 
   const zones = Object.keys(totals).map(Number).sort((a,b)=>a-b);
-  const labels = zones.map(z => String(z)); // just the number -- space-saving
+  const labels = zones.map(z => String(z));
   const values = zones.map(z => Number(totals[z].toFixed(2)));
+  const needVals = zones.map(z => need[z] == null ? null : Number(need[z].toFixed(2)));
+  const histVals = zones.map(z => { const h = histByGrass[grassOf[z]]; return h == null || need[z] == null ? null : Number(h.toFixed(2)); });
   const barColors = zones.map(z => ZONE_GROUP_COLOR[z] || ZONE_UNGROUPED_COLOR);
 
-  // Datalabels sit just past each bar's end. With small values (Today, 1
-  // week), Chart.js's auto-scaled axis max can land very close to the
-  // longest bar with little headroom, so the label text runs past the
-  // plot area and gets clipped. Force some breathing room both in the
-  // axis's own range (suggestedMax) and in raw pixels (layout padding),
-  // so this holds regardless of how small or large the values are.
-  const maxVal = values.length ? Math.max(...values) : 0;
+  // Need and historical need are thin floating bars (a short tick at the value), so each zone's
+  // applied bar can be read against both benchmarks at a glance.
+  const maxVal = Math.max(0, ...values, ...needVals.filter(v => v != null), ...histVals.filter(v => v != null));
+  const axisMax = Math.max(maxVal * 1.2, 0.5), tick = axisMax * 0.006;
+  const marker = vals => vals.map(v => v == null ? null : [Math.max(0, v - tick), v + tick]);
 
   makeChart('chartZoneBar', {
     type:'bar',
-    data:{ labels, datasets:[{ label:'Total inches applied', data:values, backgroundColor:barColors }] },
+    data:{ labels, datasets:[
+      { label:'Applied', data:values, backgroundColor:barColors, order:3, barPercentage:0.8, categoryPercentage:0.9, grouped:false },
+      { label:'Need', data:marker(needVals), backgroundColor:() => cssVar('--text'), order:1, barPercentage:0.95, categoryPercentage:0.9, grouped:false,
+        datalabels:{ display:false }, _vals:needVals },
+      { label:'Historical Need', data:marker(histVals), backgroundColor:'#eda100', order:2, barPercentage:0.95, categoryPercentage:0.9, grouped:false,
+        datalabels:{ display:false }, _vals:histVals },
+    ] },
     options:{
       responsive:true, maintainAspectRatio:false, indexAxis:'y',
       layout:{ padding:{ right:36 } },
-      plugins:{ legend:{display:false},
-        datalabels:{ display:true, color:() => cssVar('--text'), anchor:'end', align:'right', formatter:(v)=>num(v,2) } },
+      plugins:{
+        legend:{ display:true, position:'bottom', labels:{ usePointStyle:false, boxWidth:12, boxHeight:12, padding:12,
+          generateLabels:(chart) => chart.data.datasets.map((d, i) => ({ text:d.label, datasetIndex:i, hidden:!chart.isDatasetVisible(i),
+            fillStyle: i === 0 ? '#1a8f4e' : (typeof d.backgroundColor === 'function' ? d.backgroundColor() : d.backgroundColor), strokeStyle:'transparent', lineWidth:0, fontColor:cssVar('--text-tertiary') })) } },
+        tooltip:{ filter:(it) => !it.dataset._vals || it.dataset._vals[it.dataIndex] != null, callbacks:{ title:(items) => items.length ? `Zone ${items[0].label}` : '',
+          label:(ctx) => { const v = ctx.dataset._vals ? ctx.dataset._vals[ctx.dataIndex] : ctx.raw; return v == null ? null : `${ctx.dataset.label}: ${num(v, 2)} in`; } } },
+        // values sit inside the end of each bar, so they never collide with the benchmark ticks
+        datalabels:{ display:(ctx) => ctx.datasetIndex === 0 && ctx.dataset.data[ctx.dataIndex] > axisMax * 0.12, color:'#fff', anchor:'end', align:'start', offset:4, font:{ weight:'600', size:10.5 }, formatter:(v)=>num(v,2) } },
       scales: {
-        x:{ beginAtZero:true, suggestedMax: Math.max(maxVal*1.2, 2), title:{display:true, text:'inches'} },
-        y:{ ticks:{ autoSkip:false } }, // force all 12 zone labels to render, never thinned out for space
+        x:{ beginAtZero:true, suggestedMax: axisMax, title:{display:true, text:'inches'} },
+        y:{ ticks:{ autoSkip:false } },
       },
     },
   });
@@ -3285,169 +3422,6 @@ async function buildGrassBalanceChart(grassType, chartId, from, to){
 }
 
 /* ============================================================
-   MOWERS — zone time (fixed to average per VISIT, not per day-
-   in-range), efficiency donuts, non-working time
-   ============================================================ */
-const NON_WORKING_LABELS = {
-  0:'manual action required', 1:'home / charging', 2:'starting', 3:'starting',
-  4:'going home', 5:'going home', 30:'going home', 104:'going home',
-  6:'searching border', 32:'mowing border', 33:'zone search', 103:'zone search',
-  34:'paused', 113:'waiting position', 114:'idle',
-};
-const MOWING_CODES = new Set([7,8,9,10,13,112]);
-let mwAvgMode = true;
-let lastZoneTotals = null, lastZoneDayCounts = null;
-let lastNonWorkStates = { Mowtilda:null, 'Eskimow Joe':null }, lastNonWorkDays = { Mowtilda:1, 'Eskimow Joe':1 };
-let lastEffMinutes = { Mowtilda:null, 'Eskimow Joe':null };
-
-async function initMowersSection(){
-  $('#mwFrom').value = fmtDate(daysAgo(30)); $('#mwTo').value = fmtDate(new Date());
-  $('#mwApply').addEventListener('click', renderMowersSection);
-  $('#mwAvgToggle').querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      mwAvgMode = btn.dataset.m === 'avg';
-      $('#mwAvgToggle').querySelectorAll('button').forEach(b => b.classList.toggle('on', b===btn));
-      if (lastZoneTotals) drawMowZoneChart(lastZoneTotals, lastZoneDayCounts);
-      if (lastNonWorkStates.Mowtilda) drawNonWorkChart('Mowtilda', 'chartNonWorkMowtilda', lastNonWorkStates.Mowtilda, lastNonWorkDays.Mowtilda);
-      if (lastNonWorkStates['Eskimow Joe']) drawNonWorkChart('Eskimow Joe', 'chartNonWorkEskimow', lastNonWorkStates['Eskimow Joe'], lastNonWorkDays['Eskimow Joe']);
-      if (lastEffMinutes.Mowtilda) drawEfficiencyDonut('Mowtilda', 'chartEfficiencyMowtilda', 'effKpiMowtilda', lastEffMinutes.Mowtilda, lastNonWorkDays.Mowtilda);
-      if (lastEffMinutes['Eskimow Joe']) drawEfficiencyDonut('Eskimow Joe', 'chartEfficiencyEskimow', 'effKpiEskimow', lastEffMinutes['Eskimow Joe'], lastNonWorkDays['Eskimow Joe']);
-    });
-  });
-  await renderMowersSection();
-}
-
-async function renderMowersSection(){
-  const from = $('#mwFrom').value, to = $('#mwTo').value, mower = $('#mwMower').value;
-  let q = supa.from('mower_zone_daily').select('mower_name,zone_id,zone_name,day,est_minutes')
-    .gte('day', from).lte('day', to).order('day');
-  if (mower !== 'all') q = q.eq('mower_name', mower);
-  const { data } = await q;
-
-  if (!data || !data.length){
-    emptyState('chartMowZone', 'No mower activity in this range yet.');
-    $('#mowerKpis').innerHTML = '';
-  } else {
-    const totalMinutes = data.reduce((s,r)=>s+(r.est_minutes||0),0);
-    const dayCount = new Set(data.map(r=>r.day)).size || 1;
-    const byZoneTotal = {};
-    const byZoneDays = {}; // per-zone: the set of days THAT zone was actually mowed
-    data.forEach(r => {
-      const z = r.zone_name || 'Unassigned';
-      byZoneTotal[z] = (byZoneTotal[z]||0) + (r.est_minutes||0);
-      (byZoneDays[z] = byZoneDays[z] || new Set()).add(r.day);
-    });
-    const zoneDayCounts = {};
-    Object.keys(byZoneDays).forEach(z => { zoneDayCounts[z] = byZoneDays[z].size; });
-    const topZone = Object.entries(byZoneTotal).sort((a,b)=>b[1]-a[1])[0];
-
-    $('#mowerKpis').innerHTML = [
-      {label:'Total mow time', value:num(totalMinutes/60,1), unit:'hrs'},
-      {label:'Days with activity', value:dayCount},
-      {label:'Busiest zone', value: topZone ? topZone[0] : '—'},
-    ].map(k => `<div class="kpi-card"><div class="label">${k.label}</div><div class="value">${k.value}${k.unit?` <span class="unit">${k.unit}</span>`:''}</div></div>`).join('');
-
-    drawMowZoneChart(byZoneTotal, zoneDayCounts);
-  }
-  await renderNonWorkingReport(from, to);
-}
-
-function drawMowZoneChart(byZoneTotal, zoneDayCounts){
-  lastZoneTotals = byZoneTotal; lastZoneDayCounts = zoneDayCounts;
-  const zones = Object.keys(byZoneTotal).sort((a,b)=>byZoneTotal[b]-byZoneTotal[a]).slice(0,12);
-  makeChart('chartMowZone', {
-    type:'bar',
-    data:{ labels:zones, datasets:[{ label: mwAvgMode?'Hours/visit':'Total hours',
-      data:zones.map(z => {
-        // "Average per visit": divide THAT zone's total minutes by the number
-        // of days IT was actually mowed -- not every day in the selected
-        // range, which was diluting infrequently-mowed (often larger) zones.
-        const divisor = mwAvgMode ? (zoneDayCounts[z] || 1) : 1;
-        return Math.round((byZoneTotal[z]/60/divisor)*10)/10;
-      }), backgroundColor:CHART_COLORS.applied }]},
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false},
-      datalabels:{ display:true, color:() => cssVar('--text'), anchor:'end', align:'right', formatter:(v)=>num(v,1) } } }
-  });
-}
-
-async function renderNonWorkingReport(from, to){
-  const data = await fetchAllRows(() => supa.from('mower_activity').select('mower_name,timestamp_utc,ls_code,battery_pct')
-    .gte('timestamp_utc', from).lte('timestamp_utc', to+'T23:59:59').order('timestamp_utc'));
-
-  if (!data || !data.length){
-    emptyState('chartNonWorkMowtilda', 'No data yet.'); emptyState('chartNonWorkEskimow', 'No data yet.');
-    emptyState('chartEfficiencyMowtilda', 'No data yet.'); emptyState('chartEfficiencyEskimow', 'No data yet.');
-    return;
-  }
-  const byMower = {};
-  data.forEach(r => { (byMower[r.mower_name] = byMower[r.mower_name] || []).push(r); });
-
-  const SEARCHING_CODES = new Set([33,103,4,5,30,104]); // zone search + going home
-
-  function buildFor(mowerName, chartId, effChartId, effKpiId){
-    const rows = byMower[mowerName];
-    if (!rows || rows.length < 2){ emptyState(chartId, 'No data yet.'); emptyState(effChartId, 'No data yet.'); return; }
-    const stateMinutes = {};
-    const eff = { mowing:0, idle:0, errors:0, searching:0, other:0 };
-    const daySet = new Set();
-    for (let i = 0; i < rows.length - 1; i++){
-      const r = rows[i];
-      daySet.add(r.timestamp_utc.slice(0,10));
-      const gapMin = (new Date(rows[i+1].timestamp_utc) - new Date(r.timestamp_utc)) / 60000;
-      if (gapMin <= 0 || gapMin > 180) continue;
-      if (MOWING_CODES.has(r.ls_code)){ eff.mowing += gapMin; continue; }
-      const label = NON_WORKING_LABELS[r.ls_code] || `code ${r.ls_code}`;
-      stateMinutes[label] = (stateMinutes[label] || 0) + gapMin;
-      if (r.ls_code === 0){ eff.errors += gapMin; }
-      else if (r.ls_code === 1){ if ((r.battery_pct ?? 100) >= 95) eff.idle += gapMin; else eff.other += gapMin; }
-      else if (SEARCHING_CODES.has(r.ls_code)){ eff.searching += gapMin; }
-      else { eff.other += gapMin; }
-    }
-    lastNonWorkStates[mowerName] = stateMinutes;
-    lastNonWorkDays[mowerName] = daySet.size || 1;
-    lastEffMinutes[mowerName] = eff;
-    drawNonWorkChart(mowerName, chartId, stateMinutes, daySet.size || 1);
-    drawEfficiencyDonut(mowerName, effChartId, effKpiId, eff, daySet.size || 1);
-  }
-  buildFor('Mowtilda', 'chartNonWorkMowtilda', 'chartEfficiencyMowtilda', 'effKpiMowtilda');
-  buildFor('Eskimow Joe', 'chartNonWorkEskimow', 'chartEfficiencyEskimow', 'effKpiEskimow');
-}
-
-function drawEfficiencyDonut(mowerName, chartId, kpiId, eff, dayCount){
-  const divisor = mwAvgMode ? dayCount : 1;
-  const mowHrs = eff.mowing/60/divisor, idleHrs = eff.idle/60/divisor, errHrs = eff.errors/60/divisor,
-        searchHrs = eff.searching/60/divisor, otherHrs = eff.other/60/divisor;
-  const workableHrs = mowHrs + errHrs + searchHrs + otherHrs; // idle excluded, same as before
-  const efficiencyPct = workableHrs > 0 ? (mowHrs/workableHrs*100) : 0;
-  makeChart(chartId, {
-    type:'doughnut',
-    data:{ labels:['Mowing','Idle (unscheduled)','Errors (manual action required)','Searching (zone search + going home)','Other active codes'],
-      datasets:[{ data:[mowHrs,idleHrs,errHrs,searchHrs,otherHrs].map(v=>Number(v.toFixed(1))),
-        backgroundColor:['#1a8f4e','#b9c2bd','#d14343','#eda100','#0e9aa7'], pointStyle:'circle' }]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, pointStyle:'circle', boxWidth:10, boxHeight:10}},
-        datalabels:{ color:'#fff', font:{weight:'bold'}, formatter:(v)=> v>0 ? num(v,1)+'h' : '' } } }
-  });
-  $('#'+kpiId).innerHTML = `
-    <div class="kpi-card"><div class="label">Efficiency (mowing ÷ workable)</div><div class="value">${num(efficiencyPct,1)}<span class="unit">%</span></div></div>
-    <div class="kpi-card"><div class="label">${mwAvgMode?'Workable hrs/day':'Total workable hrs'}</div><div class="value">${num(workableHrs,1)}<span class="unit">hrs</span></div></div>
-  `;
-}
-
-function drawNonWorkChart(mowerName, chartId, stateMinutes, dayCount){
-  const entries = Object.entries(stateMinutes).sort((a,b)=>b[1]-a[1]);
-  if (!entries.length){ emptyState(chartId, 'No non-working time recorded.'); return; }
-  const divisor = mwAvgMode ? dayCount : 1;
-  makeChart(chartId, {
-    type:'bar',
-    data:{ labels:entries.map(e=>e[0]), datasets:[{ label: mwAvgMode?'Hours/day':'Total hours',
-      data:entries.map(e=>Math.round((e[1]/60/divisor)*10)/10), backgroundColor:CHART_COLORS.high }]},
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false},
-      datalabels:{ display:true, color:() => cssVar('--text'), anchor:'end', align:'right', formatter:(v)=>num(v,1) } } }
-  });
-}
-
-/* ============================================================
    EXPLORER
    ============================================================ */
 const COLUMN_LABELS = {
@@ -3457,7 +3431,7 @@ const COLUMN_LABELS = {
   rh_mean_pct:'Humidity (%)', wind_avg_mph:'Wind (mph)', rain_in:'Rain (in)',
   solar_rad_avg_wm2:'Sunlight', et0_in:'Water lost (in)', etc_in:'Water needed (in)',
   irrigation_applied_in:'Water applied (in)', net_deficit_in:'Shortfall (in)',
-  mower_name:'Mower', est_minutes:'Minutes mowed', runtime_minutes:'Minutes run',
+  runtime_minutes:'Minutes run',
   program_name:'Program', source:'Source', created_at:'Logged at',
 };
 function friendlyCol(c){ return COLUMN_LABELS[c] || c; }
@@ -3465,7 +3439,6 @@ const EXPLORER_SOURCES = {
   weather_daily: { dateCol:'weather_date', metrics:{ temp_high_f:'High temp (°F)', temp_low_f:'Low temp (°F)', temp_mean_f:'Mean temp (°F)',
     rh_mean_pct:'Mean humidity (%)', wind_avg_mph:'Avg wind (mph)', rain_in:'Rain (in)', solar_rad_avg_wm2:'Sunlight', et0_in:'Water lost to evaporation (in)' } },
   et_balance_by_zone: { dateCol:'weather_date', metrics:{ etc_in:'Water needed (in)', rain_in:'Rain (in)', irrigation_applied_in:'Water applied (in)', net_deficit_in:'Shortfall (in)' } },
-  mower_zone_daily: { dateCol:'day', metrics:{ est_minutes:'Estimated minutes' } },
   irrigation_runs: { dateCol:'run_date', metrics:{ runtime_minutes:'Runtime (minutes)' } }
 };
 function initExplorerSection(){
@@ -3745,7 +3718,7 @@ async function initOnThisDayScatterSection(){
         const offset = (cat==='high_min' || cat==='low_min') ? 26 : 6;
         return {
           display:true, align, anchor:'end', offset,
-          formatter:(v)=>`${num(v.y,0)}°F`, color:COLOR_MAP[cat], font:{weight:'bold', size:11},
+          formatter:(v)=> cat==='current' ? `${num(v.y,0)}°F` : `${num(v.y,0)}°F (${v.year})`, color:COLOR_MAP[cat], font:{weight:'bold', size:11},
         };
       })(),
     }));
@@ -3827,9 +3800,9 @@ checkSession();
 <div id="layoutOverlay"></div>
 <aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
   <div class="lay-head"><h2>Page settings</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
-  <p class="lay-help">Every card on every page for this kind of device: the eye shows or hides it, the pin adds it to Overview, ▲ ▼ change the order. To drag and resize cards, open a page and press <b>Layout</b>. Default day ranges are at the bottom.</p>
+  <p class="lay-help">Show, hide, pin and reorder every card. Press <b>Layout</b> on a page to drag and resize.</p>
   <div id="layoutList"></div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 14 (finance layout editor: drag, resize, free placement)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 16 (merged cards, water today, forecast, controller push, saved layouts)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
@@ -3899,7 +3872,12 @@ checkSession();
     winEnd: isTime(saved.winEnd) ? saved.winEnd : '12:00',            // end of the watering window (mowers head out at noon)
     mode:   saved.mode === 'queue' ? 'queue' : 'each',               // 'each' = own day, 'queue' = same morning, one after another
     open:   (saved.open && typeof saved.open === 'object') ? saved.open : {},   // which program cards show their by-zone math
+    zones:  (saved.zones && typeof saved.zones === 'object') ? saved.zones : {}, // a program's zones as read from the controller (overrides the defaults)
   };
+  // zones copied from the controller replace a program's default zone list
+  const applyZoneOverrides = () => PROGRAMS.forEach(p => { const o = persist.zones[p.key];
+    if (Array.isArray(o) && o.length) { p.zones = o.map(zd => ({ z: +zd.z, min: +zd.min })); p.placeholder = false; p.zones.forEach(zd => { DEFAULT_MIN[zk(p.key, zd.z)] = zd.min; }); } });
+  applyZoneOverrides();
   PROGRAMS.filter(p => p.legacy).forEach(p => p.zones.forEach(zd => {
     const old = String(zd.z), nk = zk(p.key, zd.z);
     for (const field of ['base', 'count']) {
@@ -3982,14 +3960,14 @@ checkSession();
   /* ---------- rendering ---------- */
   function renderTiles(){
     const b = needOf('bermuda'), f = needOf('fescue');
-    // Secondary number: the historical average from the "Water Needed — 7-Day Rolling Average"
+    // Secondary number: the historical average from the "Water Needed, 7-Day Rolling Avg"
     // chart (its dashed Average line, 2010-2025) for the week ending this Saturday, i.e. the
     // typical full-week need for this same stretch of the calendar.
     const tile = (label, v, hist) => {
       let sub;
       if (hist) sub = `Historical avg: ${num(hist.value, 2)} in/wk · ${num(hist.value / 7, 2)} in/day` +
-        `<br><span style="font-weight:400;color:var(--text-tertiary)">${AVG_REF_YEARS.from}–${AVG_REF_YEARS.to} · week ending ${state.histWeekEnd || 'Sat'}</span>`;
-      else sub = state.histState === 'loading' ? 'Historical avg: loading…' : 'Historical avg: —';
+        `<br><span style="font-weight:400;color:var(--text-tertiary)">${AVG_REF_YEARS.from}-${AVG_REF_YEARS.to} · week ending ${state.histWeekEnd || 'Sat'}</span>`;
+      else sub = state.histState === 'loading' ? 'Historical avg: loading…' : 'Historical avg: -';
       return { label, value: num(v, 2), unit: 'in', sub };
     };
     renderKpiCards('budgetNeedKpis', [
@@ -4000,22 +3978,24 @@ checkSession();
 
   function renderChips(){
     const b = needOf('bermuda'), f = needOf('fescue');
-    const chip = (id, label, disabled) =>
-      `<span class="year-chip ${state.follow === id ? 'on' : ''}" data-follow="${id}"${disabled ? ' style="opacity:.45;pointer-events:none"' : ''}>${label}</span>`;
+    // one choice at a time, so a dropdown (typing a number switches it to Custom)
     const hb = histOf('bermuda'), hf = histOf('fescue');
-    el('budChips').innerHTML =
-      chip('bermuda',  'Use Bermuda need' + (b != null ? ' · ' + num(b, 2) : ''), b == null) +
-      chip('fescue',   'Use Fescue need'  + (f != null ? ' · ' + num(f, 2) : ''), f == null) +
-      chip('bermuda-hist', 'Use Bermuda historical avg' + (hb != null ? ' · ' + num(hb, 2) : ''), hb == null) +
-      chip('fescue-hist',  'Use Fescue historical avg'  + (hf != null ? ' · ' + num(hf, 2) : ''), hf == null) +
-      chip('property', 'Use property target · ' + num(PROPERTY_TARGET, 2), false);
+    const opt = (id, label, v) => `<option value="${id}" ${state.follow === id ? 'selected' : ''} ${id !== 'custom' && v == null ? 'disabled' : ''}>${label}${v != null ? ' · ' + num(v, 2) + ' in' : ''}</option>`;
+    el('budChips').innerHTML = `<div class="filter-field"><label for="budFollow">Target from</label><select id="budFollow">` +
+      opt('custom', 'Custom (type it above)', null) +
+      opt('bermuda', 'Bermuda need, this week', b) +
+      opt('fescue', 'Fescue need, this week', f) +
+      opt('bermuda-hist', 'Bermuda historical avg', hb) +
+      opt('fescue-hist', 'Fescue historical avg', hf) +
+      opt('property', 'Property target', PROPERTY_TARGET) + `</select></div>`;
+    const sel = el('budFollow'); if (sel && !state.follow) sel.value = 'custom';
   }
 
   function renderSummary(){
     const d = persist.days;
     el('budSummary').innerHTML =
       `${num(state.target, 2)} in/week ÷ ${d} watering day${d > 1 ? 's' : ''} = <b>${num(state.target / d, 2)} in per watering day</b>. ` +
-      `Budget only scales the run time of each cycle — your start times, programs and cycle counts stay exactly as scheduled.`;
+      `Budget only scales run time per cycle. Start times, programs and cycle counts stay as scheduled.`;
   }
 
   function programHtml(r, t){
@@ -4023,9 +4003,9 @@ checkSession();
     const open = !!persist.open[p.key];
     let note = '';
     if (clamped) note = raw > MAX_PCT
-      ? `Needs ${raw}% — over the ${MAX_PCT}% cap. Add a watering day to bring it in range.`
-      : `Needs ${raw}% — under the ${MIN_PCT}% floor. Water on fewer days.`;
-    else if (pct == null) note = 'No zones counted — turn one on in Zone setup below.';
+      ? `Needs ${raw}%, over the ${MAX_PCT}% cap. Add a watering day to bring it in range.`
+      : `Needs ${raw}%, under the ${MIN_PCT}% floor. Water on fewer days.`;
+    else if (pct == null) note = 'No zones counted. Turn one on in Zone setup below.';
 
     const body = rows.map(x => {
       const nr = x.needPct == null ? null : Math.round(x.needPct);
@@ -4035,8 +4015,8 @@ checkSession();
       return `<tr class="${x.counted ? '' : 'bud-muted'}">
         <td><b>Zone ${x.z}</b>${sub ? `<div class="bud-zsub">${sub}</div>` : ''}</td>
         <td>${fmtMin(x.min)} min<div class="bud-zsub">${num(x.baseInDay, 2)} in/day</div></td>
-        <td class="${needCls}">${nr == null ? '—' : nr + '%'}</td>
-        <td class="${getsCls}">${x.atMin == null ? '—' : fmtMin(x.atMin) + ' min'}<div class="bud-zsub ${getsCls}">${x.atWk == null ? '' : num(x.atWk, 2) + ' in/wk'}</div></td>
+        <td class="${needCls}">${nr == null ? 'n/a' : nr + '%'}</td>
+        <td class="${getsCls}">${x.atMin == null ? 'n/a' : fmtMin(x.atMin) + ' min'}<div class="bud-zsub ${getsCls}">${x.atWk == null ? '' : num(x.atWk, 2) + ' in/wk'}</div></td>
       </tr>`;
     }).join('');
 
@@ -4044,12 +4024,12 @@ checkSession();
       <div class="bud-prog-head">
         <div><h3>${esc(p.title)}</h3><div class="bud-area">${esc(p.area)} · ${cyc} cycles per watering day (times are per cycle)</div>
           <button type="button" class="bud-mathbtn" data-math="${p.key}" aria-expanded="${open}">${open ? '▾ Hide' : '▸ Show'} zone detail · ${rows.length} zones</button></div>
-        <div class="bud-set"><div class="lbl">Set budget to</div><div class="big ${clamped ? 'warn' : ''}">${pct == null ? '—' : pct + '%'}</div>${t && t.end != null ? `<div class="bud-ends ${t.over ? 'warn' : ''}">ends ${fmtClock(t.end)}</div>` : ''}</div>
+        <div class="bud-set"><div class="lbl">Set budget to</div><div class="big ${clamped ? 'warn' : ''}">${pct == null ? 'n/a' : pct + '%'}</div>${t && t.end != null ? `<div class="bud-ends ${t.over ? 'warn' : ''}">ends ${fmtClock(t.end)}</div>` : ''}</div>
       </div>
       ${note ? `<div class="bud-note">${note}</div>` : ''}
       ${r.placeholder ? `<div class="bud-note" style="color:var(--text-secondary);">Run times and cycles for ${esc(p.title)} are placeholders (copied from each zone's other program). Enter its real times in Zone setup below, or <a href="#" data-confirm-prog="${p.key}" style="color:var(--turf);font-weight:600;">use these as-is</a>.</div>` : ''}
       <div class="bud-math" ${open ? '' : 'hidden'}><div class="table-wrap" style="max-height:none;"><table class="data bud-table">
-        <thead><tr><th>Zone</th><th>Baseline</th><th>Budget needed</th><th>At ${pct == null ? '—' : pct + '%'} budget</th></tr></thead>
+        <thead><tr><th>Zone</th><th>Baseline</th><th>Budget needed</th><th>At ${pct == null ? 'n/a' : pct + '%'} budget</th></tr></thead>
         <tbody>${body}</tbody>
       </table></div></div>
     </div>`;
@@ -4071,7 +4051,7 @@ checkSession();
     const blocks = results.map((r, i) => {
       const t = tl[i], p = r.p;
       const head = (endTxt, cls) => `<div class="bud-tl-head"><span><b>${esc(p.title)}</b> · ${esc(p.area)}</span><span class="end ${cls || ''}">${endTxt}</span></div>`;
-      if (t.end == null) return `<div class="bud-tl-block">${head('—')}<div class="bud-tl-detail">No zones counted, so no budget to time.</div></div>`;
+      if (t.end == null) return `<div class="bud-tl-block">${head('n/a')}<div class="bud-tl-detail">No zones counted, so no budget to time.</div></div>`;
       const inEnd = Math.min(t.end, winEnd), overStart = Math.max(t.start, winEnd);
       const bars = (inEnd > t.start ? `<div class="bud-tl-bar" style="left:${pctOf(t.start)}%;width:${pctOf(inEnd) - pctOf(t.start)}%"></div>` : '') +
                    (t.end > winEnd ? `<div class="bud-tl-bar over" style="left:${pctOf(overStart)}%;width:${pctOf(t.end) - pctOf(overStart)}%"></div>` : '');
@@ -4093,6 +4073,10 @@ checkSession();
     const results = calc(), tl = timeline(results);
     renderTiles(); renderChips(); renderSummary();
     el('budgetPrograms').innerHTML = results.map((r, i) => programHtml(r, tl[i])).join('');
+    // read by the "Push to controller" card
+    window.TURF_BUDGETS = results.map(r => ({ key: r.p.key, title: r.p.title, area: r.p.area, pct: r.pct, raw: r.raw, cycles: r.cyc,
+      zones: r.p.zones.map(zd => ({ z: zd.z, min: baseOf(r.p.key, zd.z, zd.min) })) }));
+    document.dispatchEvent(new Event('turfops:budgets'));
     renderTimeline(results, tl);
     const openCount = PROGRAMS.filter(p => persist.open[p.key]).length;
     const legend = el('budLegend'), all = el('budMathAll');
@@ -4137,6 +4121,15 @@ checkSession();
     if (st && document.activeElement !== st) st.value = persist.start;
     if (we && document.activeElement !== we) we.value = persist.winEnd;
   }
+
+  // "Use the controller's zones and run times": { A: { zones: [{z, min}], cycles }, ... }
+  window.turfBudgetUseController = map => {
+    Object.keys(map || {}).forEach(k => { const m = map[k]; if (!m || !Array.isArray(m.zones) || !m.zones.length) return;
+      persist.zones[k] = m.zones.map(zd => ({ z: +zd.z, min: +zd.min }));
+      m.zones.forEach(zd => { persist.base[zk(k, zd.z)] = +zd.min; });
+      if (m.cycles > 0) persist.cycles[k] = m.cycles; });
+    applyZoneOverrides(); save(); renderSetup(); renderAll();
+  };
 
   function renderAll(){
     syncInputs();
@@ -4205,9 +4198,10 @@ checkSession();
     const b = e.target.closest('[data-mode]'); if (!b) return;
     persist.mode = b.dataset.mode; save(); renderOutputs();
   });
-  el('budChips').addEventListener('click', e => {
-    const c = e.target.closest('[data-follow]'); if (!c) return;
-    state.follow = c.dataset.follow;
+  el('budChips').addEventListener('change', e => {
+    const c = e.target.closest('#budFollow'); if (!c) return;
+    state.follow = c.value === 'custom' ? null : c.value;
+    if (!state.follow) { renderAll(); return; }
     if (state.follow === 'property') state.target = PROPERTY_TARGET;
     else syncTargetFromNeed();
     renderAll();
@@ -4277,6 +4271,185 @@ checkSession();
 </script>
 <script>
 /* =====================================================================
+   TODAY: "Water today?" + rain forecast (Overview), data-age warning, and
+   PUSH TO CONTROLLER (Calculator): budgets and rain delay, sent to the
+   B-hyve only when you confirm (Supabase Edge Function bhyve-control).
+   ===================================================================== */
+// Forecast point. 0.01 deg is about 1 km; the NWS forecast grid is 2.5 km, so two decimals are plenty.
+const FORECAST_SITE = { lat: 35.70, lon: -97.40 };
+const FORECAST_TTL_MS = 30 * 60 * 1000;
+const dayKeyCT = d => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(d);
+
+// ISO-8601 duration ("PT6H", "P1DT12H") -> hours
+function isoHours(dur){ const m = /P(?:(\d+)D)?(?:T(?:(\d+)H)?)?/.exec(dur || ''); return m ? (+(m[1] || 0)) * 24 + (+(m[2] || 0)) : 1; }
+
+async function loadRainForecast(){
+  try { const c = JSON.parse(sessionStorage.getItem('turfops.fc')); if (c && Date.now() - c.at < FORECAST_TTL_MS) return c.days; } catch (e) {}
+  const pt = await fetch(`https://api.weather.gov/points/${FORECAST_SITE.lat},${FORECAST_SITE.lon}`, { headers: { Accept: 'application/geo+json' } });
+  if (!pt.ok) throw new Error('NWS points ' + pt.status);
+  const grid = await fetch((await pt.json()).properties.forecastGridData, { headers: { Accept: 'application/geo+json' } });
+  if (!grid.ok) throw new Error('NWS grid ' + grid.status);
+  const P = (await grid.json()).properties;
+  const days = {};   // 'YYYY-MM-DD' (Central) -> { rain (in), pop (%) }
+  const today = dayKeyCT(new Date());
+  // amounts are spread evenly over each forecast period's hours, so a period that crosses midnight splits between days
+  ((P.quantitativePrecipitation || {}).values || []).forEach(v => {
+    const [start, dur] = v.validTime.split('/'), hrs = isoHours(dur), t0 = new Date(start).getTime(), perHr = (v.value || 0) / 25.4 / hrs;
+    for (let h = 0; h < hrs; h++) { const k = dayKeyCT(new Date(t0 + h * 3600e3)); (days[k] ||= { rain: 0, pop: 0 }).rain += perHr; }
+  });
+  ((P.probabilityOfPrecipitation || {}).values || []).forEach(v => {
+    const [start, dur] = v.validTime.split('/'), hrs = isoHours(dur), t0 = new Date(start).getTime();
+    for (let h = 0; h < hrs; h++) { const k = dayKeyCT(new Date(t0 + h * 3600e3)); (days[k] ||= { rain: 0, pop: 0 }).pop = Math.max(days[k].pop, v.value || 0); }
+  });
+  const out = Object.keys(days).filter(k => k >= today).sort().slice(0, 7).map(k => ({ date: k, rain: Math.round(days[k].rain * 100) / 100, pop: Math.round(days[k].pop) }));
+  try { sessionStorage.setItem('turfops.fc', JSON.stringify({ at: Date.now(), days: out })); } catch (e) {}
+  return out;
+}
+
+async function renderRainForecast(){
+  const host = document.getElementById('rainForecast'); if (!host) return;
+  let days;
+  try { days = await loadRainForecast(); }
+  catch (e) { console.error('Rain forecast failed:', e); host.innerHTML = '<div class="wt-msg">Forecast unavailable right now.</div>'; window.TURF_FORECAST = null; return; }
+  window.TURF_FORECAST = days;
+  document.dispatchEvent(new Event('turfops:forecast'));
+  const max = Math.max(0.5, ...days.map(d => d.rain));
+  const lbl = k => { const d = new Date(k + 'T12:00:00'); return k === dayKeyCT(new Date()) ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short' }); };
+  host.innerHTML = days.map(d => `<div class="fc-day" title="${num(d.rain, 2)} in · ${d.pop}% chance">
+      <div class="fc-amt">${d.rain >= 0.01 ? num(d.rain, 2) : '0'}</div>
+      <div class="fc-bar"><span style="height:${Math.max(2, d.rain / max * 100)}%"></span></div>
+      <div class="fc-pop">${d.pop}%</div><div class="fc-lbl">${lbl(d.date)}</div></div>`).join('');
+  const tot = days.reduce((s, d) => s + d.rain, 0), sub = document.getElementById('forecastSub');
+  if (sub) sub.textContent = `Next 7 days · ${num(tot, 2)} in expected · National Weather Service`;
+}
+
+// "Water today?": the running deficit (same math as the Water deficit chart) against each grass type's
+// irrigate / watch levels, with the next two days of forecast rain taken into account.
+async function renderWaterToday(){
+  const host = document.getElementById('waterToday'); if (!host) return;
+  const forecast = await new Promise(res => { if (window.TURF_FORECAST !== undefined) return res(window.TURF_FORECAST);
+    const t = setTimeout(() => res(null), 6000); document.addEventListener('turfops:forecast', () => { clearTimeout(t); res(window.TURF_FORECAST); }, { once: true }); });
+  const rain48 = forecast ? forecast.slice(0, 2).reduce((s, d) => s + d.rain, 0) : null;
+  const yr = String(new Date().getFullYear()), today = fmtDate(new Date());
+  const rows = await Promise.all(['bermuda', 'fescue'].map(async g => {
+    const data = (await grassHistory(g)).filter(r => r.weather_date.startsWith(yr) && r.weather_date <= today);
+    let run = 0; data.forEach(r => { if (r.net_deficit_in != null) run = Math.max(0, run + r.net_deficit_in); });
+    const last7 = data.slice(-7).map(r => r.etc_in).filter(v => v != null), pace = last7.length ? avg(last7) : 0;
+    const T = DEFICIT_THRESHOLD_IN[g], W = T * 0.8;
+    let state, line;
+    if (run >= T && rain48 != null && rain48 >= run * 0.8) { state = 'hold'; line = `Hold off. ${num(rain48, 2)} in of rain expected in the next 2 days.`; }
+    else if (run >= T) { state = 'water'; line = `Water today. ${num(run, 2)} in behind (irrigate at ${num(T, 2)}).`; }
+    else if (run >= W) { const days = pace > 0 ? Math.max(1, Math.ceil((T - run) / pace)) : null; state = 'watch'; line = `Close. About ${days ? days + ' day' + (days > 1 ? 's' : '') : 'a few days'} until it needs water.`; }
+    else { const days = pace > 0 ? Math.ceil((T - run) / pace) : null; state = 'ok'; line = days ? `No water needed. About ${days} days at this week's pace.` : 'No water needed.'; }
+    return { g, run, T, W, state, line };
+  }));
+  const LBL = { water: 'Water', hold: 'Hold', watch: 'Soon', ok: 'No' };
+  const head = rows.some(r => r.state === 'water') ? 'Yes, water today' : rows.some(r => r.state === 'hold') ? 'Hold off, rain is coming' : rows.some(r => r.state === 'watch') ? 'Not yet, but soon' : 'No watering needed';
+  host.innerHTML = `<div class="wt-head">${head}</div>` + rows.map(r => `<div class="wt-row wt-${r.state}">
+      <span class="wt-chip">${LBL[r.state]}</span>
+      <div class="wt-main"><div class="wt-g">${r.g === 'bermuda' ? 'Bermuda' : 'Fescue'} <span>${num(r.run, 2)} / ${num(r.T, 2)} in</span></div>
+        <div class="wt-meter"><span style="width:${Math.min(100, r.run / r.T * 100)}%"></span><i style="left:${r.W / r.T * 100}%"></i></div>
+        <div class="wt-line">${r.line}</div></div></div>`).join('')
+    + (rain48 == null ? '' : `<div class="wt-foot">Next 2 days: ${num(rain48, 2)} in of rain forecast.</div>`);
+}
+
+/* ---------------- Push to controller ---------------- */
+const CTL = { status: null, busy: false, admin: null, confirm: null, msg: '' };
+const ctlEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const normName = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+async function ctlCall(body){
+  const { data, error } = await supa.functions.invoke('bhyve-control', { body });
+  if (error) { let msg = error.message; try { const j = await error.context.json(); msg = j.error || msg; } catch (e) {} throw new Error(msg); }
+  return data;
+}
+async function initController(){
+  const host = document.getElementById('ctlBody'); if (!host) return;
+  try { const { data: u } = await supa.auth.getUser(); const { data } = await supa.from('turfops_admins').select('user_id').eq('user_id', u.user.id).maybeSingle(); CTL.admin = !!data; }
+  catch (e) { CTL.admin = false; }
+  if (!CTL.admin) { host.innerHTML = '<div class="wt-msg">Only the controller owner can push changes from here.</div>'; return; }
+  document.addEventListener('turfops:budgets', renderController);
+  document.addEventListener('turfops:forecast', renderController);
+  host.addEventListener('click', onCtlClick);
+  await ctlRefresh();
+}
+async function ctlRefresh(){
+  CTL.busy = true; renderController();
+  try { CTL.status = await ctlCall({ action: 'status' }); CTL.msg = ''; }
+  catch (e) { CTL.msg = 'Could not reach the controller: ' + e.message; }
+  CTL.busy = false; renderController();
+}
+function ctlRows(){
+  const dev = CTL.status && CTL.status.devices && CTL.status.devices[0]; if (!dev) return { dev: null, rows: [] };
+  const calc = window.TURF_BUDGETS || [];
+  const rows = dev.programs.map(p => {
+    const c = calc.find(x => normName(x.area) === normName(p.name) || normName(x.title) === normName(p.name));
+    const ctlZones = p.stations.map(s => s.station).sort((a, b) => a - b), calcZones = c ? c.zones.map(z => z.z).sort((a, b) => a - b) : [];
+    const same = c && ctlZones.join(',') === calcZones.join(',') && p.stations.every(s => { const z = c.zones.find(q => q.z === s.station); return z && +z.min === +s.run_time; });
+    return { p, c, ctlZones, calcZones, same, want: c && c.pct != null ? Math.max(10, Math.min(200, Math.round(c.pct))) : null };
+  });
+  return { dev, rows };
+}
+function renderController(){
+  const host = document.getElementById('ctlBody'); if (!host || !CTL.admin) return;
+  if (!CTL.status) { host.innerHTML = `<div class="wt-msg">${CTL.busy ? 'Connecting to the controller…' : ctlEsc(CTL.msg || 'Not connected.')}</div>${CTL.busy ? '' : '<button class="btn ghost" type="button" data-ctl="refresh">Try again</button>'}`; return; }
+  const { dev, rows } = ctlRows(); if (!dev) { host.innerHTML = '<div class="wt-msg">No sprinkler timer found on the B-hyve account.</div>'; return; }
+  const sendable = rows.filter(r => r.p.enabled && r.c && r.want != null && r.want !== r.p.budget && r.same);   // programs that are off are left alone
+  const mism = rows.filter(r => r.c && !r.same);
+  const fc = window.TURF_FORECAST, rain48 = fc ? fc.slice(0, 2).reduce((s, d) => s + d.rain, 0) : 0;
+  const suggest = rain48 >= 0.25 ? (rain48 >= 0.75 ? 72 : 48) : null;
+  const rd = dev.rain_delay || 0;
+  host.innerHTML = `
+    <div class="ctl-status"><span class="dot ${dev.is_connected ? '' : 'err'}"></span><b>${ctlEsc(dev.name || 'Controller')}</b>
+      <span>${dev.is_connected ? 'online' : 'offline'} · ${rd ? `rain delay ${rd} h` : 'no rain delay'}</span>
+      <button class="btn ghost sm" type="button" data-ctl="refresh" ${CTL.busy ? 'disabled' : ''}>${CTL.busy ? 'Refreshing…' : 'Refresh'}</button></div>
+    <div class="table-wrap" style="max-height:none"><table class="data ctl-table"><thead><tr><th>Program</th><th>Zones</th><th>On controller</th><th>Calculator</th></tr></thead><tbody>
+      ${rows.map(r => `<tr class="${r.p.enabled ? '' : 'ctl-off'}"><td><b>${ctlEsc(r.p.name)}</b>${r.p.enabled ? '' : ' <span class="chip">off</span>'}</td>
+        <td>${r.ctlZones.join(', ')}</td><td>${r.p.budget}%</td>
+        <td>${!r.c ? '<span class="muted">not in calculator</span>' : !r.same ? '<span class="ctl-warn">zones / times differ</span>' : r.want == null ? 'n/a' : r.want === r.p.budget ? `${r.want}% <span class="muted">same</span>` : `<b>${r.want}%</b>`}</td></tr>`).join('')}
+    </tbody></table></div>
+    ${mism.length ? `<div class="ctl-note">The calculator's zones or run times don't match the controller for ${mism.map(r => `<b>${ctlEsc(r.p.name)}</b> (controller: zones ${r.ctlZones.join(', ')}; calculator: ${r.calcZones.join(', ') || 'none'})`).join('; ')}. Its budgets would be wrong for those programs.
+      <button class="btn ghost sm" type="button" data-ctl="adopt">Use the controller's zones and times</button></div>` : ''}
+    <div class="ctl-actions">
+      ${CTL.confirm === 'budgets' ? `<span class="ctl-confirm">Set ${sendable.map(r => `${ctlEsc(r.p.name)} ${r.p.budget}% → ${r.want}%`).join(', ')}?</span>
+        <button class="btn" type="button" data-ctl="budgets-go" ${CTL.busy ? 'disabled' : ''}>Confirm</button><button class="btn ghost" type="button" data-ctl="cancel">Cancel</button>`
+      : `<button class="btn" type="button" data-ctl="budgets" ${sendable.length && !CTL.busy ? '' : 'disabled'}>${sendable.length ? `Send ${sendable.length} budget${sendable.length > 1 ? 's' : ''}` : 'Budgets match'}</button>`}
+    </div>
+    <div class="ctl-rain">
+      <label for="ctlHours">Rain delay</label>
+      <select id="ctlHours" class="ctl-sel">${[24, 48, 72, 96, 168].map(h => `<option value="${h}" ${h === (CTL.hours || suggest || 48) ? 'selected' : ''}>${h === 168 ? '1 week' : h + ' h'}</option>`).join('')}</select>
+      ${CTL.confirm === 'rain' ? `<button class="btn" type="button" data-ctl="rain-go" ${CTL.busy ? 'disabled' : ''}>Confirm ${CTL.hours} h delay</button><button class="btn ghost" type="button" data-ctl="cancel">Cancel</button>`
+        : `<button class="btn ghost" type="button" data-ctl="rain" ${CTL.busy ? 'disabled' : ''}>Set rain delay</button>`}
+      ${rd ? (CTL.confirm === 'unrain' ? `<button class="btn" type="button" data-ctl="unrain-go">Confirm cancel</button><button class="btn ghost" type="button" data-ctl="cancel">Keep it</button>` : `<button class="btn ghost" type="button" data-ctl="unrain">Cancel rain delay</button>`) : ''}
+      ${suggest && !rd ? `<span class="ctl-hint">${num(rain48, 2)} in of rain forecast in 2 days. A ${suggest} h delay fits.</span>` : ''}
+    </div>
+    ${CTL.msg ? `<div class="ctl-msg">${ctlEsc(CTL.msg)}</div>` : ''}`;
+}
+async function onCtlClick(e){
+  const b = e.target.closest('[data-ctl]'); if (!b || b.disabled) return;
+  const a = b.dataset.ctl, sel = document.getElementById('ctlHours'); if (sel) CTL.hours = +sel.value;
+  if (a === 'refresh') return ctlRefresh();
+  if (a === 'cancel') { CTL.confirm = null; return renderController(); }
+  if (a === 'budgets' || a === 'rain' || a === 'unrain') { CTL.confirm = a; CTL.msg = ''; return renderController(); }
+  if (a === 'adopt') {
+    const map = {}; ctlRows().rows.filter(r => r.c && !r.same).forEach(r => { map[r.c.key] = { zones: r.p.stations.map(s => ({ z: s.station, min: s.run_time })), cycles: (r.p.start_times || []).length || null }; });
+    if (typeof window.turfBudgetUseController === 'function') window.turfBudgetUseController(map);
+    CTL.msg = 'Calculator updated with the controller’s zones and run times.'; return renderController();
+  }
+  CTL.busy = true; CTL.confirm = null; renderController();
+  try {
+    let res;
+    if (a === 'budgets-go') res = await ctlCall({ action: 'set_budgets', changes: ctlRows().rows.filter(r => r.p.enabled && r.c && r.want != null && r.want !== r.p.budget && r.same).map(r => ({ program_id: r.p.id, budget: r.want })) });
+    if (a === 'rain-go') res = await ctlCall({ action: 'rain_delay', hours: CTL.hours });
+    if (a === 'unrain-go') res = await ctlCall({ action: 'rain_delay', hours: 0 });
+    if (res && res.status) CTL.status = res.status;
+    CTL.msg = res && res.ok ? (a === 'budgets-go' ? 'Budgets sent. The controller now shows the new values.' : a === 'rain-go' ? `Rain delay set: ${CTL.hours} h.` : 'Rain delay cancelled.')
+      : 'The controller did not confirm the change. Check the B-hyve app.';
+  } catch (err) { CTL.msg = 'Failed: ' + err.message; }
+  CTL.busy = false; renderController();
+}
+</script>
+<script>
+/* =====================================================================
    CARDS & LAYOUT -- the eckert.fin layout editor, ported to TurfOps
    Every chart / table / tool on a tab is a card on that tab's 12-column grid. Press Layout to:
      · drag a card's handle to move it (arrows on a phone), or drop it anywhere with Free placement on
@@ -4309,11 +4482,11 @@ checkSession();
   const RANGE_FALLBACK = { doy: 'full', wb: '90', zone: '0' };
   const RANGE_UI = [
     { key: 'doy',  label: 'Trend charts (Years & range)',      row: '#doyRangeChips',
-      opts: [['today','Today'],['lastweek','Last week'],['thisweek','This week'],['1month','1 month'],['3month','3 months'],['6month','6 months'],['full','Full year']] },
+      opts: [['today','Today'],['lastweek','Last wk'],['thisweek','This wk'],['1month','1 mo'],['3month','3 mo'],['6month','6 mo'],['full','Full yr']] },
     { key: 'wb',   label: 'What the Grass Needed vs. What It Got', row: '#wbRangeChips',
-      opts: [['7','1 week'],['30','1 month'],['90','3 months'],['180','6 months'],['365','1 year']] },
-    { key: 'zone', label: 'Water Applied — By Zone',           row: '#zoneBarRangeChips',
-      opts: [['0','Today'],['thisweek','This week'],['30','1 month'],['180','6 months'],['365','1 year']] },
+      opts: [['7','1 wk'],['30','1 mo'],['90','3 mo'],['180','6 mo'],['365','1 yr']] },
+    { key: 'zone', label: 'Water Applied by Zone',           row: '#zoneBarRangeChips',
+      opts: [['0','Today'],['thisweek','This wk'],['30','1 mo'],['180','6 mo'],['365','1 yr']] },
   ];
   const rangeDefaults = Object.assign({}, RANGE_FALLBACK);
   try {
@@ -4364,7 +4537,7 @@ checkSession();
       let key = (canvas && canvas.id) || el.id || normKey(sec.id.replace(/^sec-/, '') + '-' + title);
       seenKeys[key] = (seenKeys[key] || 0) + 1; if (seenKeys[key] > 1) key += '-' + seenKeys[key];
       el.classList.add('card', 'panel'); el.classList.remove('pinnable');
-      el.dataset.cid = key; el.dataset.home = tab; el.dataset.span = u.span; el.dataset.title = title === secTitle ? title : `${secTitle} · ${title}`;
+      el.dataset.cid = key; el.dataset.home = tab; el.dataset.span = u.span; el.dataset.sec = sec.id; el.dataset.title = title === secTitle ? title : `${secTitle} · ${title}`;
       // header: section name as a small eyebrow (with its icon), then the card's own title
       const head = document.createElement('div'); head.className = 'card-head';
       const showEyebrow = title !== secTitle;
@@ -4379,6 +4552,61 @@ checkSession();
     subs.forEach(s => { if (!s.isConnected || !s.closest('.card')) s.remove(); });
     sec.remove();
   });
+
+  /* ---------- merged cards: one card, a switch for the view and/or the grass ---------- */
+  // The calculator's "this week's need" tiles repeat the Overview need tiles; keep the element (the
+  // calculator still writes to it) but off the page.
+  { const nk = document.getElementById('budgetNeedKpis'), c = nk && nk.closest('.card');
+    if (c) { const hold = document.createElement('div'); hold.hidden = true; hold.id = 'hiddenHold'; document.body.appendChild(hold); hold.appendChild(nk); c.remove(); } }
+  const GRASSES = [['bermuda', 'Bermuda'], ['fescue', 'Fescue']];
+  const MERGES = [
+    { key: 'deficit', title: 'Water deficit', grass: true, views: [
+        ['running', 'Running', { bermuda: 'chartDeficitBermuda', fescue: 'chartDeficitFescue' }],
+        ['ytd', 'Year to date', { bermuda: 'chartCumDefYearBermuda', fescue: 'chartCumDefYearFescue' }],
+        ['monthly', 'By month', { bermuda: 'chartCumDefMonthBermuda', fescue: 'chartCumDefMonthFescue' }]] },
+    { key: 'etweekly', title: 'Water needed, 7-day rolling avg', grass: true, views: [['all', '', { bermuda: 'chartEtWeeklyBermuda', fescue: 'chartEtWeeklyFescue' }]] },
+    { key: 'balance', title: 'What the grass needed vs. what it got', grass: true, extra: '#wbRangeChips', views: [['all', '', { bermuda: 'chartBalanceBermuda', fescue: 'chartBalanceFescue' }]] },
+  ];
+  const MERGED_FROM = {};   // old card key -> merged card key (carries pins / order over)
+  const segHtml = (name, opts) => `<div class="seg sm" data-seg="${name}">${opts.map(([v, l]) => `<button type="button" data-v="${v}">${esc(l)}</button>`).join('')}</div>`;
+  function makeSwitchCard(key, title, icon, grid, before){
+    const card = document.createElement('div'); card.className = 'card panel mcard';
+    card.dataset.cid = key; card.dataset.span = 12; card.dataset.title = title;
+    card.innerHTML = `<div class="card-head"><h3>${icon ? `<span class="ce-ic">${icon}</span>` : ''}${esc(title)}<span class="ce-from"></span></h3><div class="card-sub mc-sub"></div></div><div class="mc-ctl"></div><div class="mc-panes"></div>`;
+    grid.insertBefore(card, before); return card;
+  }
+  // strip a source card down to its body, so it can live inside a merged card as a pane
+  function toPane(src){ $$(':scope > .card-head, :scope > .panel-pin', src).forEach(x => x.remove());
+    src.classList.remove('card', 'panel', 'pinnable'); src.classList.add('mpane'); ['cid', 'span', 'title', 'sec'].forEach(k => delete src.dataset[k]); src.removeAttribute('style'); return src; }
+  MERGES.forEach(m => {
+    const first = document.getElementById(m.views[0][2].bermuda); const firstCard = first && first.closest('.card'); if (!firstCard) return;
+    const grid = firstCard.parentElement, home = firstCard.dataset.home, icon = ($('.ce-ic', firstCard) || {}).innerHTML || '';
+    const card = makeSwitchCard(m.key, m.title, icon, grid, firstCard); card.dataset.home = home;
+    $('.ce-from', card).textContent = TAB_LABELS[home] || '';
+    const ctl = $('.mc-ctl', card), panes = $('.mc-panes', card);
+    if (m.extra) { const ex = document.querySelector(m.extra), exCard = ex && ex.closest('.card');
+      if (exCard) { MERGED_FROM[exCard.dataset.cid] = m.key; const body = toPane(exCard); body.classList.remove('mpane'); body.classList.add('mc-extra'); card.insertBefore(body, panes); } }
+    if (m.views.length > 1) ctl.insertAdjacentHTML('beforeend', segHtml('view', m.views.map(v => [v[0], v[1]])));
+    if (m.grass) ctl.insertAdjacentHTML('beforeend', segHtml('grass', GRASSES));
+    m.views.forEach(([vid, , ids]) => GRASSES.forEach(([g]) => {
+      const cv = document.getElementById(ids[g]), src = cv && cv.closest('.card'); if (!src) return;
+      MERGED_FROM[src.dataset.cid] = m.key;
+      const sub = $('.card-sub', src); const subHtml = sub ? sub.innerHTML : '';
+      const pane = toPane(src); pane.dataset.view = vid; pane.dataset.grass = g; pane.dataset.sub = subHtml;
+      panes.appendChild(pane);
+    }));
+  });
+  // Reference: one card with a tab per topic
+  { const refs = $$(':scope > .card', grids.records).filter(c => c.dataset.sec === 'sec-reference');
+    if (refs.length) {
+      const icon = ($('.ce-ic', refs[0]) || {}).innerHTML || '';
+      const card = makeSwitchCard('reference', 'How the math works', icon, grids.records, refs[0]); card.dataset.home = 'records';
+      const SHORT = { 'Property constants': 'Constants', 'Worked example: the last 7 days': 'Worked example', 'Crop coefficients (Kc)': 'Kc', 'Other tunable constants': 'Other constants', 'Defined terms': 'Terms' };
+      const tabs = refs.map((r, i) => { let t = (r.dataset.title || '').replace(/^Reference · /, '').replace(/^(The |What is )/, '').replace(/ equation$/, '').replace(/\?$/, ''); return ['r' + i, SHORT[t] || t]; });
+      $('.mc-ctl', card).innerHTML = segHtml('view', tabs);
+      refs.forEach((r, i) => { MERGED_FROM[r.dataset.cid] = 'reference'; const pane = toPane(r); pane.dataset.view = 'r' + i; $('.mc-panes', card).appendChild(pane); });
+    } }
+  $$('.mcard').forEach(c => { if (c.dataset.home && c.dataset.home !== 'overview') {} });
   const CARDS = {};   // key -> { el, home, slot }
   TABS.forEach(t => $$(':scope > .card', grids[t]).forEach(c => { CARDS[c.dataset.cid] = { el: c, home: t, slot: null }; }));
 
@@ -4411,12 +4639,36 @@ checkSession();
           UI = data.ui; UI.layout ||= {}; UI.pins ||= []; UI.compact ||= {}; UI.savedAt = new Date(data.updated_at).getTime();
           UI.pins = UI.pins.filter(k => CARDS[k] && CARDS[k].home !== 'overview');
           try { localStorage.setItem(UI_KEY, JSON.stringify(UI)); } catch (e) {}
-          applyCompact(); syncPinButtons(); place(); render();
+          UI.views ||= {}; UI.presets ||= {};
+          applyCompact(); syncPinButtons(); place(); $$('.mcard').forEach(applySwitch); render();
         } else if (!data && UI.savedAt) this.push();   // first time on the account: upload this device's layout
       } catch (e) { this.ready = true; console.warn('[layout sync]', e); }
     },
   };
 
+
+  /* ---------- merged-card switches ---------- */
+  UI.views ||= {};
+  function applySwitch(card){
+    const k = card.dataset.cid, st = UI.views[k] || {}, panes = $$(':scope > .mc-panes > .mpane', card);
+    const views = [...new Set(panes.map(p => p.dataset.view).filter(Boolean))], hasGrass = panes.some(p => p.dataset.grass);
+    const view = views.includes(st.view) ? st.view : views[0], grass = hasGrass ? (st.grass === 'fescue' ? 'fescue' : 'bermuda') : null;
+    panes.forEach(p => { p.hidden = !((!p.dataset.view || p.dataset.view === view) && (!grass || p.dataset.grass === grass)); });
+    $$('.mc-ctl [data-seg] button', card).forEach(b => { const seg = b.closest('[data-seg]').dataset.seg; b.classList.toggle('on', seg === 'view' ? b.dataset.v === view : b.dataset.v === grass); });
+    const shown = panes.find(p => !p.hidden), sub = $(':scope > .card-head .mc-sub', card);
+    if (sub) { sub.innerHTML = shown && shown.dataset.sub ? shown.dataset.sub : ''; sub.hidden = !sub.innerHTML; }
+    if (shown) requestAnimationFrame(() => $$('canvas', shown).forEach(cv => { const ch = window.Chart && Chart.getChart(cv); if (ch) { try { ch.resize(); } catch (e) {} } }));
+  }
+  $$('.mcard').forEach(card => {
+    applySwitch(card);
+    $('.mc-ctl', card).addEventListener('click', e => { const b = e.target.closest('[data-seg] button'); if (!b) return;
+      const seg = b.closest('[data-seg]').dataset.seg, k = card.dataset.cid; UI.views[k] = { ...(UI.views[k] || {}), [seg]: b.dataset.v };
+      applySwitch(card); SYNC.schedule(); setTimeout(() => packFree(cur), 60); });
+  });
+  // pins / order / hidden saved under the old card keys follow their merged card
+  { const mapK = k => MERGED_FROM[k] || k, uniq = a => a.filter((x, i) => a.indexOf(x) === i);
+    UI.pins = uniq(UI.pins.map(mapK)).filter(k => CARDS[k] && CARDS[k].home !== 'overview');
+    Object.values(UI.layout).forEach(L => ['orderBy', 'hiddenBy'].forEach(f => { if (L[f]) Object.keys(L[f]).forEach(dk => { L[f][dk] = uniq((L[f][dk] || []).map(mapK)); }); })); }
   /* ---------- device kind, sizes ---------- */
   const devKey = () => innerWidth <= 860 ? 'phone' : 'desk';
   const SIZES = { desk: [2, 3, 4, 5, 6, 7, 8, 9, 10, 12], phone: [4, 6, 12] };
@@ -4486,7 +4738,7 @@ checkSession();
     const dk = devKey();
     if (LAYOUT_EDIT){
       const b = document.createElement('div'); b.className = 'lay-banner';
-      b.innerHTML = `${svg(IC.layout)}<span><b>Customizing ${esc(TAB_LABELS[page])} on ${dk === 'phone' ? 'phones' : 'computers'}.</b> Drag the handle to move a card (arrows on a phone), drag its right or bottom edge (or use − / +) to resize it, the eye to hide it, the pin to add it to Overview. Double-click an edge to reset it. Sizes are saved separately for phone and computer.</span><span class="lay-banner-act"><label class="lay-cmp" title="Tiles pack into any empty space, and you can drop a tile anywhere"><input type="checkbox" id="layFree" ${L.free && L.free[dk] ? 'checked' : ''}> Free placement</label><label class="lay-cmp"><input type="checkbox" id="layCompact" ${isCompact() ? 'checked' : ''}> Compact view</label><button class="btn ghost" type="button" id="layReset">Reset page</button><button class="btn" type="button" id="layDone">Done</button></span>`;
+      b.innerHTML = `${svg(IC.layout)}<span><b>Editing ${esc(TAB_LABELS[page])} (${dk === 'phone' ? 'phone' : 'computer'} layout).</b> Drag the handle to move, an edge to resize (double-click resets), the eye to hide, the pin to add to Overview.</span><span class="lay-banner-act"><label class="lay-cmp" title="Tiles pack into any empty space, and you can drop a tile anywhere"><input type="checkbox" id="layFree" ${L.free && L.free[dk] ? 'checked' : ''}> Free placement</label><label class="lay-cmp"><input type="checkbox" id="layCompact" ${isCompact() ? 'checked' : ''}> Compact view</label><button class="btn ghost" type="button" id="layReset">Reset page</button><button class="btn" type="button" id="layDone">Done</button></span>`;
       el.prepend(b);
       $('#layDone').onclick = () => setEdit(false);
       $('#layReset').onclick = () => { const was = clone(UI.layout[page] || {}); resetPageDev(page); SYNC.schedule(); render(); toast('Page layout reset', () => { UI.layout[page] = was; SYNC.schedule(); render(); }); };
@@ -4577,7 +4829,7 @@ checkSession();
     pageCards(page).forEach(c => { if (!c.dataset.cid || c.style.display === 'none' || c.classList.contains('lay-hidden')) return; const h = Math.round(c.getBoundingClientRect().height); if (h > 20) K[c.dataset.cid] = h; });
     SYNC.schedule(); }
   function setEdit(on){
-    if (!on && LAYOUT_EDIT) { layLock(cur); LAYOUT_EDIT = false; syncLayoutBtn(); render(); toast('Layout saved · cards keep at least these heights'); return; }
+    if (!on && LAYOUT_EDIT) { layLock(cur); LAYOUT_EDIT = false; syncLayoutBtn(); render(); toast('Layout saved'); return; }
     LAYOUT_EDIT = !!on; syncLayoutBtn(); render();
   }
   function syncLayoutBtn(){ const b = $('#layoutBtn'); if (b) { b.classList.toggle('on', LAYOUT_EDIT); b.setAttribute('aria-pressed', String(LAYOUT_EDIT)); } }
@@ -4655,6 +4907,22 @@ checkSession();
     t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), undo ? 6000 : 2600);
   }
 
+
+  /* ---------- saved layouts (e.g. Summer / Winter) ---------- */
+  UI.presets ||= {};
+  function presetsHtml(){
+    const names = Object.keys(UI.presets).sort();
+    return `<div class="lay-ranges"><h3>Saved layouts</h3><p>Save how every page is arranged right now, then switch back any time (e.g. Summer, Winter).</p>
+      <div class="pre-save"><input class="pre-in" id="preName" maxlength="40" placeholder="Name, e.g. Summer"><button type="button" class="btn" id="preSave">Save</button></div>
+      ${names.length ? names.map(n => `<div class="lay-row pre-row" data-pre="${esc(n)}"><div class="lay-name">${esc(n)}<span class="lay-count">${new Date(UI.presets[n].savedAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' })}</span></div>
+        <button type="button" class="btn ghost pre-btn" data-pre-act="apply">Use</button><button type="button" class="lay-ic" data-pre-act="del" title="Delete">✕</button></div>`).join('') : '<p class="lay-dev">No saved layouts yet.</p>'}</div>`;
+  }
+  function savePreset(name){ name = String(name || '').trim(); if (!name) return;
+    UI.presets[name] = { layout: clone(UI.layout), pins: UI.pins.slice(), compact: clone(UI.compact), views: clone(UI.views || {}), savedAt: Date.now() }; SYNC.schedule(); }
+  function usePreset(name){ const pr = UI.presets[name]; if (!pr) return; const was = clone(UI);
+    UI.pins.forEach(sendHome); UI.layout = clone(pr.layout || {}); UI.pins = (pr.pins || []).filter(k => CARDS[k]); UI.compact = clone(pr.compact || {}); UI.views = clone(pr.views || {});
+    applyCompact(); syncPinButtons(); place(); $$('.mcard').forEach(applySwitch); SYNC.schedule(); render();
+    toast(`Layout “${name}” in use`, () => { UI.pins.forEach(sendHome); UI = was; applyCompact(); syncPinButtons(); place(); $$('.mcard').forEach(applySwitch); SYNC.schedule(); render(); drawer(); }); }
   /* =====================================================================
      5) WIRING: tabs, Layout button, window size, settings drawer
      ===================================================================== */
@@ -4671,7 +4939,7 @@ checkSession();
   function drawer(){
     if (!list) return;
     const dk = devKey();
-    list.innerHTML = `<p class="lay-dev">Cards on ${dk === 'phone' ? 'phones' : 'computers'} · press <b>Layout</b> on a page to drag and resize</p>` + TABS.map(t => {
+    list.innerHTML = `<p class="lay-dev">${dk === 'phone' ? 'Phone' : 'Computer'} layout</p>` + TABS.map(t => {
       const L = UI.layout[t] || {}, H = LGET(L, 'hidden'), keys = t === 'overview' ? [...Object.keys(CARDS).filter(k => CARDS[k].home === 'overview'), ...UI.pins] : Object.keys(CARDS).filter(k => CARDS[k].home === t);
       const O = LGET(L, 'order'), ord = keys.map((k, i) => ({ k, o: O.indexOf(k) < 0 ? 1000 + i : O.indexOf(k) })).sort((a, b) => a.o - b.o).map(x => x.k);
       return `<div class="lay-tabhead">${esc(TAB_LABELS[t])}${H.length ? `<span class="lay-count">${H.length} hidden</span>` : ''}</div>` + ord.map((k, i) => {
@@ -4681,13 +4949,17 @@ checkSession();
           <button type="button" class="lay-ic ${hid ? '' : 'on'}" data-act="hide" title="${hid ? 'Show' : 'Hide'}">${svg(hid ? IC.eyeOff : IC.eye)}</button>
           <div class="lay-btns"><button type="button" data-act="up" ${i ? '' : 'disabled'} aria-label="Move up">▲</button><button type="button" data-act="down" ${i < ord.length - 1 ? '' : 'disabled'} aria-label="Move down">▼</button></div></div>`; }).join('');
     }).join('') + `<div class="lay-ranges"><h3>Default day ranges</h3>
-      <p>What each chart group shows when the page opens. Changing one also switches the view now; the range chips on the page still change it on the fly.</p>` +
+      <p>What each chart group shows when the page opens.</p>` +
       RANGE_UI.map(u => `<label for="layRange-${u.key}">${esc(u.label)}</label>
         <select id="layRange-${u.key}" data-range="${u.key}">${u.opts.map(o => `<option value="${o[0]}" ${o[0] === rangeDefaults[u.key] ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`).join('') + `</div>`
-      + `<div class="lay-ranges"><h3>Chart animation</h3><p>How fast lines draw in when a chart loads (0 = instant).</p><input type="range" id="layAnim" min="0" max="30" step="0.5" value="${($('#animSpeedSlider') || {}).value || 3}" style="width:100%;accent-color:var(--brand-500)"></div>`;
+      + `<div class="lay-ranges"><h3>Chart animation <span class="lay-count" id="layAnimV">${ANIMATION_SPEED_MS ? ANIMATION_SPEED_MS + ' ms / point' : 'Instant'}</span></h3><input type="range" id="layAnim" min="0" max="30" step="0.5" value="${ANIMATION_SPEED_MS}" style="width:100%;accent-color:var(--brand-500)"></div>`
+      + presetsHtml();
   }
   if (list) {
     list.addEventListener('click', e => {
+      if (e.target.closest('#preSave')) { const n = $('#preName'); savePreset(n && n.value); drawer(); return; }
+      const pb = e.target.closest('[data-pre-act]');
+      if (pb) { const n = pb.closest('[data-pre]').dataset.pre; if (pb.dataset.preAct === 'apply') usePreset(n); else { delete UI.presets[n]; SYNC.schedule(); } drawer(); return; }
       const b = e.target.closest('button[data-act]'); if (!b || b.disabled) return;
       const row = b.closest('.lay-row'), page = row.dataset.page, k = row.dataset.k, act = b.dataset.act;
       if (act === 'pin') { togglePin(k); }
@@ -4696,7 +4968,8 @@ checkSession();
         if (j < 0 || j >= keys.length) return; [keys[i], keys[j]] = [keys[j], keys[i]]; setOrder(page, keys); SYNC.schedule(); if (page === cur) render(); }
       drawer();
     });
-    list.addEventListener('input', e => { if (e.target.id !== 'layAnim') return; const sl = $('#animSpeedSlider'); if (sl) { sl.value = e.target.value; sl.dispatchEvent(new Event('input')); } });
+    list.addEventListener('input', e => { if (e.target.id !== 'layAnim') return; ANIMATION_SPEED_MS = Number(e.target.value); try { localStorage.setItem('turfops.anim', e.target.value); } catch (err) {} const o = $('#layAnimV'); if (o) o.textContent = e.target.value === '0' ? 'Instant' : e.target.value + ' ms / point'; });
+    list.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'preName') { savePreset(e.target.value); drawer(); } });
     list.addEventListener('change', e => {
       const sel = e.target.closest('select[data-range]'); if (!sel) return;
       const u = RANGE_UI.find(x => x.key === sel.dataset.range); if (!u) return;
@@ -4767,6 +5040,27 @@ checkSession();
   const sideOut = document.getElementById('sideSignOut');
   if (sideOut) sideOut.addEventListener('click', () => { const b = document.getElementById('logoutBtn'); if (b) b.click(); });
 
+  // Years & range: collapsed by default (most days the defaults are fine); the heading shows what's selected
+  const RC_KEY = 'turfops.rangeOpen';
+  function rangeSummary(){
+    const el = document.getElementById('rangeSummary'); if (!el) return;
+    const yrs = (typeof sharedYears === 'object' && sharedYears.selected) ? [...sharedYears.selected].sort() : [];
+    const day = document.querySelector('#doyRangeChips .year-chip.on');
+    el.textContent = [yrs.length > 3 ? `${yrs.length} years` : yrs.join(', '), day ? day.textContent.trim() : ''].filter(Boolean).join(' · ');
+  }
+  function setRangeOpen(open, save){
+    document.body.classList.toggle('range-open', open);
+    const b = document.getElementById('rangeToggle'); if (b) b.setAttribute('aria-expanded', String(open));
+    if (save) { try { localStorage.setItem(RC_KEY, open ? '1' : '0'); } catch (e) {} }
+    rangeSummary();
+  }
+  { let o = false; try { o = localStorage.getItem(RC_KEY) === '1'; } catch (e) {} setRangeOpen(o, false); }
+  const rt = document.getElementById('rangeToggle');
+  if (rt) rt.addEventListener('click', () => setRangeOpen(!document.body.classList.contains('range-open'), true));
+  const rcEl = document.getElementById('rangeControls');
+  if (rcEl) rcEl.addEventListener('click', () => setTimeout(rangeSummary, 0));
+  document.addEventListener('turfops:ready', rangeSummary);
+
   // theme
   function applyTheme(t, save){
     const root = document.documentElement;
@@ -4827,8 +5121,7 @@ checkSession();
   // the cards on a tab's grid that are showing (the Layout editor hides cards with display:none)
   const secsOn = tab => { const g = document.getElementById('g-' + tab); return g ? Array.from(g.children).filter(c => c.classList.contains('card') && c.style.display !== 'none') : []; };
   const hiddenByLayout = () => false;
-  const RANGE_KEYS = ['chartTrendHigh', 'chartTrendLow', 'chartTrendFeelsHigh', 'chartTrendFeelsLow', 'chartTrendRain', 'chartTrendRainBar', 'chartDeficitBermuda', 'chartDeficitFescue',
-    'chartCumDefYearBermuda', 'chartCumDefYearFescue', 'chartCumDefMonthBermuda', 'chartCumDefMonthFescue', 'chartEtWeeklyBermuda', 'chartEtWeeklyFescue'];
+  const RANGE_KEYS = ['chartTrendHigh', 'chartTrendLow', 'chartTrendFeelsHigh', 'chartTrendFeelsLow', 'chartTrendRain', 'chartTrendRainBar', 'deficit', 'etweekly'];
 
   // The shared range bar only appears when the active tab has a visible chart that uses it;
   // an empty tab shows a short explanation instead of a blank page.
