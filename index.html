@@ -642,6 +642,7 @@ header.top .page-sub{ color:var(--text-tertiary); font-size:var(--fs-base); marg
 .speed{ display:flex; align-items:center; gap:8px; height:38px; padding:0 14px; border-radius:var(--r-pill); border:1px solid var(--border-strong); background:var(--card);
   font-size:var(--fs-sm); font-weight:600; color:var(--text-tertiary); }
 .speed input[type=range]{ width:90px; accent-color:var(--brand-500); }
+#settingsBtn{ width:38px; padding:0; }
 main{ max-width:1400px; margin:0; padding:24px 34px 60px; }
 
 /* ---- buttons / inputs / chips ---- */
@@ -770,10 +771,10 @@ table.pm-steps tr.pm-group td{ border-top:1.5px solid var(--border-strong); }
   .top-actions{ margin-left:0; width:100%; }
     .mob-only{ display:inline-flex !important; }
   .top-actions{ flex-wrap:nowrap; gap:8px; }
-  .speed{ flex:1; min-width:0; padding:0 12px; }
-  .speed input[type=range]{ flex:1; width:auto; min-width:0; }
+  .speed{ display:none; }
+  .top-actions{ justify-content:flex-end; }
   #layoutBtn span{ display:none; }
-  #layoutBtn, #themeMob{ width:38px; padding:0; flex:none; }
+  #layoutBtn, #themeMob, #settingsBtn{ width:38px; padding:0; flex:none; }
   #logoutBtn{ flex:none; padding:0 14px; }
   main{ padding:18px 16px calc(110px + env(safe-area-inset-bottom, 0px)); }
   .panel, .sticky-controls{ padding:16px; }
@@ -782,6 +783,112 @@ table.pm-steps tr.pm-group td{ border-top:1.5px solid var(--border-strong); }
   .kpi-card{ padding:16px; }
   .kpi-card .value{ font-size:var(--fs-2xl); }
   .section-toggle h2{ font-size:var(--fs-lg); }
+}
+
+/* =====================================================================
+   CARD GRID + LAYOUT EDITOR (ported from eckert.fin)
+   ===================================================================== */
+.grid{ display:grid; gap:18px; }
+.g-12{ grid-template-columns:repeat(12,minmax(0,1fr)); }
+.tpage{ display:block; }
+.tgrid > .card{ margin:0; min-width:0; position:relative; display:flex; flex-direction:column; }
+.tgrid > .card > .chart-wrap{ flex:1 0 auto; }
+.tgrid > .card > .chart-with-yslider{ flex:1 0 auto; }
+.tgrid > .card.panel{ padding:20px 22px; }
+.card-head{ margin-bottom:12px; padding-right:34px; }
+.card-head h3{ font-size:var(--fs-md) !important; font-weight:600; letter-spacing:-.01em; margin:0 !important; display:flex; align-items:center; gap:8px; }
+.card-head .card-sub{ margin:4px 0 0 !important; font-size:var(--fs-sm); color:var(--text-tertiary); line-height:1.4; }
+.card-eyebrow{ display:flex; align-items:center; gap:7px; font-size:var(--fs-xs); font-weight:600; color:var(--text-tertiary); margin-bottom:6px; letter-spacing:.01em; }
+.ce-ic{ width:22px; height:22px; border-radius:7px; background:var(--brand-100); color:var(--brand-500); display:inline-grid; place-items:center; flex:none; }
+.ce-ic svg{ width:13px; height:13px; }
+.card-head h3 .ce-ic{ width:26px; height:26px; border-radius:8px; }
+.card-head h3 .ce-ic svg{ width:15px; height:15px; }
+.ce-from{ display:none; margin-left:2px; font-size:var(--fs-2xs); font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-500); background:var(--brand-100); padding:2px 7px; border-radius:var(--r-pill); }
+#g-overview > .card:not([data-home="overview"]) .ce-from{ display:inline-block; }
+.card.panel .card-head + .panel-sub{ margin-top:-4px; }
+.tgrid details.card > summary{ list-style:none; }
+.panel-pin{ position:absolute; top:14px; right:14px; z-index:3; }
+body.lay-on .panel-pin{ display:none; }
+.pin-slot{ display:none !important; }
+#tabEmpty{ margin-top:4px; }
+
+/* compact view (finance default): a little tighter everywhere */
+body.compact .grid{ gap:14px; }
+body.compact .tgrid > .card.panel{ padding:16px 18px; }
+body.compact .card-head{ margin-bottom:10px; }
+body.compact .kpi-card{ padding:14px 16px; }
+
+/* layout controls */
+.lay-ctl{ position:absolute; top:8px; right:8px; z-index:6; display:flex; gap:4px; background:var(--card); border:1px solid var(--border-strong); border-radius:var(--r-sm); padding:3px; box-shadow:var(--shadow); }
+.lay-ctl button{ width:28px; height:28px; border-radius:var(--r-xs); display:grid; place-items:center; color:var(--text-secondary); background:none; border:0; cursor:pointer; font:inherit; padding:0; }
+.lay-ctl button:hover{ background:var(--surface); color:var(--text); }
+.lay-ctl button.on{ color:var(--brand-500); background:var(--brand-100); }
+.lay-ctl svg{ width:16px; height:16px; }
+.lay-ctl .grip{ cursor:grab; }
+.lay-ctl .sz{ font-weight:700; font-size:var(--fs-md); line-height:1; width:26px; }
+.lay-ctl .sz-l{ font-size:var(--fs-xs); font-weight:600; color:var(--text-secondary); min-width:30px; text-align:center; align-self:center; }
+body.lay-on .tgrid > .card{ outline:1.5px dashed var(--border-strong); outline-offset:3px; }
+body.lay-on .card.lay-hidden{ opacity:.35; }
+body.lay-on .card.lay-hidden .lay-ctl{ opacity:1; }
+.card.lay-drop{ outline:2px solid var(--brand-500) !important; }
+.lay-banner{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:var(--brand-100); color:var(--text); border-radius:var(--r-md); padding:10px 14px; margin-bottom:16px; font-size:var(--fs-base); line-height:1.45; }
+.lay-banner > svg{ width:18px; height:18px; flex:none; color:var(--brand-500); }
+.lay-banner > span:nth-child(2){ flex:1 1 320px; }
+.lay-banner-act{ margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.lay-banner .btn{ height:32px; }
+.lay-cmp{ display:flex; align-items:center; gap:6px; font-size:var(--fs-sm); font-weight:600; white-space:nowrap; cursor:pointer; }
+.lay-cmp input{ width:16px; height:16px; accent-color:var(--brand-500); }
+.lay-rs{ position:absolute; top:12px; bottom:12px; right:0; width:10px; cursor:ew-resize; z-index:7; touch-action:none; }
+.lay-rs::after{ content:''; position:absolute; top:50%; left:3px; width:4px; height:44px; transform:translateY(-50%); border-radius:3px; background:var(--brand-500); opacity:.55; }
+.lay-rh{ position:absolute; left:12px; right:12px; bottom:0; height:10px; cursor:ns-resize; z-index:7; touch-action:none; }
+.lay-rh::after{ content:''; position:absolute; left:50%; top:3px; height:4px; width:44px; transform:translateX(-50%); border-radius:3px; background:var(--brand-500); opacity:.55; }
+.lay-rs:hover::after, .lay-rh:hover::after, .lay-sizing .lay-rs::after, .lay-sizing .lay-rh::after{ opacity:1; }
+.lay-sizing{ outline:2px dashed var(--brand-500) !important; outline-offset:3px; }
+.lay-hl{ position:absolute; left:50%; bottom:10px; transform:translateX(-50%); background:var(--brand-500); color:#fff; font-size:var(--fs-xs); font-weight:700; padding:3px 8px; border-radius:var(--r-xs); z-index:8; pointer-events:none; white-space:nowrap; }
+.card.lay-tall-scroll{ overflow-y:auto; }
+body.lay-on .card.lay-tall-scroll{ overflow:hidden; }
+.card.lay-locked{ overflow:visible; }
+/* free placement: 8px rows, tiles pack into any open space; the grid guide shows while customizing */
+.grid.free{ grid-auto-rows:8px; row-gap:0; grid-auto-flow:row dense; position:relative; }
+.grid.free > .card{ align-self:start; }
+.free-ghost{ position:absolute; border:2px dashed var(--brand-500); border-radius:var(--r-lg); background:color-mix(in srgb,var(--brand-500) 8%,transparent); pointer-events:none; z-index:1; }
+.free-ghost.pushed{ border-color:var(--warn); background:color-mix(in srgb,var(--warn) 10%,transparent); }
+.free-ghost.pushed::after{ content:'Lands here — the spot under the pointer is taken'; position:absolute; left:10px; top:8px; font-size:var(--fs-xs); font-weight:700; color:var(--warn); }
+.card.free-moving{ z-index:20; opacity:.9; box-shadow:0 18px 40px rgba(0,0,0,.18); pointer-events:none; transition:none; }
+body.lay-on .grid.free{
+  background-image:
+    repeating-linear-gradient(to bottom, color-mix(in srgb,var(--brand-500) 22%,transparent) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(to bottom, color-mix(in srgb,var(--text-tertiary) 6%,transparent) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(to right, color-mix(in srgb,var(--brand-500) 7%,transparent) 0 var(--fcw,60px), transparent var(--fcw,60px) calc(var(--fcw,60px) + var(--fgap,12px)));
+  border-radius:var(--r-lg); outline:1px dashed color-mix(in srgb,var(--brand-500) 35%,transparent); outline-offset:4px; min-height:60vh; }
+/* touch: drag handles own the gesture (otherwise iOS scrolls the page and cancels the drag) */
+.lay-ctl .grip, .lay-rs, .lay-rh{ touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-select:none; user-select:none; }
+#layoutBtn.on{ background:var(--brand-900); border-color:transparent; color:#fff; box-shadow:var(--glow); }
+:root[data-theme="dark"] #layoutBtn.on{ background:var(--brand-500); }
+
+/* toast (same as finance / data) */
+.toast{ position:fixed; left:50%; bottom:28px; transform:translate(-50%,20px); opacity:0; pointer-events:none; background:var(--text); color:var(--card); padding:11px 14px 11px 14px; border-radius:var(--r-md);
+  display:flex; align-items:center; gap:10px; font-size:var(--fs-base); font-weight:500; z-index:200; transition:all .2s; box-shadow:0 12px 30px -10px rgba(0,0,0,.4); max-width:calc(100% - 32px); }
+.toast.on{ opacity:1; transform:translate(-50%,0); pointer-events:auto; }
+.toast button{ color:var(--brand-300); font:inherit; font-weight:700; margin-left:6px; background:none; border:0; cursor:pointer; }
+
+/* settings drawer rows */
+.lay-dev{ font-size:var(--fs-sm); color:var(--text-tertiary); margin:4px 4px 2px; }
+.lay-ic{ width:34px; height:34px; display:grid; place-items:center; border:1px solid var(--border-strong); background:var(--card); color:var(--text-tertiary); border-radius:var(--r-sm); cursor:pointer; padding:0; flex:none; }
+.lay-ic svg{ width:16px; height:16px; }
+.lay-ic.on{ color:var(--brand-500); background:var(--brand-100); border-color:transparent; }
+.lay-row.is-hidden .lay-name{ opacity:.45; }
+
+@media (max-width:860px){
+  .grid{ gap:14px; }
+  .tgrid > .card.panel{ padding:16px; }
+  body.lay-on .bottom-tabs{ display:none; }
+  body.lay-on main{ padding-bottom:calc(40px + env(safe-area-inset-bottom, 0px)); }
+  .lay-ctl .grip, .lay-ctl button{ width:34px; height:34px; }
+  .lay-rs{ width:22px; right:-2px; } .lay-rh{ height:22px; bottom:-2px; }
+  .lay-rs::after{ left:9px; } .lay-rh::after{ top:9px; }
+  .toast{ bottom:calc(96px + env(safe-area-inset-bottom, 0px)); }
 }
 </style>
 </head>
@@ -836,7 +943,8 @@ table.pm-steps tr.pm-group td{ border-top:1.5px solid var(--border-strong); }
       <div class="top-actions">
         <label class="speed" title="How fast the charts draw in">Animation <input type="range" id="animSpeedSlider" min="0" max="30" value="3" step="0.5"></label>
         <button class="btn ghost mob-only" type="button" id="themeMob" aria-label="Switch light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg></button>
-        <button id="layoutBtn" class="btn ghost" type="button" aria-label="Layout settings" title="Reorder sections &amp; charts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M10 9v12"/></svg><span>Layout</span></button>
+        <button class="btn ghost icon-only" type="button" id="settingsBtn" aria-label="Page settings" title="Cards on every page, default ranges"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
+        <button id="layoutBtn" class="btn ghost" type="button" aria-pressed="false" title="Move, resize, hide or pin the cards on this page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M10 9v12"/></svg><span>Layout</span></button>
         <button id="logoutBtn" class="mob-only" type="button">Sign out</button>
       </div>
     </div>
@@ -1751,6 +1859,7 @@ async function checkSession(){
 function showLogin(){ $('#loginScreen').style.display='flex'; $('#app').style.display='none'; }
 function showApp(){
   $('#loginScreen').style.display='none'; $('#app').style.display='block';
+  if (window.turfopsLayout) { window.turfopsLayout.render(); window.turfopsLayout.pull(); }
   initApp();
 }
 $('#loginBtn').addEventListener('click', async () => {
@@ -1778,7 +1887,8 @@ $('#animSpeedSlider').addEventListener('input', (e) => { ANIMATION_SPEED_MS = Nu
   let startY = null, pulling = false, refreshing = false;
 
   function onTouchStart(e){
-    if (window.scrollY > 0 || refreshing) { startY = null; pulling = false; return; }
+    // no pull-to-refresh while customizing the layout -- a drag there moves or resizes a card
+    if (window.scrollY > 0 || refreshing || document.body.classList.contains('lay-on')) { startY = null; pulling = false; return; }
     startY = e.touches[0].clientY;
     pulling = true;
     indicator.classList.add('dragging');
@@ -1898,6 +2008,7 @@ async function initApp(){
   const forceResizeAll = () => Object.values(charts).forEach(c => { try { c.resize(); } catch(e){} });
   requestAnimationFrame(forceResizeAll);
   setTimeout(forceResizeAll, 500);
+  setTimeout(() => document.dispatchEvent(new Event('turfops:ready')), 600);   // the layout re-packs now that every card has its real height
 }
 </script>
 
@@ -3715,11 +3826,11 @@ checkSession();
 
 <div id="layoutOverlay"></div>
 <aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
-  <div class="lay-head"><h2>Layout</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
-  <p class="lay-help">Sections are grouped by the tab they appear on. Use the switch to show or hide one, and ▲ ▼ to reorder it within its tab. Tap ▸ on a section with several charts to reorder them too — charts swap places within that section's existing grid. Saved on this device. Tap the pin in the corner of any chart to add it to Overview (it still shows on its own tab too). Pinned charts are listed under Overview here and reorder like any other section. Default day ranges are at the bottom.</p>
+  <div class="lay-head"><h2>Page settings</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
+  <p class="lay-help">Every card on every page for this kind of device: the eye shows or hides it, the pin adds it to Overview, ▲ ▼ change the order. To drag and resize cards, open a page and press <b>Layout</b>. Default day ranges are at the bottom.</p>
   <div id="layoutList"></div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 13 (eckert design system, light / dark)</div>
-  <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset to default</button><button class="btn" id="layoutDone" type="button">Done</button></div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 14 (finance layout editor: drag, resize, free placement)</div>
+  <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
 /* ============================================================
@@ -4165,177 +4276,33 @@ checkSession();
 })();
 </script>
 <script>
-/* ============================================================
-   PIN CHARTS TO OVERVIEW
-   Any chart panel on another tab can be pinned. Each pinned chart gets its own small section on the
-   Overview tab (id "pin-<canvas id>", data-tab="overview"), so the Layout drawer lists it under
-   Overview and it reorders like any other section there.
-   A chart can't be in two places at once, so the panel itself moves: while Overview is the active
-   tab, pinned panels sit in their Overview sections; on any other tab they go back to the hidden
-   slot they came from. The chart object, its controls and its data refreshes travel with the panel.
-   Runs before the Layout script so a saved Overview order can include the pinned sections.
-   Saved on this device.
-   ============================================================ */
-(function pinCharts(){
+/* =====================================================================
+   CARDS & LAYOUT -- the eckert.fin layout editor, ported to TurfOps
+   Every chart / table / tool on a tab is a card on that tab's 12-column grid. Press Layout to:
+     · drag a card's handle to move it (arrows on a phone), or drop it anywhere with Free placement on
+     · drag its right edge to resize it (snaps to ⅙ ¼ ⅓ ½ ⅔ ¾ … full), its bottom edge to make it taller / shorter
+       (snaps to the cards beside it and to its natural height) · double-click an edge to reset it
+     · hide it with the eye · pin it to Overview with the pin
+   Sizes, order, hidden cards and free-placement spots are kept separately for phone and computer.
+   On Done every card's height is locked in (outside Layout it never gets shorter than that, so nothing
+   below it jumps up; it can still grow). Cards never get narrower than their content needs (min widths).
+   The layout is saved on this device right away and synced to your account (public.turfops_prefs),
+   so it follows you to any computer or phone you sign in on.
+   ===================================================================== */
+(function turfLayout(){
   'use strict';
-  const KEY = 'turfops.pins.v2', OLD_KEY = 'turfops.pins.v1';
-  const main = document.querySelector('main'); if (!main) return;
-  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z"/><path d="M12 15v6"/></svg>';
-  const TAB_LABELS = { temps: 'Temps', rain: 'Rain', irrigation: 'Irrigation', calculator: 'Calculator', records: 'Records' };
-  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const sections = () => Array.from(main.children).filter(e => e.matches('section.collapsible'));
-  const tabOf = sec => (sec.dataset.tab || 'overview').split(' ')[0];
-
-  // Every chart panel outside Overview, keyed by its canvas id (stored on the panel, because
-  // "No data yet" replaces the canvas).
-  const panels = {};   // key -> { panel, sec, slot }
-  sections().filter(sec => tabOf(sec) !== 'overview').forEach(sec => {
-    sec.querySelectorAll('.panel').forEach(p => {
-      const c = p.querySelector('canvas');
-      if (!c || !c.id || (p.parentElement && p.parentElement.closest('.panel'))) return;
-      p.dataset.pinKey = c.id;
-      p.classList.add('pinnable');
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = 'pin-btn panel-pin'; b.innerHTML = ICON;
-      b.addEventListener('click', e => { e.stopPropagation(); toggle(c.id); });
-      p.insertBefore(b, p.firstChild);
-      panels[c.id] = { panel: p, sec, slot: null };
-    });
-  });
-
-  let pins = [];
-  try { pins = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { pins = []; }
-  if (!Array.isArray(pins)) pins = [];
-  // One-time carry-over from the earlier whole-section pins: pin every chart in those sections.
-  try {
-    const old = JSON.parse(localStorage.getItem(OLD_KEY));
-    if (Array.isArray(old) && old.length){
-      Object.keys(panels).forEach(k => { if (old.includes(panels[k].sec.id) && !pins.includes(k)) pins.push(k); });
-      localStorage.setItem(KEY, JSON.stringify(pins));
-    }
-    localStorage.removeItem(OLD_KEY);
-  } catch (e) {}
-  pins = pins.filter(k => panels[k]);
-
-  let activeTab = (main.dataset.activeTab || 'overview');
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(pins)); } catch (e) {} };
-  const pinSecId = k => 'pin-' + k;
-  const panelTitle = p => { const h = p.querySelector(':scope > h3'); return h ? h.textContent.trim() : ''; };
-  const secTitle = sec => { const h = sec.querySelector('.section-toggle h2'); return h ? h.textContent.trim() : sec.id; };
-
-  function syncButtons(){
-    Object.keys(panels).forEach(k => {
-      const b = panels[k].panel.querySelector(':scope > .panel-pin'); if (!b) return;
-      const on = pins.includes(k);
-      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
-      b.title = on ? 'Unpin from Overview' : 'Pin to Overview'; b.setAttribute('aria-label', b.title);
-    });
-  }
-
-  // Overview sections end where the first section from another tab begins.
-  function overviewInsertPoint(){
-    const secs = sections();
-    const lastOv = secs.filter(s => tabOf(s) === 'overview').pop();
-    return lastOv ? lastOv.nextSibling : main.firstChild;
-  }
-
-  function makePinSection(k){
-    const { panel, sec } = panels[k];
-    const id = pinSecId(k);
-    let ps = document.getElementById(id);
-    if (ps) return ps;
-    const home = secTitle(sec), chart = panelTitle(panel);
-    ps = document.createElement('section');
-    ps.className = 'collapsible pin-sec'; ps.id = id; ps.dataset.tab = 'overview';
-    ps.dataset.pinKey = k;
-    ps.dataset.pinTitle = chart && chart !== home ? `${home} — ${chart}` : home;
-    // the home section's own subtitle (e.g. "Inches per week") when it sits above its chart grid
-    const sub = sec.querySelector(':scope > .section-body > .panel-sub');
-    const icon = sec.querySelector('.section-toggle .sec-icon');
-    ps.innerHTML = `<button class="section-toggle" type="button"><h2>${icon ? icon.outerHTML : ''}${esc(home)}<span class="pin-from">${esc(TAB_LABELS[tabOf(sec)] || '')}</span></h2><span class="chevron">︿</span></button>
-      <div class="section-body">${sub ? `<div class="panel-sub pin-sub">${sub.innerHTML}</div>` : ''}<div class="pin-host"></div></div>`;
-    ps.querySelector('.section-toggle').addEventListener('click', () => {
-      const was = ps.classList.contains('collapsed');
-      ps.classList.toggle('collapsed');
-      if (was) remeasure(ps);
-    });
-    main.insertBefore(ps, overviewInsertPoint());
-    return ps;
-  }
-
-  function remeasure(root){
-    requestAnimationFrame(() => root.querySelectorAll('canvas').forEach(c => {
-      const ch = window.Chart && Chart.getChart && Chart.getChart(c);
-      if (ch) { try { ch.resize(); } catch (e) {} }
-    }));
-  }
-
-  // Leave a hidden marker where the panel lives on its own tab, so it can always go back.
-  function ensureSlot(k){
-    const rec = panels[k];
-    if (rec.slot && rec.slot.isConnected) return rec.slot;
-    rec.slot = document.createElement('div');
-    rec.slot.className = 'pin-slot'; rec.slot.hidden = true; rec.slot.dataset.pinSlot = k;
-    rec.panel.before(rec.slot);
-    return rec.slot;
-  }
-  function sendHome(k){
-    const rec = panels[k];
-    if (rec.slot && rec.slot.isConnected && rec.panel.previousElementSibling !== rec.slot) rec.slot.after(rec.panel);
-  }
-  function sendToOverview(k){
-    const ps = makePinSection(k);
-    ensureSlot(k);
-    const host = ps.querySelector('.pin-host');
-    if (panels[k].panel.parentElement !== host) host.appendChild(panels[k].panel);
-  }
-
-  function place(){
-    pins.forEach(k => activeTab === 'overview' ? sendToOverview(k) : sendHome(k));
-    remeasure(main);
-  }
-
-  function toggle(k){
-    if (!panels[k]) return;
-    if (pins.includes(k)){
-      pins = pins.filter(x => x !== k);
-      sendHome(k);
-      const ps = document.getElementById(pinSecId(k)); if (ps) ps.remove();
-      remeasure(panels[k].sec);
-    } else {
-      pins.push(k);
-      makePinSection(k);
-      if (activeTab === 'overview') sendToOverview(k);
-    }
-    save(); syncButtons();
-    document.dispatchEvent(new Event('turfops:layout'));   // empty-tab message + range bar re-check
-  }
-  function clear(){
-    pins.slice().forEach(k => { sendHome(k); const ps = document.getElementById(pinSecId(k)); if (ps) ps.remove(); });
-    pins = []; save(); syncButtons();
-    document.dispatchEvent(new Event('turfops:layout'));
-  }
-
-  // Build the Overview sections now (so the Layout script sees them when it restores a saved order);
-  // the panels themselves move when the bottom tabs announce which tab is showing.
-  pins.forEach(makePinSection);
-  syncButtons();
-  document.addEventListener('turfops:tab', e => { activeTab = (e.detail && e.detail.tab) || 'overview'; place(); });
-
-  window.turfopsPins = { toggle, clear, isPinned: k => pins.includes(k) };
-})();
-</script>
-<script>
-/* ============================================================
-   LAYOUT SETTINGS -- reorder sections, and the charts inside them.
-   Saved per device in localStorage. Sections swap places; charts swap
-   places within their section's existing grid (two-up rows stay two-up,
-   a full-width slot stays full-width).
-   ============================================================ */
-(function layoutSettings(){
-  'use strict';
-
-  const LS_KEY = 'turfops.layout.v1';
+  const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const svg = (p, w) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w || 2}" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const IC = {
+    grip: '<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',
+    up: '<path d="M12 19V5M6 11l6-6 6 6"/>', down: '<path d="M12 5v14M6 13l6 6 6-6"/>',
+    eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    eyeOff: '<path d="M3 3l18 18M10.6 5.1A9.7 9.7 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.2 4.1M6.6 6.6C3.8 8.3 2 12 2 12s3.6 7 10 7a9.5 9.5 0 004.4-1.1M9.9 9.9a3 3 0 004.2 4.2"/>',
+    layout: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M10 9v12"/>',
+    pin: '<path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z"/><path d="M12 15v6"/>',
+  };
 
   /* ---------- default day ranges (read by the page's init code via window.TURF_RANGE_DEFAULTS) ---------- */
   const RANGE_LS = 'turfops.ranges.v1';
@@ -4355,236 +4322,410 @@ checkSession();
   } catch (e) {}
   window.TURF_RANGE_DEFAULTS = rangeDefaults;
 
-  const main = document.querySelector('main');
-  const panel = document.getElementById('layoutPanel');
-  const overlay = document.getElementById('layoutOverlay');
-  const list = document.getElementById('layoutList');
-  const openBtn = document.getElementById('layoutBtn');
-  if (!main || !panel || !overlay || !list) return;
+  const main = document.querySelector('main'); if (!main) return;
+  const TABS = ['overview', 'temps', 'rain', 'irrigation', 'calculator', 'records'];
+  const TAB_LABELS = { overview: 'Overview', temps: 'Temperature', rain: 'Rain', irrigation: 'Irrigation', calculator: 'Calculator', records: 'Records' };
+  const normKey = t => String(t || '').toLowerCase().replace(/[’'°%()]/g, '').replace(/[^a-z0-9&+]+/g, '-').replace(/^-+|-+$/g, '') || 'card';
 
-  // Sections that read the shared "Years & range" controls. Those controls
-  // always sit directly above whichever of these is currently first.
-  const RANGE_SECTIONS = ['sec-daily-highs', 'sec-feels-high', 'sec-cum-rain', 'sec-deficit-bermuda', 'sec-cumdef-year', 'sec-cumdef-month', 'sec-etweekly-bermuda'];
-
-  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const secEls = () => Array.from(main.children).filter(e => e.matches('section.collapsible'));
-  const chartPanels = sec => Array.from(sec.querySelectorAll('.panel'))
-    .filter(p => p.querySelector('canvas') && !(p.parentElement && p.parentElement.closest('.panel')));
-  const panelKey = p => p.querySelector('canvas').id;
-  const secTitle = s => { if (s.dataset.pinTitle) return s.dataset.pinTitle; const h = s.querySelector('.section-toggle h2'); return h ? h.textContent.trim() : s.id; };
-  const panelTitle = p => { const h = p.querySelector('h3'); return (h && h.textContent.trim()) || panelKey(p); };
-
-  // Capture the shipped order before any saved layout is applied (used by Reset,
-  // and to place sections added in future versions where they belong).
-  const DEFAULT = { sections: secEls().map(s => s.id), charts: {} };
-  secEls().forEach(s => { DEFAULT.charts[s.id] = chartPanels(s).map(panelKey); });
-
-  // Put `desired` into the DOM slots currently held by `current` (same set of nodes).
-  function permute(current, desired){
-    const slots = current.map(n => { const c = document.createComment('slot'); n.replaceWith(c); return c; });
-    desired.forEach((n, i) => slots[i].replaceWith(n));
-  }
-
-  // saved order + anything it doesn't know about, each slotted after its default predecessor
-  function mergeOrder(saved, base){
-    const out = (saved || []).filter((id, i, a) => base.includes(id) && a.indexOf(id) === i);
-    base.forEach((id, i) => {
-      if (out.includes(id)) return;
-      let j = i - 1; while (j >= 0 && !out.includes(base[j])) j--;
-      out.splice(j >= 0 ? out.indexOf(base[j]) + 1 : 0, 0, id);
+  /* =====================================================================
+     1) CARDS: turn each tab's sections into cards on one 12-column grid per tab
+     ===================================================================== */
+  const grids = {};
+  const anchor = document.getElementById('tabEmpty');
+  TABS.forEach(t => {
+    const sec = document.createElement('section'); sec.className = 'tpage'; sec.id = 'p-' + t; sec.dataset.tab = t;
+    sec.innerHTML = `<div class="grid g-12 tgrid" id="g-${t}"></div>`;
+    main.insertBefore(sec, anchor);
+    grids[t] = sec.firstElementChild;
+  });
+  // titles for the few blocks that have no heading of their own
+  const MISC_TITLE = [['#overviewKpis', 'At a glance'], ['#budgetNeedKpis', 'This week’s water need'], ['#budChips', 'Weekly target'],
+    ['#budgetPrograms', 'Program budgets'], ['#wbRangeChips', 'Water balance range'], ['#chartExplorer', 'Explorer'], ['#explorerTable, table', 'Explorer data']];
+  const seenKeys = {};
+  $$(':scope > section.collapsible', main).forEach(sec => {
+    const tab = (sec.dataset.tab || 'overview').split(' ')[0], grid = grids[tab] || grids.overview;
+    const h2 = $('.section-toggle h2', sec), secTitle = h2 ? h2.textContent.trim() : '';
+    const iconEl = h2 && $('.sec-icon', h2), icon = iconEl ? iconEl.innerHTML : '';
+    const body = $(':scope > .section-body', sec); if (!body) { sec.remove(); return; }
+    const subs = [], units = []; let misc = [];
+    const flush = () => { if (!misc.length) return; const w = document.createElement('div'); w.className = 'panel'; misc.forEach(n => w.appendChild(n)); units.push({ el: w, span: 12, misc: true }); misc = []; };
+    [...body.children].forEach(ch => {
+      if (ch.matches('.panel-sub') && !units.length && !misc.length) { subs.push(ch); return; }
+      if (ch.matches('.two-col, .four-col')) { flush(); [...ch.children].forEach(p => units.push({ el: p, span: ch.matches('.four-col') ? 3 : 6 })); ch.remove(); return; }
+      if (ch.matches('.panel')) { flush(); units.push({ el: ch, span: 12 }); return; }
+      misc.push(ch);
     });
-    return out;
-  }
-
-  const isHidden = s => s.classList.contains('lay-hidden');
-
-  // Which page (bottom tab) each section lives on is fixed by its data-tab attribute; the drawer groups
-  // sections by tab and only reorders within a tab.
-  const TAB_ORDER = ['overview', 'temps', 'rain', 'irrigation', 'calculator', 'records'];
-  const TAB_LABELS = { overview: 'Overview', temps: 'Temps', rain: 'Rain', irrigation: 'Irrigation', calculator: 'Calculator', records: 'Records, reference & explorer' };
-  const tabOf = s => (s.dataset.tab || 'overview').split(' ')[0];
-
-  function placeRangeControls(){
-    _placeRangeControls();
-    document.dispatchEvent(new Event('turfops:layout'));
-  }
-  function _placeRangeControls(){
-    const head = document.getElementById('rangeControlsHeading');
-    const ctl = document.getElementById('rangeControls');
-    if (!head || !ctl) return;
-    // sit above the first VISIBLE section that uses them; if every one of those is hidden, hide the controls too
-    const first = secEls().find(s => RANGE_SECTIONS.includes(s.id) && !isHidden(s));
-    head.classList.toggle('lay-hidden', !first);
-    ctl.classList.toggle('lay-hidden', !first);
-    if (!first || ctl.nextElementSibling === first) return;
-    main.insertBefore(head, first);
-    main.insertBefore(ctl, first);
-  }
-
-  function refreshCharts(sections){
-    requestAnimationFrame(() => {
-      (sections || secEls()).forEach(sec => sec.querySelectorAll('canvas').forEach(c => {
-        const ch = window.Chart && Chart.getChart && Chart.getChart(c);
-        if (ch) { try { ch.resize(); } catch (e) {} }
-      }));
+    flush();
+    units.forEach((u, i) => {
+      const el = u.el, h3 = $(':scope > h3', el) || $(':scope > summary', el);
+      let title = h3 ? h3.textContent.trim() : '';
+      if (!title) { const hit = MISC_TITLE.find(([s]) => $(s, el) || el.matches(s)); title = hit ? hit[1] : secTitle; }
+      const canvas = $('canvas', el);
+      let key = (canvas && canvas.id) || el.id || normKey(sec.id.replace(/^sec-/, '') + '-' + title);
+      seenKeys[key] = (seenKeys[key] || 0) + 1; if (seenKeys[key] > 1) key += '-' + seenKeys[key];
+      el.classList.add('card', 'panel'); el.classList.remove('pinnable');
+      el.dataset.cid = key; el.dataset.home = tab; el.dataset.span = u.span; el.dataset.title = title === secTitle ? title : `${secTitle} · ${title}`;
+      // header: section name as a small eyebrow (with its icon), then the card's own title
+      const head = document.createElement('div'); head.className = 'card-head';
+      const showEyebrow = title !== secTitle;
+      head.innerHTML = (showEyebrow ? `<div class="card-eyebrow">${icon ? `<span class="ce-ic">${icon}</span>` : ''}<span>${esc(secTitle)}</span><span class="ce-from">${esc(TAB_LABELS[tab])}</span></div>` : '')
+        + (h3 && h3.tagName === 'H3' ? '' : (h3 ? '' : `<h3>${showEyebrow ? '' : (icon ? `<span class="ce-ic">${icon}</span>` : '')}${esc(title)}${showEyebrow ? '' : `<span class="ce-from">${esc(TAB_LABELS[tab])}</span>`}</h3>`));
+      if (h3 && h3.tagName === 'H3') { h3.removeAttribute('style'); head.appendChild(h3); if (!showEyebrow) { h3.insertAdjacentHTML('afterbegin', icon ? `<span class="ce-ic">${icon}</span>` : ''); h3.insertAdjacentHTML('beforeend', `<span class="ce-from">${esc(TAB_LABELS[tab])}</span>`); } }
+      // the section's subtitle: on every card of a pair (Bermuda / Fescue), only the first card of a longer section
+      if ((!u.misc || $('#overviewKpis', el) || $('#budgetNeedKpis', el)) && (i === 0 || units.length <= 2)) subs.forEach((s, si) => { const n = i === 0 ? s : s.cloneNode(true); if (i) n.removeAttribute('id'); n.classList.add('card-sub'); head.appendChild(n); });
+      if (h3 && h3.tagName === 'SUMMARY') el.insertBefore(head, h3.nextSibling); else el.insertBefore(head, el.firstChild);
+      grid.appendChild(el);
     });
-  }
+    subs.forEach(s => { if (!s.isConnected || !s.closest('.card')) s.remove(); });
+    sec.remove();
+  });
+  const CARDS = {};   // key -> { el, home, slot }
+  TABS.forEach(t => $$(':scope > .card', grids[t]).forEach(c => { CARDS[c.dataset.cid] = { el: c, home: t, slot: null }; }));
 
-  function applySectionOrder(ids){
-    const cur = secEls(), byId = {};
-    cur.forEach(s => { byId[s.id] = s; });
-    // base = what's on the page now (shipped sections + any pinned-chart sections), in DOM order
-    permute(cur, mergeOrder(ids, cur.map(s => s.id)).map(id => byId[id]));
-    placeRangeControls();
-  }
-  function applyChartOrder(secId, keys){
-    const sec = document.getElementById(secId); if (!sec) return;
-    const cur = chartPanels(sec), byKey = {};
-    cur.forEach(p => { byKey[panelKey(p)] = p; });
-    if (cur.length < 2) return;
-    permute(cur, mergeOrder(keys, DEFAULT.charts[secId] || cur.map(panelKey)).map(k => byKey[k]));
-  }
+  /* =====================================================================
+     2) SAVED UI (per user, per device kind) -- localStorage now, synced to Supabase
+     ===================================================================== */
+  const UI_KEY = 'turfops.ui.v1';
+  let UI = (() => { try { return JSON.parse(localStorage.getItem(UI_KEY)) || null; } catch (e) { return null; } })() || { layout: {}, pins: [], compact: {}, savedAt: 0 };
+  UI.layout ||= {}; UI.pins ||= []; UI.compact ||= {};
+  // carry over pins from the earlier builds (chart ids) once
+  try { const old = JSON.parse(localStorage.getItem('turfops.pins.v2')); if (Array.isArray(old)) { old.forEach(k => { if (CARDS[k] && !UI.pins.includes(k)) UI.pins.push(k); }); localStorage.removeItem('turfops.pins.v2'); } } catch (e) {}
+  try { localStorage.removeItem('turfops.layout.v1'); localStorage.removeItem('turfops.pins.v1'); } catch (e) {}
+  UI.pins = UI.pins.filter(k => CARDS[k] && CARDS[k].home !== 'overview');
+  const SYNC = {
+    t: 0, ready: false,
+    schedule(){ UI.savedAt = Date.now(); try { localStorage.setItem(UI_KEY, JSON.stringify(UI)); } catch (e) {}
+      clearTimeout(this.t); this.t = setTimeout(() => this.push(), 1200); },
+    async push(){
+      if (!this.ready || typeof supa === 'undefined') return;
+      try { const { data: u } = await supa.auth.getUser(); if (!u || !u.user) return;
+        const { error } = await supa.from('turfops_prefs').upsert({ user_id: u.user.id, ui: UI, updated_at: new Date(UI.savedAt).toISOString() });
+        if (error) console.warn('[layout sync] save failed:', error.message); } catch (e) { console.warn('[layout sync]', e); }
+    },
+    async pull(){
+      if (typeof supa === 'undefined') return;
+      try { const { data, error } = await supa.from('turfops_prefs').select('ui,updated_at').maybeSingle();
+        this.ready = true;
+        if (error) { console.warn('[layout sync] load failed:', error.message); return; }
+        if (data && data.ui && new Date(data.updated_at).getTime() > (UI.savedAt || 0) + 1000){
+          UI = data.ui; UI.layout ||= {}; UI.pins ||= []; UI.compact ||= {}; UI.savedAt = new Date(data.updated_at).getTime();
+          UI.pins = UI.pins.filter(k => CARDS[k] && CARDS[k].home !== 'overview');
+          try { localStorage.setItem(UI_KEY, JSON.stringify(UI)); } catch (e) {}
+          applyCompact(); syncPinButtons(); place(); render();
+        } else if (!data && UI.savedAt) this.push();   // first time on the account: upload this device's layout
+      } catch (e) { this.ready = true; console.warn('[layout sync]', e); }
+    },
+  };
 
-  function snapshot(){
-    const charts = {};
-    secEls().forEach(s => { charts[s.id] = chartPanels(s).map(panelKey); });
-    return { sections: secEls().map(s => s.id), charts, hidden: secEls().filter(isHidden).map(s => s.id) };
-  }
-  function persist(){ try { localStorage.setItem(LS_KEY, JSON.stringify(snapshot())); } catch (e) {} }
+  /* ---------- device kind, sizes ---------- */
+  const devKey = () => innerWidth <= 860 ? 'phone' : 'desk';
+  const SIZES = { desk: [2, 3, 4, 5, 6, 7, 8, 9, 10, 12], phone: [4, 6, 12] };
+  const SIZE_NAME = n => ({2: '⅙', 3: '¼', 4: '⅓', 5: '5/12', 6: '½', 7: '7/12', 8: '⅔', 9: '¾', 10: '⅚', 11: '11/12', 12: 'Full'})[n] || n + '/12';
+  const isCompact = () => UI.compact[devKey()] !== false;   // on unless turned off for this kind of device
+  function applyCompact(){ document.body.classList.toggle('compact', isCompact()); }
+  applyCompact();
+  const pageLayout = page => (UI.layout[page] ||= { order: [], hidden: [] });
+  // card order and hidden cards are kept per device (phone / computer)
+  const LGET = (L, key) => (L && L[key + 'By'] && L[key + 'By'][devKey()]) || (L && L[key]) || [];
+  const LDK = (page, key) => { const L = pageLayout(page), dk = devKey(); L[key + 'By'] ||= {}; if (!L[key + 'By'][dk]) L[key + 'By'][dk] = (L[key] || []).slice(); return L[key + 'By'][dk]; };
+  const setOrder = (page, list) => { LDK(page, 'order'); pageLayout(page).orderBy[devKey()] = list; };
+  function resetPageDev(page){ const L = UI.layout[page]; if (!L) return; const dk = devKey();
+    (L.orderBy ||= {})[dk] = []; (L.hiddenBy ||= {})[dk] = []; ['size', 'tall', 'free', 'pos', 'lock'].forEach(k => { if (L[k]) delete L[k][dk]; }); }
+  const spanOf = el => { const cs = getComputedStyle(el), m = cs.gridColumnEnd.match(/span (\d+)/) || cs.gridColumnStart.match(/span (\d+)/); return m ? +m[1] : 12; };
 
-  /* ---------- apply a saved layout on load ---------- */
-  try {
-    const saved = JSON.parse(localStorage.getItem(LS_KEY));
-    if (saved && Array.isArray(saved.sections)){
-      applySectionOrder(saved.sections);
-      Object.keys(saved.charts || {}).forEach(id => applyChartOrder(id, saved.charts[id]));
-      if (Array.isArray(saved.hidden)) saved.hidden.forEach(id => { const s = document.getElementById(id); if (s && s.matches('section.collapsible')) s.classList.add('lay-hidden'); });
-      placeRangeControls();
-      refreshCharts();
+  /* ---------- current tab ---------- */
+  let cur = main.dataset.activeTab || 'overview';
+  let LAYOUT_EDIT = false;
+  const pageEl = page => document.getElementById('p-' + page);
+  const pageCards = page => $$(':scope > .card', grids[page]);
+
+  /* =====================================================================
+     3) PINS: a pinned card shows on Overview too. A card can't be in two places at once, so it moves:
+        it sits on Overview while Overview is showing and goes back to its own tab otherwise.
+     ===================================================================== */
+  function ensureSlot(k){ const r = CARDS[k]; if (r.slot && r.slot.isConnected) return r.slot;
+    r.slot = document.createElement('div'); r.slot.className = 'pin-slot'; r.slot.hidden = true; r.el.before(r.slot); return r.slot; }
+  function sendHome(k){ const r = CARDS[k]; if (r.slot && r.slot.isConnected && r.el.previousElementSibling !== r.slot) r.slot.after(r.el); }
+  function sendToOverview(k){ ensureSlot(k); if (CARDS[k].el.parentElement !== grids.overview) grids.overview.appendChild(CARDS[k].el); }
+  function place(){ UI.pins.forEach(k => cur === 'overview' ? sendToOverview(k) : sendHome(k)); }
+  function syncPinButtons(){ Object.keys(CARDS).forEach(k => { const b = $(':scope > .panel-pin', CARDS[k].el); if (!b) return; const on = UI.pins.includes(k);
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.title = on ? 'Unpin from Overview' : 'Pin to Overview'; b.setAttribute('aria-label', b.title); }); }
+  function togglePin(k){ if (!CARDS[k] || CARDS[k].home === 'overview') return;
+    if (UI.pins.includes(k)) { UI.pins = UI.pins.filter(x => x !== k); sendHome(k); }
+    else { UI.pins.push(k); if (cur === 'overview') sendToOverview(k); }
+    SYNC.schedule(); syncPinButtons(); render(); }
+  Object.keys(CARDS).forEach(k => { if (CARDS[k].home === 'overview') return; const c = CARDS[k].el; c.classList.add('pinnable');
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pin-btn panel-pin'; b.innerHTML = svg(IC.pin, 1.8);
+    b.addEventListener('click', e => { e.stopPropagation(); togglePin(k); }); c.insertBefore(b, c.firstChild); });
+  syncPinButtons();
+
+  /* =====================================================================
+     4) LAYOUT ENGINE (same rules as eckert.fin)
+     ===================================================================== */
+  // minimum tile widths: a tile saved at ⅙ of a wide screen would be crushed on a narrower one; it takes more columns instead
+  const MIN_W = c => +c.dataset.minw || (c.querySelector('table') ? 360 : c.querySelector('canvas') ? 320 : c.querySelector('.kpi-row') ? 340 : 260);
+  function fitMinWidth(card, free){
+    const g = card.parentElement; if (!g || !g.clientWidth || devKey() === 'phone') return;
+    const gap = parseFloat(getComputedStyle(g).columnGap) || 0, colW = (g.clientWidth - gap * 11) / 12;
+    const need = Math.min(12, Math.ceil((MIN_W(card) + gap) / (colW + gap))), now = spanOf(card); if (now >= need) return;
+    const m = (card.style.gridColumn || '').match(/^(\d+)\s*\//);
+    card.style.gridColumn = m && free ? `${Math.max(1, Math.min(13 - need, +m[1]))} / span ${need}` : `span ${need}`;
+  }
+  // a card's chart box: extra height goes here, so the chart itself gets taller or shorter
+  const chartBox = c => c.querySelector('.chart-wrap');
+  function chartBase(cw){ const h = cw.style.height, f = cw.style.flex; cw.style.height = ''; cw.style.flex = 'none'; const b = cw.getBoundingClientRect().height; cw.style.height = h; cw.style.flex = f; return b; }
+
+  function render(){ applyLayout(cur); requestAnimationFrame(() => { fitTallCards(cur); remeasure(cur); }); document.dispatchEvent(new Event('turfops:layout')); }
+  function remeasure(page){ $$('canvas', pageEl(page)).forEach(cv => { const ch = window.Chart && Chart.getChart && Chart.getChart(cv); if (ch) { try { ch.resize(); } catch (e) {} } }); }
+
+  function applyLayout(page){
+    const el = pageEl(page); if (!el) return;
+    const cards = pageCards(page).map(c => ({ el: c, k: c.dataset.cid })), L = UI.layout[page] || { order: [], hidden: [] };
+    document.body.classList.toggle('lay-on', LAYOUT_EDIT);
+    $$('.lay-banner', main).forEach(b => b.remove());
+    const dk = devKey();
+    if (LAYOUT_EDIT){
+      const b = document.createElement('div'); b.className = 'lay-banner';
+      b.innerHTML = `${svg(IC.layout)}<span><b>Customizing ${esc(TAB_LABELS[page])} on ${dk === 'phone' ? 'phones' : 'computers'}.</b> Drag the handle to move a card (arrows on a phone), drag its right or bottom edge (or use − / +) to resize it, the eye to hide it, the pin to add it to Overview. Double-click an edge to reset it. Sizes are saved separately for phone and computer.</span><span class="lay-banner-act"><label class="lay-cmp" title="Tiles pack into any empty space, and you can drop a tile anywhere"><input type="checkbox" id="layFree" ${L.free && L.free[dk] ? 'checked' : ''}> Free placement</label><label class="lay-cmp"><input type="checkbox" id="layCompact" ${isCompact() ? 'checked' : ''}> Compact view</label><button class="btn ghost" type="button" id="layReset">Reset page</button><button class="btn" type="button" id="layDone">Done</button></span>`;
+      el.prepend(b);
+      $('#layDone').onclick = () => setEdit(false);
+      $('#layReset').onclick = () => { const was = clone(UI.layout[page] || {}); resetPageDev(page); SYNC.schedule(); render(); toast('Page layout reset', () => { UI.layout[page] = was; SYNC.schedule(); render(); }); };
+      $('#layFree').onchange = e => { const lay = pageLayout(page); (lay.free ||= {})[dk] = e.target.checked; if (!e.target.checked && lay.pos) delete lay.pos[dk]; SYNC.schedule(); render(); };
+      $('#layCompact').onchange = e => { UI.compact[dk] = e.target.checked; applyCompact(); SYNC.schedule(); render(); };
     }
-  } catch (e) { console.error('Layout: could not apply saved layout', e); }
+    const SZ = (L.size && L.size[dk]) || {}, TL = (L.tall && L.tall[dk]) || {}, FREE = !!(L.free && L.free[dk]), POS = (L.pos && L.pos[dk]) || {};
+    grids[page].classList.toggle('free', FREE);
+    // effective order: the saved order, with any card it doesn't know yet slotted in after the card before it
+    const keys = cards.map(c => c.k), ORD = LGET(L, 'order').filter(k => keys.includes(k));
+    if (ORD.length) keys.forEach((k, i) => { if (ORD.includes(k)) return; const prev = keys.slice(0, i).reverse().find(x => ORD.includes(x)); ORD.splice(prev ? ORD.indexOf(prev) + 1 : 0, 0, k); });
+    cards.forEach((c, i) => {
+      const oi = ORD.indexOf(c.k); c.el.style.order = oi < 0 ? 1000 + i : oi;
+      const defSpan = dk === 'phone' ? 12 : (+c.el.dataset.span || 12);
+      c.el.style.gridColumn = `span ${SZ[c.k] || defSpan}`; c.el.style.gridRow = ''; delete c.el.dataset.pin;
+      const fr = FREE_ROWS[page + '|' + c.k]; if (FREE && fr) c.el.style.gridRow = `span ${fr}`;
+      if (FREE && POS[c.k]) { const n = spanOf(c.el), col = Math.max(1, Math.min(13 - n, POS[c.k].c)); c.el.style.gridColumn = `${col} / span ${n}`; c.el.dataset.pin = POS[c.k].r; if (fr) c.el.style.gridRow = `${POS[c.k].r} / span ${fr}`; }
+      c.el.dataset.extra = TL[c.k] || ''; c.el.style.height = ''; c.el.style.minHeight = ''; c.el.style.overflow = ''; c.el.classList.remove('lay-tall-scroll');
+      c.el.style.alignSelf = TL[c.k] ? 'start' : '';   // a card with its own height doesn't stretch to its row
+      const cw = chartBox(c.el); if (cw) { cw.style.height = ''; cw.style.flex = ''; if (TL[c.k]) { cw.style.height = Math.max(120, chartBase(cw) + TL[c.k]) + 'px'; cw.style.flex = 'none'; } }
+      const LKH = !LAYOUT_EDIT && L.lock && L.lock[dk] && L.lock[dk][c.k]; c.el.classList.toggle('lay-locked', !!LKH);
+      // a locked tile keeps AT LEAST its saved height (nothing below it jumps up), but grows when its content needs more
+      if (LKH) { c.el.style.minHeight = LKH + 'px'; c.el.style.alignSelf = 'start'; }
+      if (!LAYOUT_EDIT) fitMinWidth(c.el, FREE);
+      const hid = LGET(L, 'hidden').includes(c.k);
+      c.el.classList.toggle('lay-hidden', hid && LAYOUT_EDIT);
+      c.el.style.display = hid && !LAYOUT_EDIT ? 'none' : '';
+      [':scope > .lay-ctl', ':scope > .lay-rs', ':scope > .lay-rh'].forEach(s => { const x = $(s, c.el); if (x) x.remove(); });
+      if (!LAYOUT_EDIT) { c.el.removeAttribute('draggable'); c.el.ondragstart = c.el.ondragover = c.el.ondragleave = c.el.ondrop = c.el.ondragend = null; return; }
+      const canPin = CARDS[c.k] && CARDS[c.k].home !== 'overview', pinned = UI.pins.includes(c.k);
+      const ctl = document.createElement('div'); ctl.className = 'lay-ctl';
+      ctl.innerHTML = `<button class="grip" type="button" title="Drag to move">${svg(IC.grip)}</button><button type="button" data-mv="-1" title="Move earlier">${svg(IC.up)}</button><button type="button" data-mv="1" title="Move later">${svg(IC.down)}</button><button type="button" data-sz="-1" title="Smaller" class="sz">−</button><span class="sz-l">${SIZE_NAME(spanOf(c.el))}</span><button type="button" data-sz="1" title="Larger" class="sz">+</button>${canPin ? `<button type="button" data-pn class="${pinned ? 'on' : ''}" title="${pinned ? 'Unpin from' : 'Pin to'} Overview">${svg(IC.pin, 1.8)}</button>` : ''}<button type="button" data-hd title="${hid ? 'Show' : 'Hide'}">${svg(hid ? IC.eyeOff : IC.eye)}</button>`;
+      c.el.appendChild(ctl);
+      // drag the right edge to resize: snaps to the 12-column grid (whole steps on a phone)
+      const rs = document.createElement('div'); rs.className = 'lay-rs'; rs.title = 'Drag to resize · double-click to reset'; c.el.appendChild(rs);
+      rs.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); rs.setPointerCapture(e.pointerId);
+        const grid = c.el.parentElement, gap = parseFloat(getComputedStyle(grid).columnGap) || 0, colW = (grid.clientWidth - gap * 11) / 12, left = c.el.getBoundingClientRect().left;
+        const list = SIZES[dk], snap = n => list.reduce((b, x) => Math.abs(x - n) < Math.abs(b - n) ? x : b, list[0]);
+        let n = spanOf(c.el); const tag = $('.lay-ctl .sz-l', c.el); c.el.classList.add('lay-sizing'); document.body.classList.add('lay-dragging');
+        rs.onpointermove = ev => { const w = ev.clientX - left; n = snap(Math.max(1, Math.min(12, Math.round((w + gap) / (colW + gap)))));
+          c.el.style.gridColumn = c.el.dataset.pin && POS[c.k] ? `${Math.max(1, Math.min(13 - n, POS[c.k].c))} / span ${n}` : `span ${n}`; freeRows(c.el); if (tag) tag.textContent = SIZE_NAME(n); };
+        rs.onpointerup = rs.onpointercancel = () => { rs.onpointermove = rs.onpointerup = rs.onpointercancel = null; c.el.classList.remove('lay-sizing'); document.body.classList.remove('lay-dragging');
+          const lay = pageLayout(page); ((lay.size ||= {})[dk] ||= {})[c.k] = n; SYNC.schedule(); render(); }; };
+      rs.ondblclick = () => { const lay = pageLayout(page); if (lay.size && lay.size[dk]) delete lay.size[dk][c.k]; SYNC.schedule(); render(); };
+      // drag the bottom edge: charts stretch; snaps every 8px, to the cards beside it, and to its natural height
+      const rh = document.createElement('div'); rh.className = 'lay-rh'; rh.title = 'Drag to change the height · double-click to reset'; c.el.appendChild(rh);
+      rh.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); rh.setPointerCapture(e.pointerId);
+        c.el.style.alignSelf = 'start'; const r0 = c.el.getBoundingClientRect(), h0 = r0.height, e0 = +(c.el.dataset.extra || 0), base = h0 - e0, y0 = e.clientY;
+        const near = pageCards(page).filter(x => x !== c.el && x.style.display !== 'none' && Math.abs(x.getBoundingClientRect().top - r0.top) < 40).map(x => { const a = x.style.alignSelf; x.style.alignSelf = 'start'; const h = x.getBoundingClientRect().height; x.style.alignSelf = a; return h; });
+        const mags = [...near, base]; let ex = e0, tgt = h0; c.el.classList.add('lay-sizing'); document.body.classList.add('lay-dragging');
+        const cw = chartBox(c.el), cw0 = cw ? cw.getBoundingClientRect().height : 0; if (cw) cw.style.flex = 'none';
+        const tag = document.createElement('div'); tag.className = 'lay-hl'; c.el.appendChild(tag);
+        rh.onpointermove = ev => { const t = Math.max(80, h0 + ev.clientY - y0), m = mags.find(x => Math.abs(x - t) <= 12);
+          tgt = m != null ? Math.round(m) : Math.round(t / 8) * 8; ex = Math.round(tgt - base);
+          if (cw) cw.style.height = Math.max(120, cw0 + (tgt - h0)) + 'px'; else { c.el.style.height = tgt + 'px'; c.el.style.overflow = 'hidden'; }
+          freeRows(c.el, tgt);
+          tag.textContent = m != null ? (Math.abs(m - base) < 1 ? 'Natural height' : 'Lined up with the next card') : (ex > 0 ? '+' : '') + ex + 'px'; };
+        rh.onpointerup = rh.onpointercancel = () => { rh.onpointermove = rh.onpointerup = rh.onpointercancel = null; c.el.classList.remove('lay-sizing'); document.body.classList.remove('lay-dragging'); c.el.style.overflow = ''; tag.remove();
+          const lay = pageLayout(page); ((lay.tall ||= {})[dk] ||= {})[c.k] = ex; if (Math.abs(ex) < 4) delete lay.tall[dk][c.k]; SYNC.schedule(); render(); }; };
+      rh.ondblclick = () => { const lay = pageLayout(page); if (lay.tall && lay.tall[dk]) delete lay.tall[dk][c.k]; SYNC.schedule(); render(); };
+      ctl.onclick = e => e.stopPropagation();
+      $$('[data-mv]', ctl).forEach(b => b.onclick = () => moveCard(page, c.k, +b.dataset.mv));
+      $$('[data-sz]', ctl).forEach(b => b.onclick = () => { const list = SIZES[dk], now = spanOf(c.el);
+        const n = +b.dataset.sz > 0 ? (list.find(x => x > now) ?? list[list.length - 1]) : ([...list].reverse().find(x => x < now) ?? list[0]);
+        const lay = pageLayout(page); ((lay.size ||= {})[dk] ||= {})[c.k] = n; SYNC.schedule(); render(); });
+      $('[data-hd]', ctl).onclick = () => { const H = LDK(page, 'hidden'); H.includes(c.k) ? H.splice(H.indexOf(c.k), 1) : H.push(c.k); SYNC.schedule(); render(); };
+      const pn = $('[data-pn]', ctl); if (pn) pn.onclick = () => togglePin(c.k);
+      const grip = $('.grip', ctl);
+      if (FREE) { grip.title = 'Drag anywhere · double-click to un-pin its spot'; grip.onpointerdown = e => freeDrag(e, page, c, dk);
+        grip.ondblclick = () => { const lay = pageLayout(page); if (lay.pos && lay.pos[dk]) delete lay.pos[dk][c.k]; SYNC.schedule(); render(); }; }
+      else grip.onmousedown = grip.ontouchstart = () => c.el.setAttribute('draggable', 'true');
+      c.el.ondragstart = e => { e.dataTransfer.setData('text/plain', c.k); e.dataTransfer.effectAllowed = 'move'; };
+      c.el.ondragend = () => c.el.removeAttribute('draggable');
+      c.el.ondragover = e => { e.preventDefault(); c.el.classList.add('lay-drop'); };
+      c.el.ondragleave = () => c.el.classList.remove('lay-drop');
+      c.el.ondrop = e => { e.preventDefault(); c.el.classList.remove('lay-drop'); const from = e.dataTransfer.getData('text/plain'); if (!from || from === c.k) return;
+        const r = c.el.getBoundingClientRect(), after = (e.clientY - r.top) > r.height / 2 || (e.clientX - r.left) > r.width * .66;
+        const list = visualOrder(page).filter(k => k !== from), at = list.indexOf(c.k) + (after ? 1 : 0); list.splice(at, 0, from); setOrder(page, list); SYNC.schedule(); render(); };
+    });
+  }
+  const visualOrder = page => pageCards(page).map((c, i) => ({ k: c.dataset.cid, o: +c.style.order || i, i })).sort((a, b) => a.o - b.o || a.i - b.i).map(x => x.k);
+  function moveCard(page, k, dir){
+    const list = visualOrder(page), i = list.indexOf(k), j = i + dir; if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]]; setOrder(page, list); SYNC.schedule(); render();
+  }
+  // Done: every card's current height is locked in, per device -- outside Layout a card never gets shorter than that
+  function layLock(page){ const dk = devKey(), L = pageLayout(page), K = ((L.lock ||= {})[dk] = {});
+    pageCards(page).forEach(c => { if (!c.dataset.cid || c.style.display === 'none' || c.classList.contains('lay-hidden')) return; const h = Math.round(c.getBoundingClientRect().height); if (h > 20) K[c.dataset.cid] = h; });
+    SYNC.schedule(); }
+  function setEdit(on){
+    if (!on && LAYOUT_EDIT) { layLock(cur); LAYOUT_EDIT = false; syncLayoutBtn(); render(); toast('Layout saved · cards keep at least these heights'); return; }
+    LAYOUT_EDIT = !!on; syncLayoutBtn(); render();
+  }
+  function syncLayoutBtn(){ const b = $('#layoutBtn'); if (b) { b.classList.toggle('on', LAYOUT_EDIT); b.setAttribute('aria-pressed', String(LAYOUT_EDIT)); } }
 
-  /* ---------- the settings drawer ---------- */
-  const expanded = new Set();
-
-  function arrows(act, disUp, disDown){
-    return `<div class="lay-btns">
-      <button type="button" data-act="${act}-up" aria-label="Move up" ${disUp ? 'disabled' : ''}>▲</button>
-      <button type="button" data-act="${act}-down" aria-label="Move down" ${disDown ? 'disabled' : ''}>▼</button></div>`;
+  /* ---------- non-chart cards: extra height (taller = more room, shorter = scrolls) ---------- */
+  function fitTallCards(page){
+    pageCards(page).forEach(c => { const ex = +(c.dataset.extra || 0); if (!ex || chartBox(c) || c.classList.contains('lay-locked')) return;
+      c.style.alignSelf = 'start'; const nat = c.getBoundingClientRect().height;
+      if (ex > 0) c.style.minHeight = (nat + ex) + 'px'; else { c.style.height = Math.max(90, nat + ex) + 'px'; c.classList.add('lay-tall-scroll'); } });
+    packFree(page);
   }
 
-  function render(){
-    const secs = secEls();
-    const groups = TAB_ORDER.map(t => ({ tab: t, secs: secs.filter(s => tabOf(s) === t) })).filter(g => g.secs.length);
-    list.innerHTML = groups.map(g => `<div class="lay-tabhead">${esc(TAB_LABELS[g.tab])}</div>` + g.secs.map((s, i) => {
-      const charts = chartPanels(s), multi = charts.length > 1, open = multi && expanded.has(s.id);
-      const hid = isHidden(s);
-      let h = `<div class="lay-sec ${hid ? 'is-hidden' : ''}" data-sec="${esc(s.id)}"><div class="lay-row">
-        <button type="button" class="lay-exp" data-act="toggle" ${multi ? '' : 'disabled'} aria-label="Show charts">${open ? '▾' : '▸'}</button>
-        <div class="lay-name">${esc(secTitle(s))}${s.classList.contains('pin-sec') ? '<span class="lay-pinned">PINNED</span>' : ''}${multi ? `<span class="lay-count">${charts.length} charts</span>` : ''}</div>
-        <button type="button" class="lay-vis ${hid ? '' : 'on'}" data-act="vis" role="switch" aria-checked="${!hid}" aria-label="${hid ? 'Show' : 'Hide'} ${esc(secTitle(s))}"><span></span></button>
-        ${arrows('sec', i === 0, i === g.secs.length - 1)}</div>`;
-      if (open) h += charts.map((p, j) => `<div class="lay-row lay-chart" data-key="${esc(panelKey(p))}">
-        <div class="lay-name">${esc(panelTitle(p))}</div>${arrows('chart', j === 0, j === charts.length - 1)}</div>`).join('');
-      return h + '</div>';
-    }).join('')).join('') + `<div class="lay-ranges"><h3>Default day ranges</h3>
+  /* ---------- free placement: the grid runs in 8px rows; each card spans as many rows as it is tall ---------- */
+  const FREE_ROW = 8, FREE_ROWS = {};
+  function freeRows(card, h){ const g = card.parentElement; if (!g || !g.classList.contains('free')) return;
+    const gap = parseFloat(getComputedStyle(g).columnGap) || 0; if (h == null) h = card.getBoundingClientRect().height;
+    card.dataset.rows = Math.max(1, Math.ceil((h + gap) / FREE_ROW)); freeLayout(g); }
+  // saved tiles, top to bottom by saved row: each keeps its column and is pushed down only by tiles placed before it
+  function planFree(boxes, P){ const placed = [], out = {};
+    const floor = (col, w) => Math.max(1, ...placed.filter(p => col < p.col + p.w && p.col < col + w).map(p => p.row + p.h));
+    boxes.filter(b => P[b.k]).sort((a, b) => P[a.k].r - P[b.k].r || P[a.k].c - P[b.k].c).forEach(b => { const col = Math.max(1, Math.min(13 - b.w, P[b.k].c)), row = Math.max(P[b.k].r, floor(col, b.w)); placed.push({ ...b, col, row }); out[b.k] = { col, row }; });
+    return { out, floor, placed }; }
+  function freeLayout(g){
+    const page = g.id.slice(2);
+    { const gap = parseFloat(getComputedStyle(g).columnGap) || 0; g.style.setProperty('--fgap', gap + 'px'); g.style.setProperty('--fcw', ((g.clientWidth - gap * 11) / 12) + 'px'); }
+    const dk = devKey(), lay = pageLayout(page), P = ((lay.pos ||= {})[dk] ||= {});
+    const cards = [...g.children].filter(c => c.classList.contains('card') && c.style.display !== 'none');
+    const box = (c, i) => ({ c, k: c.dataset.cid || '~' + i, w: Math.min(12, spanOf(c)), h: +c.dataset.rows || 1 });
+    const put = (b, col, row) => { b.c.style.gridColumn = `${col} / span ${b.w}`; b.c.style.gridRow = `${row} / span ${b.h}`; b.c.dataset.pin = row; };
+    const all = cards.map(box), plan = planFree(all, P), placed = plan.placed, floor = plan.floor;
+    all.filter(b => P[b.k]).forEach(b => put(b, plan.out[b.k].col, plan.out[b.k].row));
+    let added = false;
+    all.filter(b => !P[b.k]).sort((a, b) => (+a.c.style.order || 0) - (+b.c.style.order || 0)).forEach(b => { let best = null;
+      for (let col = 1; col <= 13 - b.w; col++) { const row = floor(col, b.w); if (!best || row < best.row) best = { col, row }; }
+      put(b, best.col, best.row); placed.push({ ...b, col: best.col, row: best.row }); if (b.k[0] !== '~') { P[b.k] = { c: best.col, r: best.row }; added = true; } });
+    if (added) SYNC.schedule();
+  }
+  function packFree(page){ const g = grids[page]; if (!g || !g.classList.contains('free')) return;
+    const gap = parseFloat(getComputedStyle(g).columnGap) || 0;
+    [...g.children].filter(c => c.classList.contains('card')).forEach(c => { const n = Math.max(1, Math.ceil((c.getBoundingClientRect().height + gap) / FREE_ROW)); c.dataset.rows = n; FREE_ROWS[page + '|' + c.dataset.cid] = n; });
+    freeLayout(g); }
+  function freeDrag(e, page, c, dk){
+    e.preventDefault(); e.stopPropagation();
+    const g = c.el.parentElement, gr = g.getBoundingClientRect(), gap = parseFloat(getComputedStyle(g).columnGap) || 0, colW = (g.clientWidth - gap * 11) / 12, n = spanOf(c.el);
+    const r0 = c.el.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY, sy0 = scrollY;
+    const cardX0 = r0.left - gr.left, cardY0 = r0.top - gr.top;
+    const ghost = document.createElement('div'); ghost.className = 'free-ghost'; g.appendChild(ghost);
+    c.el.classList.add('free-moving'); document.body.classList.add('lay-dragging');
+    let col = 1, row = 1, wantRow = 1, last = e, raf = 0;
+    const boxes = [...g.children].filter(x => x.classList.contains('card') && x.style.display !== 'none' && x.dataset.cid).map(x => ({ k: x.dataset.cid, w: Math.min(12, spanOf(x)), h: +x.dataset.rows || 1 }));
+    const placeIt = () => { const dx = last.clientX - x0, dy = last.clientY - y0 + (scrollY - sy0);
+      col = Math.max(1, Math.min(13 - n, Math.round((cardX0 + dx) / (colW + gap)) + 1)); row = Math.max(1, Math.round((cardY0 + dy) / FREE_ROW) + 1);
+      const gx = (col - 1) * (colW + gap), want = row; wantRow = want;
+      c.el.style.transform = `translate(${gx - cardX0}px,${(want - 1) * FREE_ROW - cardY0}px)`;
+      { const P2 = { ...((pageLayout(page).pos || {})[dk] || {}), [c.k]: { c: col, r: want } }; const o = planFree(boxes, P2).out[c.k]; row = o ? o.row : want; }
+      const gy = (row - 1) * FREE_ROW; ghost.classList.toggle('pushed', row !== want);
+      Object.assign(ghost.style, { left: gx + 'px', top: gy + 'px', width: n * colW + (n - 1) * gap + 'px', height: c.el.offsetHeight + 'px' }); };
+    const edge = () => { raf = 0; const vv = window.visualViewport, vTop = vv ? vv.offsetTop : 0, vBot = vv ? vv.offsetTop + vv.height : innerHeight;
+      const dy = last.clientY > vBot - 60 ? 12 : last.clientY < vTop + 50 && scrollY > 0 ? -12 : 0;
+      if (dy) { scrollBy(0, dy); placeIt(); raf = requestAnimationFrame(edge); } };
+    const move = ev => { ev.preventDefault(); last = ev; placeIt(); if (!raf) raf = requestAnimationFrame(edge); };
+    const onScroll = () => placeIt();
+    placeIt();
+    const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(raf); document.body.classList.remove('lay-dragging'); ghost.remove(); c.el.classList.remove('free-moving'); c.el.style.transform = '';
+      const lay = pageLayout(page), P = ((lay.pos ||= {})[dk] ||= {}); P[c.k] = { c: col, r: wantRow }; SYNC.schedule(); render(); };
+    addEventListener('pointermove', move, { passive: false }); addEventListener('pointerup', up); addEventListener('pointercancel', up); addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  /* ---------- small toast with Undo (same as finance) ---------- */
+  function toast(msg, undo){
+    let t = document.getElementById('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); }
+    t.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button type="button">Undo</button>' : ''}`;
+    if (undo) $('button', t).onclick = () => { t.classList.remove('on'); undo(); };
+    t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), undo ? 6000 : 2600);
+  }
+
+  /* =====================================================================
+     5) WIRING: tabs, Layout button, window size, settings drawer
+     ===================================================================== */
+  document.addEventListener('turfops:tab', e => { cur = (e.detail && e.detail.tab) || 'overview'; place(); render(); });
+  let DEV_NOW = devKey(), rT = 0;
+  addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { const d = devKey(); if (d !== DEV_NOW) { DEV_NOW = d; applyCompact(); } render(); }, 150); });
+  const layoutBtn = $('#layoutBtn'); if (layoutBtn) layoutBtn.addEventListener('click', () => setEdit(!LAYOUT_EDIT));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && LAYOUT_EDIT && !$('#layoutPanel.open')) setEdit(false); });
+  // charts finish drawing after sign-in -- re-pack free grids and re-measure once they have their real heights
+  document.addEventListener('turfops:ready', () => render());
+
+  // settings drawer: every tab's cards (show / hide, order, pin) for this kind of device, default day ranges, reset
+  const panel = $('#layoutPanel'), overlay = $('#layoutOverlay'), list = $('#layoutList');
+  function drawer(){
+    if (!list) return;
+    const dk = devKey();
+    list.innerHTML = `<p class="lay-dev">Cards on ${dk === 'phone' ? 'phones' : 'computers'} · press <b>Layout</b> on a page to drag and resize</p>` + TABS.map(t => {
+      const L = UI.layout[t] || {}, H = LGET(L, 'hidden'), keys = t === 'overview' ? [...Object.keys(CARDS).filter(k => CARDS[k].home === 'overview'), ...UI.pins] : Object.keys(CARDS).filter(k => CARDS[k].home === t);
+      const O = LGET(L, 'order'), ord = keys.map((k, i) => ({ k, o: O.indexOf(k) < 0 ? 1000 + i : O.indexOf(k) })).sort((a, b) => a.o - b.o).map(x => x.k);
+      return `<div class="lay-tabhead">${esc(TAB_LABELS[t])}${H.length ? `<span class="lay-count">${H.length} hidden</span>` : ''}</div>` + ord.map((k, i) => {
+        const c = CARDS[k], hid = H.includes(k), pin = UI.pins.includes(k), canPin = c.home !== 'overview';
+        return `<div class="lay-row ${hid ? 'is-hidden' : ''}" data-page="${t}" data-k="${esc(k)}"><div class="lay-name">${esc(c.el.dataset.title)}${t === 'overview' && c.home !== 'overview' ? `<span class="lay-pinned">PINNED</span>` : ''}</div>
+          ${canPin && t !== 'overview' ? `<button type="button" class="lay-ic ${pin ? 'on' : ''}" data-act="pin" title="${pin ? 'Unpin from' : 'Pin to'} Overview">${svg(IC.pin, 1.8)}</button>` : ''}
+          <button type="button" class="lay-ic ${hid ? '' : 'on'}" data-act="hide" title="${hid ? 'Show' : 'Hide'}">${svg(hid ? IC.eyeOff : IC.eye)}</button>
+          <div class="lay-btns"><button type="button" data-act="up" ${i ? '' : 'disabled'} aria-label="Move up">▲</button><button type="button" data-act="down" ${i < ord.length - 1 ? '' : 'disabled'} aria-label="Move down">▼</button></div></div>`; }).join('');
+    }).join('') + `<div class="lay-ranges"><h3>Default day ranges</h3>
       <p>What each chart group shows when the page opens. Changing one also switches the view now; the range chips on the page still change it on the fly.</p>` +
       RANGE_UI.map(u => `<label for="layRange-${u.key}">${esc(u.label)}</label>
-        <select id="layRange-${u.key}" data-range="${u.key}">${u.opts.map(o => `<option value="${o[0]}" ${o[0] === rangeDefaults[u.key] ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`).join('') +
-      `</div>`;
+        <select id="layRange-${u.key}" data-range="${u.key}">${u.opts.map(o => `<option value="${o[0]}" ${o[0] === rangeDefaults[u.key] ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`).join('') + `</div>`
+      + `<div class="lay-ranges"><h3>Chart animation</h3><p>How fast lines draw in when a chart loads (0 = instant).</p><input type="range" id="layAnim" min="0" max="30" step="0.5" value="${($('#animSpeedSlider') || {}).value || 3}" style="width:100%;accent-color:var(--brand-500)"></div>`;
   }
-
-  function toggleSection(id){
-    const sec = document.getElementById(id); if (!sec) return;
-    sec.classList.toggle('lay-hidden');
-    placeRangeControls(); persist(); render();
-    if (!isHidden(sec)) refreshCharts([sec]);            // charts sized themselves at 0x0 while hidden -- re-measure
+  if (list) {
+    list.addEventListener('click', e => {
+      const b = e.target.closest('button[data-act]'); if (!b || b.disabled) return;
+      const row = b.closest('.lay-row'), page = row.dataset.page, k = row.dataset.k, act = b.dataset.act;
+      if (act === 'pin') { togglePin(k); }
+      else if (act === 'hide') { const H = LDK(page, 'hidden'); H.includes(k) ? H.splice(H.indexOf(k), 1) : H.push(k); SYNC.schedule(); if (page === cur) render(); }
+      else { const keys = $$('.lay-row', list).filter(r => r.dataset.page === page).map(r => r.dataset.k), i = keys.indexOf(k), j = i + (act === 'up' ? -1 : 1);
+        if (j < 0 || j >= keys.length) return; [keys[i], keys[j]] = [keys[j], keys[i]]; setOrder(page, keys); SYNC.schedule(); if (page === cur) render(); }
+      drawer();
+    });
+    list.addEventListener('input', e => { if (e.target.id !== 'layAnim') return; const sl = $('#animSpeedSlider'); if (sl) { sl.value = e.target.value; sl.dispatchEvent(new Event('input')); } });
+    list.addEventListener('change', e => {
+      const sel = e.target.closest('select[data-range]'); if (!sel) return;
+      const u = RANGE_UI.find(x => x.key === sel.dataset.range); if (!u) return;
+      rangeDefaults[u.key] = sel.value;
+      try { localStorage.setItem(RANGE_LS, JSON.stringify(rangeDefaults)); } catch (err) {}
+      const chip = document.querySelector(`${u.row} .year-chip[data-r="${sel.value}"]`); if (chip) chip.click();
+    });
   }
-
-  function moveSection(id, dir){
-    const cur = secEls(), me = cur.find(s => s.id === id);
-    if (!me) return;
-    const group = cur.filter(s => tabOf(s) === tabOf(me));          // neighbours on the SAME tab only
-    const gj = group.indexOf(me) + dir;
-    if (gj < 0 || gj >= group.length) return;
-    const i = cur.indexOf(me), j = cur.indexOf(group[gj]);
-    const next = cur.slice(); [next[i], next[j]] = [next[j], next[i]];
-    permute(cur, next); placeRangeControls(); persist(); render(); refreshCharts([next[i], next[j]]);
-  }
-  function moveChart(secId, key, dir){
-    const sec = document.getElementById(secId); if (!sec) return;
-    const cur = chartPanels(sec), i = cur.findIndex(p => panelKey(p) === key), j = i + dir;
-    if (i < 0 || j < 0 || j >= cur.length) return;
-    const next = cur.slice(); [next[i], next[j]] = [next[j], next[i]];
-    permute(cur, next); persist(); render(); refreshCharts([sec]);
-  }
-
-  list.addEventListener('click', e => {
-    const b = e.target.closest('button[data-act]'); if (!b || b.disabled) return;
-    const row = b.closest('.lay-row'), secId = b.closest('.lay-sec').dataset.sec, act = b.dataset.act;
-    if (act === 'toggle'){ expanded.has(secId) ? expanded.delete(secId) : expanded.add(secId); render(); }
-    else if (act === 'vis') toggleSection(secId);
-    else if (act === 'sec-up') moveSection(secId, -1);
-    else if (act === 'sec-down') moveSection(secId, 1);
-    else if (act === 'chart-up') moveChart(secId, row.dataset.key, -1);
-    else if (act === 'chart-down') moveChart(secId, row.dataset.key, 1);
-  });
-
-  list.addEventListener('change', e => {
-    const sel = e.target.closest('select[data-range]'); if (!sel) return;
-    const u = RANGE_UI.find(x => x.key === sel.dataset.range); if (!u) return;
-    rangeDefaults[u.key] = sel.value;
-    try { localStorage.setItem(RANGE_LS, JSON.stringify(rangeDefaults)); } catch (err) {}
-    const chip = document.querySelector(`${u.row} .year-chip[data-r="${sel.value}"]`);
-    if (chip) chip.click();                       // apply now, through the section's own handler (redraws as usual)
-  });
-
-  document.getElementById('layoutReset').addEventListener('click', () => {
-    if (window.turfopsPins) window.turfopsPins.clear();   // removes the pinned-chart sections first
-    applySectionOrder(DEFAULT.sections);
-    Object.keys(DEFAULT.charts).forEach(id => applyChartOrder(id, DEFAULT.charts[id]));
-    secEls().forEach(s => s.classList.remove('lay-hidden'));
-    placeRangeControls();
-    try { localStorage.removeItem(LS_KEY); } catch (e) {}
-    render(); refreshCharts();
-  });
-
-  // What this device reports about its screen edges -- shown under the build stamp to help debug the header.
   function deviceInfo(){
     const probe = document.createElement('div');
     probe.style.cssText = 'position:fixed;visibility:hidden;top:0;left:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);';
     document.body.appendChild(probe);
-    const cs = getComputedStyle(probe), top = Math.round(parseFloat(cs.paddingTop) || 0), bottom = Math.round(parseFloat(cs.paddingBottom) || 0);
-    probe.remove();
-    const shade = document.getElementById('statusBarShade');
-    const band = shade ? Math.round(shade.getBoundingClientRect().height) : 0;
+    const cs = getComputedStyle(probe), top = Math.round(parseFloat(cs.paddingTop) || 0), bottom = Math.round(parseFloat(cs.paddingBottom) || 0); probe.remove();
     const standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-    const cover = /viewport-fit=cover/.test((document.querySelector('meta[name=viewport]') || {}).content || '');
-    return `status-bar inset ${top}px · bottom inset ${bottom}px · band ${band}px · ${standalone ? 'home-screen app' : 'browser tab'} · edge-to-edge ${cover ? 'on' : 'off'}`;
+    return `status-bar inset ${top}px · bottom inset ${bottom}px · ${standalone ? 'home-screen app' : 'browser tab'} · ${devKey() === 'phone' ? 'phone' : 'computer'} layout`;
   }
-  function open(){
-    const bld = document.getElementById('layBuild');
-    if (bld) { if (!bld.dataset.base) bld.dataset.base = bld.textContent; bld.innerHTML = bld.dataset.base + '<br>' + deviceInfo(); }
-    render();
-    overlay.classList.add('open'); panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-  }
-  function close(){
-    overlay.classList.remove('open'); panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-  }
-  if (openBtn) openBtn.addEventListener('click', open);
-  overlay.addEventListener('click', close);
-  document.getElementById('layoutClose').addEventListener('click', close);
-  document.getElementById('layoutDone').addEventListener('click', close);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
+  function openDrawer(){ if (!panel) return; const bld = $('#layBuild'); if (bld) { if (!bld.dataset.base) bld.dataset.base = bld.textContent; bld.innerHTML = esc(bld.dataset.base) + '<br>' + deviceInfo(); }
+    drawer(); overlay.classList.add('open'); panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; }
+  function closeDrawer(){ if (!panel) return; overlay.classList.remove('open'); panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+  const setBtn = $('#settingsBtn'); if (setBtn) setBtn.addEventListener('click', openDrawer);
+  if (overlay) overlay.addEventListener('click', closeDrawer);
+  [$('#layoutClose'), $('#layoutDone')].forEach(b => b && b.addEventListener('click', closeDrawer));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel && panel.classList.contains('open')) closeDrawer(); });
+  const resetAll = $('#layoutReset');
+  if (resetAll) resetAll.addEventListener('click', () => { const was = clone(UI); Object.keys(UI.layout).forEach(resetPageDev); UI.pins = []; place(); syncPinButtons(); SYNC.schedule(); render(); drawer();
+    toast(`All pages reset on ${devKey() === 'phone' ? 'phones' : 'computers'}`, () => { UI = was; place(); syncPinButtons(); SYNC.schedule(); render(); drawer(); }); });
+  if (panel) ['touchstart', 'touchmove', 'touchend'].forEach(t => { panel.addEventListener(t, e => e.stopPropagation(), { passive: true }); overlay.addEventListener(t, e => e.stopPropagation(), { passive: true }); });
 
-  // The page's pull-to-refresh listens for touches on `document`; keep drags
-  // inside the drawer from being mistaken for a pull.
-  ['touchstart', 'touchmove', 'touchend'].forEach(t => {
-    panel.addEventListener(t, e => e.stopPropagation(), { passive: true });
-    overlay.addEventListener(t, e => e.stopPropagation(), { passive: true });
-  });
+  window.turfopsLayout = { render, pull: () => SYNC.pull(), setEdit, togglePin, isEditing: () => LAYOUT_EDIT, cards: CARDS, grids };
 })();
 </script>
 <script>
@@ -4683,14 +4824,17 @@ checkSession();
   if (!main || !nav) return;
   let current = 'overview';
 
-  const secsOn = tab => Array.from(main.children).filter(e => e.matches('section.collapsible') && (e.dataset.tab || '').split(' ').includes(tab));
-  const hiddenByLayout = s => s.classList.contains('lay-hidden');
+  // the cards on a tab's grid that are showing (the Layout editor hides cards with display:none)
+  const secsOn = tab => { const g = document.getElementById('g-' + tab); return g ? Array.from(g.children).filter(c => c.classList.contains('card') && c.style.display !== 'none') : []; };
+  const hiddenByLayout = () => false;
+  const RANGE_KEYS = ['chartTrendHigh', 'chartTrendLow', 'chartTrendFeelsHigh', 'chartTrendFeelsLow', 'chartTrendRain', 'chartTrendRainBar', 'chartDeficitBermuda', 'chartDeficitFescue',
+    'chartCumDefYearBermuda', 'chartCumDefYearFescue', 'chartCumDefMonthBermuda', 'chartCumDefMonthFescue', 'chartEtWeeklyBermuda', 'chartEtWeeklyFescue'];
 
   // The shared range bar only appears when the active tab has a visible chart that uses it;
   // an empty tab shows a short explanation instead of a blank page.
   function sync(){
     const visible = secsOn(current).filter(s => !hiddenByLayout(s));
-    const showRange = RANGE_TABS.includes(current) && visible.some(s => RANGE_SECTIONS.includes(s.id));
+    const showRange = RANGE_TABS.includes(current) && visible.some(c => RANGE_KEYS.includes(c.dataset.cid));
     ['rangeControlsHeading', 'rangeControls'].forEach(id => { const e = document.getElementById(id); if (e) e.classList.toggle('tab-hide', !showRange); });
     if (empty) empty.hidden = visible.length > 0;
   }
