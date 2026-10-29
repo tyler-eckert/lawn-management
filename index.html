@@ -3727,8 +3727,8 @@ async function buildYearlyCountChart(chartId, sliderContainerId, label, color, r
 }
 
 /* ---------------- Rain by month (build 25) ----------------
-   Bars: this year's rain for each month (this month is month-to-date). Gray band: the driest to the wettest
-   that month was in AVG_REF_YEARS. Dash: the average for that month. */
+   Green line: this year's rain for each month (this month is month-to-date), labeled. Gray band: the driest to the
+   wettest that month was in AVG_REF_YEARS. Dashed line: the average for that month. Same look as the temperature charts. */
 async function initRainMonthly(){
   const rows = await weatherHistory();
   const yr = String(new Date().getFullYear()), today = fmtDate(new Date()), M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -3747,27 +3747,35 @@ async function initRainMonthly(){
     cur.push(m <= nowM ? Number((tot[`${yr}-${mm}`] || 0).toFixed(2)) : null);
   }
   const t = document.getElementById('rainMonthlyTitle'); if (t) t.textContent = `Monthly totals: ${yr} vs. ${AVG_REF_YEARS.from}-${AVG_REF_YEARS.to} (inches)`;
+  const fmt1 = v => Number(v).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });   // #,##0.0
+  const GREEN = colorForYear(yr);
   makeChart('chartRainMonthly', {
-    type: 'bar',
+    type: 'line',
     data: { labels: M, datasets: [
-      { label: 'Min / max', data: band, backgroundColor: 'rgba(138,148,142,0.22)', borderColor: 'rgba(138,148,142,0.55)', borderWidth: 1, borderSkipped: false, borderRadius: 4, grouped: false, barPercentage: 0.82, categoryPercentage: 0.9, order: 3 },
-      { label: yr, data: cur, backgroundColor: CHART_COLORS.rain, borderRadius: 4, grouped: false, barPercentage: 0.42, categoryPercentage: 0.9, order: 1 },
-      { type: 'line', label: 'Avg', data: mean.map(v => v == null ? null : Number(v.toFixed(2))), showLine: false, pointStyle: 'line', pointRadius: 13, pointHoverRadius: 13, pointBorderWidth: 2.5, borderColor: '#4b544f', backgroundColor: '#4b544f', order: 0 },
+      // same look as the temperature charts: current year green, gray min / max band, dashed average
+      { label: yr, data: cur, borderColor: GREEN, backgroundColor: GREEN, borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, pointStyle: 'line', tension: .25, cubicInterpolationMode: 'monotone', fill: false, order: 0,
+        datalabels: { display: ctx => ctx.dataset.data[ctx.dataIndex] != null, formatter: v => fmt1(v), align: 'top', anchor: 'end', offset: 4, clamp: true,
+          color: GREEN, font: { size: 11, weight: '700' }, backgroundColor: () => cssVar('--card') || '#fff', borderRadius: 4, padding: { top: 1, bottom: 1, left: 3, right: 3 } } },
+      { label: 'Avg', data: mean.map(v => v == null ? null : Number(v.toFixed(2))), borderColor: '#7d8781', borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, pointStyle: 'line', tension: .25, cubicInterpolationMode: 'monotone', fill: false, order: 1 },
+      { label: 'Min', data: lo.map(x => x ? x.v : null), borderColor: '#b9c2bd', borderWidth: 1, pointRadius: 0, pointStyle: 'line', tension: .25, cubicInterpolationMode: 'monotone', fill: false, order: 99 },
+      { label: 'Max', data: hi.map(x => x ? x.v : null), borderColor: '#b9c2bd', borderWidth: 1, pointRadius: 0, pointStyle: 'line', tension: .25, cubicInterpolationMode: 'monotone', order: 99,
+        fill: { target: '-1', above: 'rgba(138,148,142,0.16)', below: 'rgba(138,148,142,0.16)' } },
     ] },
     options: {
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18, right: 8 } },
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 14, padding: 12 } },
+        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 18, padding: 12 } },
         tooltip: { callbacks: {
           title: items => { const i = items[0].dataIndex; return M[i] + (i + 1 === nowM ? ` (through ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''); },
-          label: ctx => { const i = ctx.dataIndex;
-            if (ctx.dataset.label === 'Min / max') return lo[i] ? [`Min: ${num(lo[i].v, 2)} in (${lo[i].y})`, `Max: ${num(hi[i].v, 2)} in (${hi[i].y})`] : null;
-            if (ctx.dataset.label === 'Avg') return ctx.raw == null ? null : `Avg: ${num(ctx.raw, 2)} in`;
-            return ctx.raw == null ? null : `${yr}: ${num(ctx.raw, 2)} in`; } } },
-        datalabels: { display: false },
+          label: ctx => { const i = ctx.dataIndex, l = ctx.dataset.label;
+            if (ctx.raw == null) return null;
+            if (l === 'Min') return `Min: ${fmt1(ctx.raw)} in (${lo[i].y})`;
+            if (l === 'Max') return `Max: ${fmt1(ctx.raw)} in (${hi[i].y})`;
+            return `${l}: ${fmt1(ctx.raw)} in`; } } },
       },
-      scales: { x: { grid: { display: true } }, y: { beginAtZero: true, title: { display: false } } },
+      scales: { x: { offset: true, grid: { display: true, offset: false } }, y: { beginAtZero: true, title: { display: false } } },
     },
   });
 }
@@ -3979,7 +3987,7 @@ checkSession();
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
   </div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 25 (settings panel, free placement, monthly rain)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 26 (rain by month as an area chart)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
