@@ -670,6 +670,8 @@ main{ max-width:1400px; margin:0; padding:24px 34px 60px; }
 :root[data-theme="dark"] .year-chip.on{ background:var(--brand-100); color:var(--brand-300); box-shadow:none; }
 .year-chip.avg-on{ background:var(--amber-light); color:var(--amber-deep); }
 .view-toggle{ border:0; background:var(--surface); border-radius:var(--r-pill); padding:3px; gap:2px; }
+/* cards are flex columns, which stretched the pill switch across the whole card; size it to its buttons */
+.view-toggle{ align-self:flex-start; width:max-content; max-width:100%; }
 .view-toggle button{ background:none; border-radius:var(--r-pill); padding:6px 14px; font-weight:600; font-size:var(--fs-sm); color:var(--text-tertiary); }
 .view-toggle button.on{ background:var(--card); color:var(--text); box-shadow:var(--shadow); }
 .month-tile{ border:0; background:var(--surface); border-radius:var(--r-sm); color:var(--text-tertiary); font-weight:600; }
@@ -3891,7 +3893,7 @@ checkSession();
   <p class="lay-help">Show, hide, pin and reorder every card. Press <b>Layout</b> on a page to drag and resize.</p>
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 22 (days since last rain)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 23 (switch width fix)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
