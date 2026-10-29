@@ -2293,7 +2293,7 @@ async function renderOverviewKpis(){
     ? compareCard(label, v, hist.value, 'in', 2, `vs hist. avg (${num(hist.value, 2)})`)
     : { label, value: num(v, 2), unit: 'in', sub: hist === undefined ? 'vs hist. avg: loading…' : 'hist. avg unavailable' }), cls: 'kpi-need' });
   try {
-    const { start: thisStart, end: thisEnd } = currentWeekRange();
+    const { start: thisStart, end: thisEnd } = needWindow();   // last 7 complete days, not this calendar week (today is left out)
 
     const allStations = [...GUIDE_STATIONS.bermuda, ...GUIDE_STATIONS.fescue];
     const { data: etcData, error: etcError } = await supa.from('et_balance_by_zone')
@@ -3087,7 +3087,7 @@ async function _rollingWeeklyRowsFetch(grassType, sinceDate){
 // 7-day value at that day-of-year). A rolling value on a Saturday covers Sun..Sat, so this is the
 // typical full-week need for this same stretch of the calendar. Returns {value, years, weekEnd} or null.
 async function historicalWeekNeed(grassType){
-  const sat = currentWeekRange().saturday;
+  const sat = daysAgo(1);   // same 7 days as needWindow(): the rolling week ending yesterday, so this year and history line up
   const doy = dayOfYear(fmtDate(sat));
   const rows = await rollingWeeklyRows(grassType);
   const vals = rows.filter(r => {
@@ -3185,6 +3185,12 @@ const RADAR_GROUPS = [
 
 // Weeks start Sunday -- find the Sunday on/before today, and the Saturday
 // that ends that same week.
+// Water need never uses today's partial day: it's the last 7 COMPLETE days (yesterday and the 6 before it),
+// so the need tiles, the radar and the budget calculator don't swing with a half-finished day.
+function needWindow(){
+  const y = daysAgo(1), s = daysAgo(7);
+  return { start: fmtDate(s), end: fmtDate(y), label: `${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${y.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` };
+}
 function currentWeekRange(){
   const now = new Date();
   const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
@@ -3198,9 +3204,12 @@ async function buildWaterRadarChart(){
   const labelEl = $('#waterRadarWeekLabel');
   if (labelEl) labelEl.textContent = `Week of ${weekFmt(sunday)} - ${weekFmt(saturday)} (Sun-Sat)`;
 
-  const { data } = await supa.from('et_balance_by_zone')
+  const nw = needWindow();
+  const { data: rows } = await supa.from('et_balance_by_zone')
     .select('zone_number,grass_type,weather_date,etc_in,irrigation_applied_in')
-    .gte('weather_date', start).lte('weather_date', end);
+    .gte('weather_date', nw.start < start ? nw.start : start).lte('weather_date', end);
+  const data = (rows || []).filter(r => r.weather_date >= start);                          // water applied: this week (Sun-Sat)
+  const needRows = (rows || []).filter(r => r.weather_date >= nw.start && r.weather_date <= nw.end);   // need: last 7 complete days
 
   if (!data || !data.length){ emptyState('chartWaterRadar', 'No data yet for this week.'); return; }
 
@@ -3225,8 +3234,12 @@ async function buildWaterRadarChart(){
   const byZone = {};
   data.forEach(r => {
     byZone[r.zone_number] = byZone[r.zone_number] || { etc:0, applied:0 };
-    byZone[r.zone_number].etc += (r.etc_in || 0);
     byZone[r.zone_number].applied += (r.irrigation_applied_in || 0);
+  });
+  needRows.forEach(r => {
+    byZone[r.zone_number] = byZone[r.zone_number] || { etc:0, applied:0 };
+    byZone[r.zone_number].etc += (r.etc_in || 0);
+    if (r.grass_type) zoneGrass[r.zone_number] = r.grass_type;
   });
 
   // Need is projected to a full 7 days from the pace seen so far, matching
@@ -3234,7 +3247,7 @@ async function buildWaterRadarChart(){
   // three agree on "this week." Water applied stays as the real total --
   // projecting future irrigation isn't meaningful the same way a
   // weather-driven rate is.
-  const distinctDays = new Set(data.map(r => r.weather_date)).size;
+  const distinctDays = new Set(needRows.map(r => r.weather_date)).size;   // normally 7; a gap in the data is scaled up to a full week
 
   const labels = [], appliedVals = [], needVals = [], histVals = [];
   RADAR_GROUPS.forEach(g => {
@@ -3256,7 +3269,7 @@ async function buildWaterRadarChart(){
       datasets: [
         { label:'Applied', data:appliedVals, order:1,
           borderColor:'#1a8f4e', backgroundColor:'rgba(26,143,78,0.28)', borderWidth:2 },
-        { label:'Weekly Need', data:needVals, order:2,
+        { label:'Need (last 7 days)', data:needVals, order:2,
           borderColor:'#8a948e', backgroundColor:'transparent', borderWidth:2, borderDash:[5,3] },
         ...(histVals.some(v => v != null) ? [{ label:'Historical Need', data:histVals, order:3,
           borderColor:'#eda100', backgroundColor:'transparent', borderWidth:2, borderDash:[2,3],
@@ -3893,7 +3906,7 @@ checkSession();
   <p class="lay-help">Show, hide, pin and reorder every card. Press <b>Layout</b> on a page to drag and resize.</p>
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 23 (switch width fix)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 24 (need = last 7 complete days)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
@@ -4062,8 +4075,8 @@ checkSession();
       return { label, value: num(v, 2), unit: 'in', sub };
     };
     renderKpiCards('budgetNeedKpis', [
-      tile('Bermuda need · this week', b, state.hist.bermuda),
-      tile('Fescue need · this week', f, state.hist.fescue),
+      tile('Bermuda need · last 7 days', b, state.hist.bermuda),
+      tile('Fescue need · last 7 days', f, state.hist.fescue),
     ]);
   }
 
@@ -4074,8 +4087,8 @@ checkSession();
     const opt = (id, label, v) => `<option value="${id}" ${state.follow === id ? 'selected' : ''} ${id !== 'custom' && v == null ? 'disabled' : ''}>${label}${v != null ? ' · ' + num(v, 2) + ' in' : ''}</option>`;
     el('budChips').innerHTML = `<div class="filter-field"><label for="budFollow">Target from</label><select id="budFollow">` +
       opt('custom', 'Custom (type it above)', null) +
-      opt('bermuda', 'Bermuda need, this week', b) +
-      opt('fescue', 'Fescue need, this week', f) +
+      opt('bermuda', 'Bermuda need, last 7 days', b) +
+      opt('fescue', 'Fescue need, last 7 days', f) +
       opt('bermuda-hist', 'Bermuda historical avg', hb) +
       opt('fescue-hist', 'Fescue historical avg', hf) +
       opt('property', 'Property target', PROPERTY_TARGET) + `</select></div>`;
@@ -4258,7 +4271,7 @@ checkSession();
     try {
       // The rolling 7-day value on a Saturday covers Sun..Sat, so the historical average of that
       // value at this Saturday's day-of-year = the typical total need for this same week.
-      state.histWeekEnd = currentWeekRange().saturday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      state.histWeekEnd = daysAgo(1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       const [b, f] = await Promise.all([historicalWeekNeed('bermuda'), historicalWeekNeed('fescue')]);
       state.hist = { bermuda: b, fescue: f };
       state.histState = 'done';
@@ -4424,7 +4437,7 @@ async function renderWaterToday(){
   const rain48 = forecast ? forecast.slice(0, 2).reduce((s, d) => s + d.rain, 0) : null;
   const yr = String(new Date().getFullYear()), today = fmtDate(new Date());
   const rows = await Promise.all(['bermuda', 'fescue'].map(async g => {
-    const data = (await grassHistory(g)).filter(r => r.weather_date.startsWith(yr) && r.weather_date <= today);
+    const data = (await grassHistory(g)).filter(r => r.weather_date.startsWith(yr) && r.weather_date < today);   // through yesterday: today's partial day is left out
     let run = 0; data.forEach(r => { if (r.net_deficit_in != null) run = Math.max(0, run + r.net_deficit_in); });
     const last7 = data.slice(-7).map(r => r.etc_in).filter(v => v != null), pace = last7.length ? avg(last7) : 0;
     const T = DEFICIT_THRESHOLD_IN[g], W = T * 0.8;

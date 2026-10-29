@@ -115,7 +115,7 @@ async function gather() {
   // "Water today?" -- identical rules to renderWaterToday() in the app
   const rain48 = fc ? sum(fc.slice(0, 2).map((d) => d.rain)) : null;
   const G = ["bermuda", "fescue"].map((g) => {
-    const rows = grass.filter((r) => r.grass_type === g);
+    const rows = grass.filter((r) => r.grass_type === g && r.weather_date < today);   // through yesterday: today's partial day never counts
     let run = 0; rows.forEach((r) => { const d = n(r.net_deficit_in); if (d != null) run = Math.max(0, run + d); });
     const last7 = rows.slice(-7).map((r) => n(r.etc_in)).filter((v): v is number => v != null), pace = last7.length ? avg(last7) : 0;
     const T = THRESH[g], W = T * 0.8;
