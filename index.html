@@ -977,6 +977,14 @@ body:not(.range-open) #rangeControls{ display:none !important; }
 body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not updating'; color:var(--neg); font-weight:600; }
 @media (max-width:860px){ .fc-strip{ gap:4px; } .wt-head{ font-size:var(--fs-xl); } }
 
+/* ---- build 22: At a glance = five tiles, then Bermuda / Fescue need on their own line (when the card is wide enough) ---- */
+.card:has(> #overviewKpis), .panel:has(> #overviewKpis){ container-type:inline-size; }
+@container (min-width:700px){
+  #overviewKpis{ grid-template-columns:repeat(10, minmax(0, 1fr)); }
+  #overviewKpis > .kpi-card{ grid-column:span 2; }
+  #overviewKpis > .kpi-card.kpi-need{ grid-column:span 5; }
+}
+
 /* ---- build 21: desktop only (mouse + wide screen; phones and tablets untouched) ---- */
 @media (min-width:1200px) and (hover:hover) and (pointer:fine){
   /* Years & range lives in the page header instead of taking a full row */
@@ -2194,7 +2202,7 @@ function renderKpiCards(containerId, cards){
   const el = $('#'+containerId);
   if (!el) return;
   el.innerHTML = cards.map(k => `
-    <div class="kpi-card ${k.subClass==='neg'?'alert':''}">
+    <div class="kpi-card ${k.subClass==='neg'?'alert':''} ${k.cls||''}">
       <div class="label">${k.label}</div>
       <div class="value ${k.subClass==='neg'?'alert':''}">${k.value}${k.unit ? ` <span class="unit">${k.unit}</span>`:''}</div>
       ${k.sub ? `<div class="sub ${k.subClass}">${k.sub}</div>` : ''}
@@ -2238,8 +2246,11 @@ async function renderDataFreshness(){
 async function renderOverviewKpis(){
   const from = fmtDate(daysAgo(30));
 
-  const { data: wx } = await supa.from('weather_daily')
-    .select('weather_date,temp_high_f,temp_low_f,rain_in').gte('weather_date', from).order('weather_date');
+  // last day with a real rain (>= 0.10 in), however long ago -- for "Days since last rain"
+  const [{ data: wx }, { data: lastRain }] = await Promise.all([
+    supa.from('weather_daily').select('weather_date,temp_high_f,temp_low_f,rain_in').gte('weather_date', from).order('weather_date'),
+    supa.from('weather_daily').select('weather_date,rain_in').gte('rain_in', 0.10).order('weather_date', { ascending: false }).limit(1),
+  ]);
 
   const kpis = [];
   if (wx && wx.length){
@@ -2259,6 +2270,13 @@ async function renderOverviewKpis(){
       .forEach(l=>kpis.push({label:l,value:'n/a'}));
   }
 
+  // Days since the last rain of 0.10 in or more (today counts as 0)
+  { const lr = lastRain && lastRain[0];
+    if (lr) { const days = Math.max(0, Math.round((new Date(dayKeyCT(new Date()) + 'T12:00:00') - new Date(lr.weather_date + 'T12:00:00')) / 864e5));
+      const when = new Date(lr.weather_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      kpis.push({ label: 'Days since last rain', value: String(days), unit: days === 1 ? 'day' : 'days', sub: `${when} · ${num(lr.rain_in, 2)} in`, cls: 'kpi-dry' }); }
+    else kpis.push({ label: 'Days since last rain', value: 'n/a', cls: 'kpi-dry' }); }
+
   // Bermuda/Fescue water need (ETc, averaged across each grass type's
   // guide stations) this week, projected to a full week, compared against
   // the HISTORICAL average for this same week (the Water Needed chart's
@@ -2269,9 +2287,9 @@ async function renderOverviewKpis(){
   let needIdx = -1, needVals = null;
   // "~": this week's need is a projection (the week so far, extended to 7 days)
   const approx = c => (c.value && c.value !== 'n/a' ? { ...c, value: '~' + c.value } : c);
-  const needCard = (label, v, hist) => approx(hist
+  const needCard = (label, v, hist) => ({ ...approx(hist
     ? compareCard(label, v, hist.value, 'in', 2, `vs hist. avg (${num(hist.value, 2)})`)
-    : { label, value: num(v, 2), unit: 'in', sub: hist === undefined ? 'vs hist. avg: loading…' : 'hist. avg unavailable' });
+    : { label, value: num(v, 2), unit: 'in', sub: hist === undefined ? 'vs hist. avg: loading…' : 'hist. avg unavailable' }), cls: 'kpi-need' });
   try {
     const { start: thisStart, end: thisEnd } = currentWeekRange();
 
@@ -2314,8 +2332,8 @@ async function renderOverviewKpis(){
   } catch (e) {
     window.TURF_WEEK_NEED = null;
     console.error('Bermuda/Fescue water-need KPIs failed:', e);
-    kpis.push({label:'Bermuda need', value:'n/a'});
-    kpis.push({label:'Fescue need', value:'n/a'});
+    kpis.push({label:'Bermuda need', value:'n/a', cls:'kpi-need'});
+    kpis.push({label:'Fescue need', value:'n/a', cls:'kpi-need'});
   }
 
   renderKpiCards('overviewKpis', kpis);
@@ -3873,7 +3891,7 @@ checkSession();
   <p class="lay-help">Show, hide, pin and reorder every card. Press <b>Layout</b> on a page to drag and resize.</p>
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 21 (range bar in header, wide free layout, forecast title)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 22 (days since last rain)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
