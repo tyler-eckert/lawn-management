@@ -10,7 +10,8 @@
 // Deploy with JWT verification OFF (the cron call has no login; the POST checks the session itself).
 // Secrets, all already set for the band app on this project:
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (+ optional VAPID_SUBJECT)            -> push
-//   RESEND_API_KEY + DIGEST_FROM, or GMAIL_USER + GMAIL_APP_PASSWORD          -> email
+//   TURF_GMAIL_USER + TURF_GMAIL_APP_PASSWORD -> email from your own Gmail (preferred)
+//   otherwise the band's: RESEND_API_KEY + DIGEST_FROM, or GMAIL_USER + GMAIL_APP_PASSWORD
 //   TURF_DIGEST_FROM (optional)  e.g. "TurfOps <turf@eckerthaus.com>"; otherwise DIGEST_FROM's address is used
 //   BHYVE_EMAIL, BHYVE_PASSWORD                                                -> controller section (optional)
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
@@ -205,29 +206,35 @@ function build(D: Awaited<ReturnType<typeof gather>>, who: { calc?: any[] | null
   </td></tr></table></td></tr>`;
 
   // yesterday
-  const wy = D.wy, kv = (l: string, v: string, u: string) => `<td width="33%" style="padding:0 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.soft};border-radius:12px"><tr><td style="padding:10px"><div style="font-size:11px;color:${C.mute};font-weight:600">${l}</div><div style="font-size:19px;font-weight:700;color:${C.ink};margin-top:2px">${v}<span style="font-size:11px;color:${C.mute};font-weight:600;margin-left:2px">${u}</span></div></td></tr></table></td>`;
+  const wy = D.wy, kv = (l: string, v: string, u: string) => `<td width="33%" style="padding:0 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.soft};border-radius:12px"><tr><td style="padding:10px 8px 10px 10px"><div style="font-size:11px;color:${C.mute};font-weight:600;white-space:nowrap">${l}</div><div style="font-size:19px;font-weight:700;color:${C.ink};margin-top:2px;white-space:nowrap">${v}<span style="font-size:11px;color:${C.mute};font-weight:600;margin-left:2px">${u}</span></div></td></tr></table></td>`;
   const ranRows = [...D.ranY.map((r) => row(`${esc(r.name)} ran`, `${esc(r.zones)} · ${esc(r.mins)}`)), ...D.ranT.map((r) => row(`${esc(r.name)} ran this morning`, `${esc(r.zones)} · ${esc(r.mins)}`))];
   const yesterday = card(eyebrow(`Yesterday · ${wk(D.yest)} ${md(D.yest)}`)
-    + (wy ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 -4px"><tr>${kv("High / low", `${Math.round(n(wy.temp_high_f) ?? 0)}&#176;`, `/ ${Math.round(n(wy.temp_low_f) ?? 0)}&#176;`)}${kv("Rain", f2(n(wy.rain_in)), "in")}${kv("ET&#8320;", f2(n(wy.et0_in)), "in")}</tr></table>` : `<div style="font-size:13px;color:${C.mute}">No weather row for yesterday yet.</div>`)
+    + (wy ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 -4px"><tr>${kv("High / low", `${Math.round(n(wy.temp_high_f) ?? 0)}&#176;`, `/ ${Math.round(n(wy.temp_low_f) ?? 0)}&#176;`)}${kv("Rain", f2(n(wy.rain_in)), "in")}${kv("ET", `<span style="white-space:nowrap;font-size:15px;letter-spacing:-.03em">${f2(D.G[0].yNeed)} / ${f2(D.G[1].yNeed)}</span>`, "")}</tr></table>` : `<div style="font-size:13px;color:${C.mute}">No weather row for yesterday yet.</div>`)
     + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px">${ranRows.length ? ranRows.join("") : row("No programs ran", "", true)}`
     + row("Need vs. got", D.G.map((x) => `${x.name} ${f2(x.yNeed)} / ${f2(x.yGot)}`).join(" · ")) + `</table>`);
 
-  // week so far
+  // week so far: a bar with the "needed" tick drawn inside it, built from table cells so every mail app shows it in front
+  const meterBar = (gotPct: number, needPct: number, col: string) => {
+    const g = Math.max(0, Math.min(100, Math.round(gotPct))), nd = Math.max(1, Math.min(99, Math.round(needPct)));
+    const cell = (w: number, bg: string) => w > 0 ? `<td width="${w}%" style="background:${bg};height:10px;line-height:10px;font-size:0">&nbsp;</td>` : "";
+    const tick = `<td width="1%" style="background:${C.ink};height:10px;line-height:10px;font-size:0">&nbsp;</td>`;   // widths add up to 100%, tick included
+    const segs = g >= nd ? cell(nd, col) + tick + cell(g - nd - 1, col) + cell(100 - g, "#eef2f0") : cell(g, col) + cell(nd - g, "#eef2f0") + tick + cell(100 - nd - 1, "#eef2f0");
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:5px;border-radius:5px;overflow:hidden;border-collapse:separate"><tr>${segs}</tr></table>`;
+  };
   const bars = D.G.map((x) => { const top = Math.max(x.wGot, x.wNeed, 0.01) * 1.25, diff = x.wGot - x.wNeed;
     return `<div style="margin:8px 0 2px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:12.5px;font-weight:600;color:${C.ink}">${x.name}</td><td align="right" style="font-size:12.5px;color:${C.mute}">${f2(x.wGot)} got · ${f2(x.wNeed)} needed · ${diff >= 0 ? "+" : "-"}${f2(Math.abs(diff))}</td></tr></table>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:5px"><tr><td style="background:#eef2f0;border-radius:9px;height:9px;line-height:9px;font-size:0"><div style="width:${Math.round(x.wGot / top * 100)}%;height:9px;background:${diff >= 0 ? C.green : C.warn};border-radius:9px"></div></td></tr></table>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:0;line-height:0;height:4px"><div style="margin-left:${Math.round(x.wNeed / top * 100)}%;width:2px;height:4px;background:${C.ink}"></div></td></tr></table></div>`; }).join("");
-  const behind = D.G.filter((x) => x.wGot < x.wNeed - 0.05);
+      ${meterBar(x.wGot / top * 100, x.wNeed / top * 100, diff >= 0 ? C.green : C.warn)}</div>`; }).join("");
+  const behind = D.G.filter((x) => x.wGot < x.wNeed - 0.02);
   const weekNote = behind.length ? `${behind.map((x) => x.name).join(" and ")} ${behind.length > 1 ? "are" : "is"} behind for the week.` : "Both are keeping up with what they've needed.";
-  const week = card(eyebrow(`${D.weekEnd === D.yest && dow(D.today) !== 0 ? "This week so far" : "Last week"} · ${wk(D.sun)}-${wk(D.weekEnd)}`) + bars + `<div style="font-size:12.5px;color:#434c47;line-height:1.45;margin-top:8px">${weekNote} Small black tick = what it needed.</div>`);
+  const week = card(eyebrow(`${D.weekEnd === D.yest && dow(D.today) !== 0 ? "This week so far" : "Last week"} · ${wk(D.sun)}-${wk(D.weekEnd)}`) + bars + `<div style="font-size:12.5px;color:#434c47;line-height:1.45;margin-top:8px">${weekNote} The black tick is what it needed.</div>`);
 
   // forecast
   let fcHtml = "";
   if (D.fc && D.fc.length) {
     const mx = Math.max(0.5, ...D.fc.map((d) => d.rain)), tot = sum(D.fc.map((d) => d.rain)), wet = [...D.fc].sort((a, b) => b.rain - a.rain)[0];
-    fcHtml = card(eyebrow("Rain forecast · next 7 days") + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${D.fc.map((d) => { const h = Math.max(2, Math.round(d.rain / mx * 56));
+    fcHtml = card(eyebrow("Rain forecast · next 7 days") + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${D.fc.map((d) => { const h = Math.max(2, Math.round(d.rain / mx * 78));
       return `<td align="center" valign="bottom" style="padding:0 2px"><div style="font-size:11.5px;font-weight:700;color:${C.ink}">${d.rain >= 0.01 ? f2(d.rain) : "0"}</div>
-        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px auto"><tr><td width="24" height="56" valign="bottom" style="background:#eef2f0;border-radius:7px;font-size:0;line-height:0"><div style="height:${h}px;background:${C.water};border-radius:7px"></div></td></tr></table>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px auto"><tr><td width="24" height="78" valign="bottom" style="background:#eef2f0;border-radius:7px;font-size:0;line-height:0"><div style="height:${h}px;background:${C.water};border-radius:7px"></div></td></tr></table>
         <div style="font-size:10px;font-weight:700;color:${C.water}">${d.pop}%</div><div style="font-size:11px;color:${C.mute};font-weight:600;margin-top:2px">${d.date === D.today ? "Today" : wk(d.date)}</div></td>`; }).join("")}</tr></table>`
       + `<div style="font-size:12.5px;color:#434c47;line-height:1.45;margin-top:8px"><b>${f2(tot)} in</b> expected this week${wet.rain >= 0.1 ? `, most of it ${wet.date === D.today ? "today" : wkLong(wet.date)}` : ""}.</div>`);
   }
@@ -288,11 +295,19 @@ ${hero}${yesterday}${week}${fcHtml}${ctlHtml}${season}
     : D.level === "ok" ? `${D.reason}` : D.reason;
   const push = { title: pushTitle, body: plain(pushBody), url: D.level === "water" || D.level === "hold" ? `${APP}#calculator` : APP, tag: `turf-digest-${D.today}` };
 
-  return { subject: plain(subject), html: safeHtml(html), text: plain(text), push };
+  return { subject: plain(subject), html: safeHtml(html.replace(/>\s+</g, "><").replace(/\s*\n\s*/g, " ").trim()), text: plain(text), push };
 }
 
 /* ---------------- delivery ---------------- */
+async function gmail(user: string, pass: string, to: string, mail: { subject: string; html: string; text: string }) {
+  const { SMTPClient } = await import("https://deno.land/x/denomailer@1.6.0/mod.ts");
+  const c = new SMTPClient({ connection: { hostname: "smtp.gmail.com", port: 465, tls: true, auth: { username: user, password: pass } } });
+  try { await c.send({ from: `TurfOps <${user}>`, to, subject: mail.subject, content: mail.text, html: mail.html }); } finally { await c.close(); }
+}
 async function sendMail(to: string, mail: { subject: string; html: string; text: string }) {
+  // TurfOps' own Gmail (TURF_GMAIL_USER + TURF_GMAIL_APP_PASSWORD) wins; the band's senders are the fallback
+  const tu = Deno.env.get("TURF_GMAIL_USER"), tp = Deno.env.get("TURF_GMAIL_APP_PASSWORD");
+  if (tu && tp) { await gmail(tu, tp.replace(/\s+/g, ""), to, mail); return "gmail " + tu; }
   const rk = Deno.env.get("RESEND_API_KEY");
   if (rk) {
     const base = Deno.env.get("DIGEST_FROM") || "";
@@ -302,10 +317,7 @@ async function sendMail(to: string, mail: { subject: string; html: string; text:
   }
   const user = Deno.env.get("GMAIL_USER"), pass = Deno.env.get("GMAIL_APP_PASSWORD");
   if (user && pass) {
-    const { SMTPClient } = await import("https://deno.land/x/denomailer@1.6.0/mod.ts");
-    const c = new SMTPClient({ connection: { hostname: "smtp.gmail.com", port: 465, tls: true, auth: { username: user, password: pass } } });
-    try { await c.send({ from: `TurfOps <${user}>`, to, subject: mail.subject, content: mail.text, html: mail.html }); } finally { await c.close(); }
-    return "gmail";
+    await gmail(user, pass, to, mail); return "gmail " + user;
   }
   throw new Error("No email sender set up (RESEND_API_KEY or GMAIL_USER + GMAIL_APP_PASSWORD).");
 }

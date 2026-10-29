@@ -850,7 +850,7 @@ body.lay-on .card.lay-hidden .lay-ctl{ opacity:1; }
 body.lay-on .card.lay-tall-scroll{ overflow:hidden; }
 .card.lay-locked{ overflow:visible; }
 /* free placement: 8px rows, tiles pack into any open space; the grid guide shows while customizing */
-.grid.free{ grid-auto-rows:8px; row-gap:0; grid-auto-flow:row dense; position:relative; }
+.grid.free{ grid-auto-rows:8px; row-gap:0 !important; grid-auto-flow:row dense; position:relative; }   /* !important: compact / phone gap rules must not add space between the 8px rows */
 .grid.free > .card{ align-self:start; }
 .free-ghost{ position:absolute; border:2px dashed var(--brand-500); border-radius:var(--r-lg); background:color-mix(in srgb,var(--brand-500) 8%,transparent); pointer-events:none; z-index:1; }
 .free-ghost.pushed{ border-color:var(--warn); background:color-mix(in srgb,var(--warn) 10%,transparent); }
@@ -977,6 +977,23 @@ body:not(.range-open) #rangeControls{ display:none !important; }
 body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not updating'; color:var(--neg); font-weight:600; }
 @media (max-width:860px){ .fc-strip{ gap:4px; } .wt-head{ font-size:var(--fs-xl); } }
 
+/* ---- build 21: desktop only (mouse + wide screen; phones and tablets untouched) ---- */
+@media (min-width:1200px) and (hover:hover) and (pointer:fine){
+  /* Years & range lives in the page header instead of taking a full row */
+  #rangeControlsHeading.in-header{ margin:0 0 0 auto !important; flex:0 1 auto; min-width:260px; max-width:460px; }
+  #rangeControlsHeading.in-header .range-toggle{ padding:8px 10px 8px 16px; gap:10px; }
+  #rangeControlsHeading.in-header .range-toggle h2{ font-size:var(--fs-base) !important; }
+  #rangeControlsHeading.in-header .range-chev{ width:24px; height:24px; }
+  #rangeControlsHeading.in-header ~ .top-actions{ margin-left:0; }
+  /* Free layout: the page can use the whole window width */
+  body:has(main[data-active-tab="overview"] #g-overview.free) main, body:has(main[data-active-tab="overview"] #g-overview.free) .header-row{ max-width:none; }
+  body:has(main[data-active-tab="temps"] #g-temps.free) main, body:has(main[data-active-tab="temps"] #g-temps.free) .header-row{ max-width:none; }
+  body:has(main[data-active-tab="rain"] #g-rain.free) main, body:has(main[data-active-tab="rain"] #g-rain.free) .header-row{ max-width:none; }
+  body:has(main[data-active-tab="irrigation"] #g-irrigation.free) main, body:has(main[data-active-tab="irrigation"] #g-irrigation.free) .header-row{ max-width:none; }
+  body:has(main[data-active-tab="calculator"] #g-calculator.free) main, body:has(main[data-active-tab="calculator"] #g-calculator.free) .header-row{ max-width:none; }
+  body:has(main[data-active-tab="records"] #g-records.free) main, body:has(main[data-active-tab="records"] #g-records.free) .header-row{ max-width:none; }
+}
+
 /* ---- build 19: notifications ---- */
 .nt-box{ border-bottom:1px solid var(--line-soft); padding:16px 0 16px; margin:0 16px 4px; }
 .nt-box:empty{ display:none; }
@@ -1076,7 +1093,7 @@ body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not 
       <div class="section-body">
         <div class="two-col">
           <div class="panel" id="waterTodayPanel"><h3>Water today?</h3><div id="waterToday" class="wt"><div class="wt-msg">Checking the deficit…</div></div></div>
-          <div class="panel" id="forecastPanel"><h3>Rain forecast</h3><div class="panel-sub" id="forecastSub">Next 7 days · National Weather Service</div><div id="rainForecast" class="fc-strip"><div class="wt-msg">Loading forecast…</div></div></div>
+          <div class="panel" id="forecastPanel"><h3>Rain forecast<span id="forecastTot" style="margin-left:-3px"></span></h3><div id="rainForecast" class="fc-strip"><div class="wt-msg">Loading forecast…</div></div></div>
         </div>
       </div>
     </section>
@@ -1125,15 +1142,15 @@ body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not 
 
     <!-- ================= 1. DAILY HIGHS & LOWS ================= -->
     <section class="collapsible" id="sec-daily-highs" data-tab="temps">
-      <button class="section-toggle" data-target="sec-daily-highs" data-icon="thermometer"><h2>Daily Highs &amp; Lows (°F)</h2><span class="chevron">︿</span></button>
+      <button class="section-toggle" data-target="sec-daily-highs" data-icon="thermometer"><h2>Temperature</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="two-col">
           <div class="panel">
-            <h3 style="font-size:0.9rem; margin-bottom:6px;">Highs</h3>
+            <h3 style="font-size:0.9rem; margin-bottom:6px;">Daily Highs (°F)</h3>
             <div class="chart-wrap tall"><canvas id="chartTrendHigh"></canvas></div>
           </div>
           <div class="panel">
-            <h3 style="font-size:0.9rem; margin-bottom:6px;">Lows</h3>
+            <h3 style="font-size:0.9rem; margin-bottom:6px;">Daily Lows (°F)</h3>
             <div class="chart-wrap tall"><canvas id="chartTrendLow"></canvas></div>
           </div>
         </div>
@@ -1142,15 +1159,15 @@ body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not 
 
     <!-- ================= 2. FEELS-LIKE HIGH & LOW ================= -->
     <section class="collapsible" id="sec-feels-high" data-tab="temps">
-      <button class="section-toggle" data-target="sec-feels-high" data-icon="thermometer"><h2>Daily Feels-Like High &amp; Low (°F)</h2><span class="chevron">︿</span></button>
+      <button class="section-toggle" data-target="sec-feels-high" data-icon="thermometer"><h2>Feels-like</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="two-col">
           <div class="panel">
-            <h3 style="font-size:0.9rem; margin-bottom:6px;">High</h3>
+            <h3 style="font-size:0.9rem; margin-bottom:6px;">Feels-Like Highs (°F)</h3>
             <div class="chart-wrap tall"><canvas id="chartTrendFeelsHigh"></canvas></div>
           </div>
           <div class="panel">
-            <h3 style="font-size:0.9rem; margin-bottom:6px;">Low</h3>
+            <h3 style="font-size:0.9rem; margin-bottom:6px;">Feels-Like Lows (°F)</h3>
             <div class="chart-wrap tall"><canvas id="chartTrendFeelsLow"></canvas></div>
           </div>
         </div>
@@ -3856,7 +3873,7 @@ checkSession();
   <p class="lay-help">Show, hide, pin and reorder every card. Press <b>Layout</b> on a page to drag and resize.</p>
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 19 (daily digest + push)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 21 (range bar in header, wide free layout, forecast title)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
@@ -4374,8 +4391,8 @@ async function renderRainForecast(){
       <div class="fc-amt">${d.rain >= 0.01 ? num(d.rain, 2) : '0'}</div>
       <div class="fc-bar"><span style="height:${Math.max(2, d.rain / max * 100)}%"></span></div>
       <div class="fc-pop">${d.pop}%</div><div class="fc-lbl">${lbl(d.date)}</div></div>`).join('');
-  const tot = days.reduce((s, d) => s + d.rain, 0), sub = document.getElementById('forecastSub');
-  if (sub) sub.textContent = `Next 7 days · ${num(tot, 2)} in expected · National Weather Service`;
+  const tot = days.reduce((s, d) => s + d.rain, 0), ft = document.getElementById('forecastTot');
+  if (ft) ft.textContent = `(${num(tot, 2)} in expected - NWS)`;
 }
 
 // "Water today?": the running deficit (same math as the Water deficit chart) against each grass type's
@@ -5224,6 +5241,22 @@ async function onCtlClick(e){
   const fromHash = (location.hash || '').slice(1);
   if (TABS.includes(fromHash)) start = fromHash;
   activate(start, { scroll: false });
+})();
+</script>
+<script>
+/* build 21: on a desktop (wide screen + mouse) the Years & range bar sits in the page header, next to the gear,
+   so it no longer takes a full row above the cards. Phones and tablets keep it where it was. */
+(function rangeInHeader(){
+  const head = document.getElementById('rangeControlsHeading'), row = document.querySelector('header.top .header-row'), actions = row && row.querySelector('.top-actions');
+  if (!head || !row || !actions || !window.matchMedia) return;
+  const mq = matchMedia('(min-width:1200px) and (hover:hover) and (pointer:fine)'), home = document.createComment('range-bar-home');
+  head.parentNode.insertBefore(home, head);
+  function place(){
+    if (mq.matches) { if (head.parentNode !== row) row.insertBefore(head, actions); head.classList.add('in-header'); }
+    else { if (head.parentNode !== home.parentNode) home.parentNode.insertBefore(head, home.nextSibling); head.classList.remove('in-header'); }
+  }
+  place();
+  try { mq.addEventListener('change', place); } catch (e) { mq.addListener(place); }
 })();
 </script>
 <script>
