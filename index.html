@@ -979,6 +979,19 @@ body:not(.range-open) #rangeControls{ display:none !important; }
 body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not updating'; color:var(--neg); font-weight:600; }
 @media (max-width:860px){ .fc-strip{ gap:4px; } .wt-head{ font-size:var(--fs-xl); } }
 
+/* ---- build 25: settings panel scrolls as one; layout and each page fold up ---- */
+#layScroll{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+#layScroll #layoutList{ flex:none; overflow:visible; }
+.lay-fold{ display:flex; align-items:center; gap:8px; width:100%; background:none; border:0; cursor:pointer; font-family:inherit; text-align:left; }
+button.lay-tabhead{ font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-tertiary); }
+.lay-fold .lay-chev{ margin-left:auto; width:22px; height:22px; display:grid; place-items:center; color:var(--text-tertiary); transition:transform .18s ease; flex:none; }
+.lay-fold .lay-chev svg{ width:14px; height:14px; }
+.lay-fold[aria-expanded="false"] .lay-chev{ transform:rotate(-90deg); }
+.lay-fold:hover .lay-chev{ color:var(--text); }
+button.lay-dev{ font-size:var(--fs-sm); font-weight:600; color:var(--text); margin:4px 0 2px; padding:6px 4px; }
+button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft); }
+.lay-fold-body[hidden]{ display:none; }
+
 /* ---- build 22: At a glance = five tiles, then Bermuda / Fescue need on their own line (when the card is wide enough) ---- */
 .card:has(> #overviewKpis), .panel:has(> #overviewKpis){ container-type:inline-size; }
 @container (min-width:700px){
@@ -1197,6 +1210,17 @@ body.data-stale header.top .page-sub::after{ content:'  ·  Weather data is not 
             <h3 style="font-size:0.9rem; margin-bottom:6px;">By day (year comparison)</h3>
             <div class="chart-wrap tall"><canvas id="chartTrendRainBar"></canvas></div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 3b. RAIN BY MONTH ================= -->
+    <section class="collapsible" id="sec-rain-monthly" data-tab="rain">
+      <button class="section-toggle" data-target="sec-rain-monthly" data-icon="droplet"><h2>Rain by month</h2><span class="chevron">︿</span></button>
+      <div class="section-body">
+        <div class="panel">
+          <h3 style="font-size:0.9rem; margin-bottom:6px;" id="rainMonthlyTitle">Monthly totals vs. 2010-2025 (inches)</h3>
+          <div class="chart-wrap tall"><canvas id="chartRainMonthly"></canvas></div>
         </div>
       </div>
     </section>
@@ -2158,6 +2182,7 @@ async function initApp(){
   // Sections load side by side instead of one after another -- each is independent and isolated by safely().
   await Promise.all([
     safely('trend charts', initTrendCharts),
+    safely('rain by month', initRainMonthly),
     safely('water balance', initWaterBalanceSection),
     safely('water radar', buildWaterRadarChart),
     safely('zone bar chart', initZoneBarSection),
@@ -3701,6 +3726,52 @@ async function buildYearlyCountChart(chartId, sliderContainerId, label, color, r
   });
 }
 
+/* ---------------- Rain by month (build 25) ----------------
+   Bars: this year's rain for each month (this month is month-to-date). Gray band: the driest to the wettest
+   that month was in AVG_REF_YEARS. Dash: the average for that month. */
+async function initRainMonthly(){
+  const rows = await weatherHistory();
+  const yr = String(new Date().getFullYear()), today = fmtDate(new Date()), M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const tot = {};   // 'YYYY-MM' -> inches
+  rows.forEach(r => { if (r.rain_in == null) return; const k = r.weather_date.slice(0, 7); tot[k] = (tot[k] || 0) + Number(r.rain_in); });
+  const refYears = []; for (let y = +AVG_REF_YEARS.from; y <= +AVG_REF_YEARS.to; y++) refYears.push(String(y));
+  const nowM = +today.slice(5, 7);
+  const cur = [], band = [], mean = [], lo = [], hi = [];
+  for (let m = 1; m <= 12; m++){
+    const mm = String(m).padStart(2, '0');
+    const vals = refYears.filter(y => tot[`${y}-${mm}`] != null).map(y => ({ y, v: tot[`${y}-${mm}`] }));
+    if (vals.length){
+      const mn = vals.reduce((a, b) => b.v < a.v ? b : a), mx = vals.reduce((a, b) => b.v > a.v ? b : a);
+      band.push([mn.v, mx.v]); lo.push(mn); hi.push(mx); mean.push(vals.reduce((s, x) => s + x.v, 0) / vals.length);
+    } else { band.push(null); lo.push(null); hi.push(null); mean.push(null); }
+    cur.push(m <= nowM ? Number((tot[`${yr}-${mm}`] || 0).toFixed(2)) : null);
+  }
+  const t = document.getElementById('rainMonthlyTitle'); if (t) t.textContent = `Monthly totals: ${yr} vs. ${AVG_REF_YEARS.from}-${AVG_REF_YEARS.to} (inches)`;
+  makeChart('chartRainMonthly', {
+    type: 'bar',
+    data: { labels: M, datasets: [
+      { label: 'Min / max', data: band, backgroundColor: 'rgba(138,148,142,0.22)', borderColor: 'rgba(138,148,142,0.55)', borderWidth: 1, borderSkipped: false, borderRadius: 4, grouped: false, barPercentage: 0.82, categoryPercentage: 0.9, order: 3 },
+      { label: yr, data: cur, backgroundColor: CHART_COLORS.rain, borderRadius: 4, grouped: false, barPercentage: 0.42, categoryPercentage: 0.9, order: 1 },
+      { type: 'line', label: 'Avg', data: mean.map(v => v == null ? null : Number(v.toFixed(2))), showLine: false, pointStyle: 'line', pointRadius: 13, pointHoverRadius: 13, pointBorderWidth: 2.5, borderColor: '#4b544f', backgroundColor: '#4b544f', order: 0 },
+    ] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 14, padding: 12 } },
+        tooltip: { callbacks: {
+          title: items => { const i = items[0].dataIndex; return M[i] + (i + 1 === nowM ? ` (through ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''); },
+          label: ctx => { const i = ctx.dataIndex;
+            if (ctx.dataset.label === 'Min / max') return lo[i] ? [`Min: ${num(lo[i].v, 2)} in (${lo[i].y})`, `Max: ${num(hi[i].v, 2)} in (${hi[i].y})`] : null;
+            if (ctx.dataset.label === 'Avg') return ctx.raw == null ? null : `Avg: ${num(ctx.raw, 2)} in`;
+            return ctx.raw == null ? null : `${yr}: ${num(ctx.raw, 2)} in`; } } },
+        datalabels: { display: false },
+      },
+      scales: { x: { grid: { display: true } }, y: { beginAtZero: true, title: { display: false } } },
+    },
+  });
+}
+
 async function initRecordsSection(){
   const rows = await weatherHistory();
 
@@ -3904,9 +3975,11 @@ checkSession();
 <aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
   <div class="lay-head"><h2>Page settings</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
   <p class="lay-help">Show, hide, pin and reorder every card. Press <b>Layout</b> on a page to drag and resize.</p>
+  <div id="layScroll">
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 24 (need = last 7 complete days)</div>
+  </div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 25 (settings panel, free placement, monthly rain)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
@@ -4883,18 +4956,18 @@ async function onCtlClick(e){
       rs.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); rs.setPointerCapture(e.pointerId);
         const grid = c.el.parentElement, gap = parseFloat(getComputedStyle(grid).columnGap) || 0, colW = (grid.clientWidth - gap * 11) / 12, left = c.el.getBoundingClientRect().left;
         const list = SIZES[dk], snap = n => list.reduce((b, x) => Math.abs(x - n) < Math.abs(b - n) ? x : b, list[0]);
-        let n = spanOf(c.el); const tag = $('.lay-ctl .sz-l', c.el); c.el.classList.add('lay-sizing'); document.body.classList.add('lay-dragging');
+        let n = spanOf(c.el); const tag = $('.lay-ctl .sz-l', c.el); c.el.classList.add('lay-sizing'); document.body.classList.add('lay-dragging'); FREE_PRIO = c.k;
         rs.onpointermove = ev => { const w = ev.clientX - left; n = snap(Math.max(1, Math.min(12, Math.round((w + gap) / (colW + gap)))));
           c.el.style.gridColumn = c.el.dataset.pin && POS[c.k] ? `${Math.max(1, Math.min(13 - n, POS[c.k].c))} / span ${n}` : `span ${n}`; freeRows(c.el); if (tag) tag.textContent = SIZE_NAME(n); };
         rs.onpointerup = rs.onpointercancel = () => { rs.onpointermove = rs.onpointerup = rs.onpointercancel = null; c.el.classList.remove('lay-sizing'); document.body.classList.remove('lay-dragging');
-          const lay = pageLayout(page); ((lay.size ||= {})[dk] ||= {})[c.k] = n; SYNC.schedule(); render(); }; };
+          const lay = pageLayout(page); ((lay.size ||= {})[dk] ||= {})[c.k] = n; freezeFree(page, c.k); FREE_PRIO = null; SYNC.schedule(); render(); }; };
       rs.ondblclick = () => { const lay = pageLayout(page); if (lay.size && lay.size[dk]) delete lay.size[dk][c.k]; SYNC.schedule(); render(); };
       // drag the bottom edge: charts stretch; snaps every 8px, to the cards beside it, and to its natural height
       const rh = document.createElement('div'); rh.className = 'lay-rh'; rh.title = 'Drag to change the height · double-click to reset'; c.el.appendChild(rh);
       rh.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); rh.setPointerCapture(e.pointerId);
         c.el.style.alignSelf = 'start'; const r0 = c.el.getBoundingClientRect(), h0 = r0.height, e0 = +(c.el.dataset.extra || 0), base = h0 - e0, y0 = e.clientY;
         const near = pageCards(page).filter(x => x !== c.el && x.style.display !== 'none' && Math.abs(x.getBoundingClientRect().top - r0.top) < 40).map(x => { const a = x.style.alignSelf; x.style.alignSelf = 'start'; const h = x.getBoundingClientRect().height; x.style.alignSelf = a; return h; });
-        const mags = [...near, base]; let ex = e0, tgt = h0; c.el.classList.add('lay-sizing'); document.body.classList.add('lay-dragging');
+        const mags = [...near, base]; let ex = e0, tgt = h0; c.el.classList.add('lay-sizing'); document.body.classList.add('lay-dragging'); FREE_PRIO = c.k;
         const cw = chartBox(c.el), cw0 = cw ? cw.getBoundingClientRect().height : 0; if (cw) cw.style.flex = 'none';
         const tag = document.createElement('div'); tag.className = 'lay-hl'; c.el.appendChild(tag);
         rh.onpointermove = ev => { const t = Math.max(80, h0 + ev.clientY - y0), m = mags.find(x => Math.abs(x - t) <= 12);
@@ -4903,7 +4976,7 @@ async function onCtlClick(e){
           freeRows(c.el, tgt);
           tag.textContent = m != null ? (Math.abs(m - base) < 1 ? 'Natural height' : 'Lined up with the next card') : (ex > 0 ? '+' : '') + ex + 'px'; };
         rh.onpointerup = rh.onpointercancel = () => { rh.onpointermove = rh.onpointerup = rh.onpointercancel = null; c.el.classList.remove('lay-sizing'); document.body.classList.remove('lay-dragging'); c.el.style.overflow = ''; tag.remove();
-          const lay = pageLayout(page); ((lay.tall ||= {})[dk] ||= {})[c.k] = ex; if (Math.abs(ex) < 4) delete lay.tall[dk][c.k]; SYNC.schedule(); render(); }; };
+          const lay = pageLayout(page); ((lay.tall ||= {})[dk] ||= {})[c.k] = ex; if (Math.abs(ex) < 4) delete lay.tall[dk][c.k]; freezeFree(page, c.k); FREE_PRIO = null; SYNC.schedule(); render(); }; };
       rh.ondblclick = () => { const lay = pageLayout(page); if (lay.tall && lay.tall[dk]) delete lay.tall[dk][c.k]; SYNC.schedule(); render(); };
       ctl.onclick = e => e.stopPropagation();
       $$('[data-mv]', ctl).forEach(b => b.onclick = () => moveCard(page, c.k, +b.dataset.mv));
@@ -4954,9 +5027,14 @@ async function onCtlClick(e){
     const gap = parseFloat(getComputedStyle(g).columnGap) || 0; if (h == null) h = card.getBoundingClientRect().height;
     card.dataset.rows = Math.max(1, Math.ceil((h + gap) / FREE_ROW)); freeLayout(g); }
   // saved tiles, top to bottom by saved row: each keeps its column and is pushed down only by tiles placed before it
-  function planFree(boxes, P){ const placed = [], out = {};
+  // prio: the card being moved or resized. It goes exactly where it was dropped and anything it lands on moves down,
+  // instead of the dropped card being bumped below whatever was already there.
+  let FREE_PRIO = null;
+  function planFree(boxes, P, prio){ const placed = [], out = {};
     const floor = (col, w) => Math.max(1, ...placed.filter(p => col < p.col + p.w && p.col < col + w).map(p => p.row + p.h));
-    boxes.filter(b => P[b.k]).sort((a, b) => P[a.k].r - P[b.k].r || P[a.k].c - P[b.k].c).forEach(b => { const col = Math.max(1, Math.min(13 - b.w, P[b.k].c)), row = Math.max(P[b.k].r, floor(col, b.w)); placed.push({ ...b, col, row }); out[b.k] = { col, row }; });
+    // first free spot at or below the saved row that doesn't overlap a card already placed
+    const fit = (col, w, h, r) => { let row = Math.max(1, r); for (;;) { const hits = placed.filter(p => col < p.col + p.w && p.col < col + w && row < p.row + p.h && p.row < row + h); if (!hits.length) return row; row = Math.max(...hits.map(p => p.row + p.h)); } };
+    boxes.filter(b => P[b.k]).sort((a, b) => (b.k === prio) - (a.k === prio) || P[a.k].r - P[b.k].r || P[a.k].c - P[b.k].c).forEach(b => { const col = Math.max(1, Math.min(13 - b.w, P[b.k].c)), row = fit(col, b.w, b.h, P[b.k].r); placed.push({ ...b, col, row }); out[b.k] = { col, row }; });
     return { out, floor, placed }; }
   function freeLayout(g){
     const page = g.id.slice(2);
@@ -4965,7 +5043,7 @@ async function onCtlClick(e){
     const cards = [...g.children].filter(c => c.classList.contains('card') && c.style.display !== 'none');
     const box = (c, i) => ({ c, k: c.dataset.cid || '~' + i, w: Math.min(12, spanOf(c)), h: +c.dataset.rows || 1 });
     const put = (b, col, row) => { b.c.style.gridColumn = `${col} / span ${b.w}`; b.c.style.gridRow = `${row} / span ${b.h}`; b.c.dataset.pin = row; };
-    const all = cards.map(box), plan = planFree(all, P), placed = plan.placed, floor = plan.floor;
+    const all = cards.map(box), plan = planFree(all, P, FREE_PRIO), placed = plan.placed, floor = plan.floor;
     all.filter(b => P[b.k]).forEach(b => put(b, plan.out[b.k].col, plan.out[b.k].row));
     let added = false;
     all.filter(b => !P[b.k]).sort((a, b) => (+a.c.style.order || 0) - (+b.c.style.order || 0)).forEach(b => { let best = null;
@@ -4973,6 +5051,10 @@ async function onCtlClick(e){
       put(b, best.col, best.row); placed.push({ ...b, col: best.col, row: best.row }); if (b.k[0] !== '~') { P[b.k] = { c: best.col, r: best.row }; added = true; } });
     if (added) SYNC.schedule();
   }
+  function freezeFree(page, k){ const g = grids[page]; if (!g || !g.classList.contains('free')) return;
+    const dk = devKey(), lay = pageLayout(page), P = ((lay.pos ||= {})[dk] ||= {});
+    const boxes = [...g.children].filter(c => c.classList.contains('card') && c.style.display !== 'none' && c.dataset.cid).map(c => ({ k: c.dataset.cid, w: Math.min(12, spanOf(c)), h: +c.dataset.rows || 1 }));
+    const plan = planFree(boxes, P, k); Object.entries(plan.out).forEach(([key, o]) => { P[key] = { c: o.col, r: o.row }; }); }
   function packFree(page){ const g = grids[page]; if (!g || !g.classList.contains('free')) return;
     const gap = parseFloat(getComputedStyle(g).columnGap) || 0;
     [...g.children].filter(c => c.classList.contains('card')).forEach(c => { const n = Math.max(1, Math.ceil((c.getBoundingClientRect().height + gap) / FREE_ROW)); c.dataset.rows = n; FREE_ROWS[page + '|' + c.dataset.cid] = n; });
@@ -4990,7 +5072,7 @@ async function onCtlClick(e){
       col = Math.max(1, Math.min(13 - n, Math.round((cardX0 + dx) / (colW + gap)) + 1)); row = Math.max(1, Math.round((cardY0 + dy) / FREE_ROW) + 1);
       const gx = (col - 1) * (colW + gap), want = row; wantRow = want;
       c.el.style.transform = `translate(${gx - cardX0}px,${(want - 1) * FREE_ROW - cardY0}px)`;
-      { const P2 = { ...((pageLayout(page).pos || {})[dk] || {}), [c.k]: { c: col, r: want } }; const o = planFree(boxes, P2).out[c.k]; row = o ? o.row : want; }
+      { const P2 = { ...((pageLayout(page).pos || {})[dk] || {}), [c.k]: { c: col, r: want } }; const o = planFree(boxes, P2, c.k).out[c.k]; row = o ? o.row : want; }
       const gy = (row - 1) * FREE_ROW; ghost.classList.toggle('pushed', row !== want);
       Object.assign(ghost.style, { left: gx + 'px', top: gy + 'px', width: n * colW + (n - 1) * gap + 'px', height: c.el.offsetHeight + 'px' }); };
     const edge = () => { raf = 0; const vv = window.visualViewport, vTop = vv ? vv.offsetTop : 0, vBot = vv ? vv.offsetTop + vv.height : innerHeight;
@@ -5001,7 +5083,7 @@ async function onCtlClick(e){
     placeIt();
     const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); removeEventListener('scroll', onScroll);
       cancelAnimationFrame(raf); document.body.classList.remove('lay-dragging'); ghost.remove(); c.el.classList.remove('free-moving'); c.el.style.transform = '';
-      const lay = pageLayout(page), P = ((lay.pos ||= {})[dk] ||= {}); P[c.k] = { c: col, r: wantRow }; SYNC.schedule(); render(); };
+      const lay = pageLayout(page), P = ((lay.pos ||= {})[dk] ||= {}); P[c.k] = { c: col, r: wantRow }; freezeFree(page, c.k); SYNC.schedule(); render(); };
     addEventListener('pointermove', move, { passive: false }); addEventListener('pointerup', up); addEventListener('pointercancel', up); addEventListener('scroll', onScroll, { passive: true });
   }
 
@@ -5038,23 +5120,29 @@ async function onCtlClick(e){
   const layoutBtn = $('#layoutBtn'); if (layoutBtn) layoutBtn.addEventListener('click', () => setEdit(!LAYOUT_EDIT));
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && LAYOUT_EDIT && !$('#layoutPanel.open')) setEdit(false); });
   // charts finish drawing after sign-in -- re-pack free grids and re-measure once they have their real heights
-  document.addEventListener('turfops:ready', () => render());
+  document.addEventListener('turfops:ready', () => { if (document.body.classList.contains('lay-dragging')) { const t = setInterval(() => { if (!document.body.classList.contains('lay-dragging')) { clearInterval(t); render(); } }, 250); return; } render(); });
 
   // settings drawer: every tab's cards (show / hide, order, pin) for this kind of device, default day ranges, reset
   const panel = $('#layoutPanel'), overlay = $('#layoutOverlay'), list = $('#layoutList');
+  // which parts of the settings panel are folded (remembered on this device); pages start folded except the one you're on
+  const FOLD_KEY = 'turfops.drawerFold'; let FOLD = {}; try { FOLD = JSON.parse(localStorage.getItem(FOLD_KEY)) || {}; } catch (e) {}
   function drawer(){
     if (!list) return;
     const dk = devKey();
-    list.innerHTML = `<p class="lay-dev">${dk === 'phone' ? 'Phone' : 'Computer'} layout</p>` + TABS.map(t => {
+    const chev = '<span class="lay-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>';
+    const open = (k, def) => (k in FOLD ? !FOLD[k] : def);
+    const layOpen = open('layout', true);
+    list.innerHTML = `<button type="button" class="lay-fold lay-dev" data-fold="layout" aria-expanded="${layOpen}">${dk === 'phone' ? 'Phone' : 'Computer'} layout${chev}</button><div class="lay-fold-body" ${layOpen ? '' : 'hidden'}>` + TABS.map(t => {
       const L = UI.layout[t] || {}, H = LGET(L, 'hidden'), keys = t === 'overview' ? [...Object.keys(CARDS).filter(k => CARDS[k].home === 'overview'), ...UI.pins] : Object.keys(CARDS).filter(k => CARDS[k].home === t);
       const O = LGET(L, 'order'), ord = keys.map((k, i) => ({ k, o: O.indexOf(k) < 0 ? 1000 + i : O.indexOf(k) })).sort((a, b) => a.o - b.o).map(x => x.k);
-      return `<div class="lay-tabhead">${esc(TAB_LABELS[t])}${H.length ? `<span class="lay-count">${H.length} hidden</span>` : ''}</div>` + ord.map((k, i) => {
+      const tOpen = open('tab:' + t, t === cur);
+      return `<button type="button" class="lay-fold lay-tabhead" data-fold="tab:${t}" aria-expanded="${tOpen}">${esc(TAB_LABELS[t])}${H.length ? `<span class="lay-count">${H.length} hidden</span>` : ''}${chev}</button><div class="lay-fold-body" ${tOpen ? '' : 'hidden'}>` + ord.map((k, i) => {
         const c = CARDS[k], hid = H.includes(k), pin = UI.pins.includes(k), canPin = c.home !== 'overview';
         return `<div class="lay-row ${hid ? 'is-hidden' : ''}" data-page="${t}" data-k="${esc(k)}"><div class="lay-name">${esc(c.el.dataset.title)}${t === 'overview' && c.home !== 'overview' ? `<span class="lay-pinned">PINNED</span>` : ''}</div>
           ${canPin && t !== 'overview' ? `<button type="button" class="lay-ic ${pin ? 'on' : ''}" data-act="pin" title="${pin ? 'Unpin from' : 'Pin to'} Overview">${svg(IC.pin, 1.8)}</button>` : ''}
           <button type="button" class="lay-ic ${hid ? '' : 'on'}" data-act="hide" title="${hid ? 'Show' : 'Hide'}">${svg(hid ? IC.eyeOff : IC.eye)}</button>
-          <div class="lay-btns"><button type="button" data-act="up" ${i ? '' : 'disabled'} aria-label="Move up">▲</button><button type="button" data-act="down" ${i < ord.length - 1 ? '' : 'disabled'} aria-label="Move down">▼</button></div></div>`; }).join('');
-    }).join('') + `<div class="lay-ranges"><h3>Default day ranges</h3>
+          <div class="lay-btns"><button type="button" data-act="up" ${i ? '' : 'disabled'} aria-label="Move up">▲</button><button type="button" data-act="down" ${i < ord.length - 1 ? '' : 'disabled'} aria-label="Move down">▼</button></div></div>`; }).join('') + '</div>';
+    }).join('') + `</div><div class="lay-ranges"><h3>Default day ranges</h3>
       <p>What each chart group shows when the page opens.</p>` +
       RANGE_UI.map(u => `<label for="layRange-${u.key}">${esc(u.label)}</label>
         <select id="layRange-${u.key}" data-range="${u.key}">${u.opts.map(o => `<option value="${o[0]}" ${o[0] === rangeDefaults[u.key] ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`).join('') + `</div>`
@@ -5063,6 +5151,8 @@ async function onCtlClick(e){
   }
   if (list) {
     list.addEventListener('click', e => {
+      const fb = e.target.closest('[data-fold]');
+      if (fb) { const k = fb.dataset.fold; FOLD[k] = fb.getAttribute('aria-expanded') === 'true'; try { localStorage.setItem(FOLD_KEY, JSON.stringify(FOLD)); } catch (err) {} drawer(); return; }
       if (e.target.closest('#preSave')) { const n = $('#preName'); savePreset(n && n.value); drawer(); return; }
       const pb = e.target.closest('[data-pre-act]');
       if (pb) { const n = pb.closest('[data-pre]').dataset.pre; if (pb.dataset.preAct === 'apply') usePreset(n); else { delete UI.presets[n]; SYNC.schedule(); } drawer(); return; }
