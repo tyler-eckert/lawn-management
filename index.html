@@ -3753,9 +3753,9 @@ async function initRainMonthly(){
     type: 'line',
     data: { labels: M, datasets: [
       // same look as the temperature charts: current year green, gray min / max band, dashed average
-      { label: yr, data: cur, borderColor: GREEN, backgroundColor: GREEN, borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, pointStyle: 'line', tension: .25, cubicInterpolationMode: 'monotone', fill: false, order: 0,
+      { label: yr, data: cur, borderColor: GREEN, backgroundColor: GREEN, borderWidth: 2.5, pointRadius: 4.5, pointHoverRadius: 6.5, pointStyle: 'circle', pointBackgroundColor: GREEN, pointBorderColor: () => cssVar('--card') || '#fff', pointBorderWidth: 1.5, tension: .25, cubicInterpolationMode: 'monotone', fill: false, order: 0,
         datalabels: { display: ctx => ctx.dataset.data[ctx.dataIndex] != null, formatter: v => fmt1(v), align: 'top', anchor: 'end', offset: 4, clamp: true,
-          color: GREEN, font: { size: 11, weight: '700' }, backgroundColor: () => cssVar('--card') || '#fff', borderRadius: 4, padding: { top: 1, bottom: 1, left: 3, right: 3 } } },
+          color: GREEN, font: { size: 11, weight: '700' } } },
       { label: 'Avg', data: mean.map(v => v == null ? null : Number(v.toFixed(2))), borderColor: '#7d8781', borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, pointStyle: 'line', tension: .25, cubicInterpolationMode: 'monotone', fill: false, order: 1 },
       { label: 'Min', data: lo.map(x => x ? x.v : null), borderColor: '#b9c2bd', borderWidth: 1, pointRadius: 0, pointStyle: 'line', tension: .25, cubicInterpolationMode: 'monotone', fill: false, order: 99 },
       { label: 'Max', data: hi.map(x => x ? x.v : null), borderColor: '#b9c2bd', borderWidth: 1, pointRadius: 0, pointStyle: 'line', tension: .25, cubicInterpolationMode: 'monotone', order: 99,
@@ -3766,7 +3766,7 @@ async function initRainMonthly(){
       layout: { padding: { top: 18, right: 8 } },
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 18, padding: 12 } },
+        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 18, padding: 12, generateLabels: ch => Chart.defaults.plugins.legend.labels.generateLabels(ch).map(l => ({ ...l, pointStyle: 'line', strokeStyle: ch.data.datasets[l.datasetIndex].borderColor, lineWidth: l.datasetIndex === 0 ? 2.5 : 1.5 })) } },
         tooltip: { callbacks: {
           title: items => { const i = items[0].dataIndex; return M[i] + (i + 1 === nowM ? ` (through ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''); },
           label: ctx => { const i = ctx.dataIndex, l = ctx.dataset.label;
@@ -3987,7 +3987,7 @@ checkSession();
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
   </div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 26 (rain by month as an area chart)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 27 (rain by month markers)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
