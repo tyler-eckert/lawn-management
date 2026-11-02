@@ -2355,9 +2355,13 @@ async function renderOverviewKpis(){
     needIdx = kpis.length; needVals = { bermuda: bermudaThis, fescue: fescueThis };
     kpis.push(needCard('Bermuda need', bermudaThis));
     kpis.push(needCard('Fescue need', fescueThis));
-    window.TURF_WEEK_NEED = { bermuda: bermudaThis, fescue: fescueThis };   // read by the budget calculator
+    window.TURF_WEEK_NEED = { bermuda: bermudaThis, fescue: fescueThis };   // water used, last 7 complete days
+    // Net need for the budget calculator: water used minus the rain that fell over the same 7 days (never below 0)
+    { const rain7 = (wx || []).filter(r => r.weather_date >= thisStart && r.weather_date <= thisEnd).reduce((t, r) => t + (Number(r.rain_in) || 0), 0);
+      window.TURF_WEEK_RAIN = rain7;
+      window.TURF_WEEK_NET = { bermuda: Math.max(0, bermudaThis - rain7), fescue: Math.max(0, fescueThis - rain7) }; }
   } catch (e) {
-    window.TURF_WEEK_NEED = null;
+    window.TURF_WEEK_NEED = null; window.TURF_WEEK_NET = null; window.TURF_WEEK_RAIN = null;
     console.error('Bermuda/Fescue water-need KPIs failed:', e);
     kpis.push({label:'Bermuda need', value:'n/a', cls:'kpi-need'});
     kpis.push({label:'Fescue need', value:'n/a', cls:'kpi-need'});
@@ -3987,7 +3991,7 @@ checkSession();
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
   </div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 27 (rain by month markers)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 28 (budget = water used minus rain)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
@@ -4081,7 +4085,8 @@ checkSession();
   const countedOf = (pk, z) => has(persist.count, zk(pk, z)) ? !!persist.count[zk(pk, z)] : COUNT_DEFAULT(z);
   // A placeholder program (D) is "confirmed" once any of its run times or its cycle count has been entered.
   const isPlaceholder = p => !!p.placeholder && !p.zones.some(zd => has(persist.base, zk(p.key, zd.z))) && !has(persist.cycles, p.key);
-  const needOf    = which => { const n = window.TURF_WEEK_NEED; const v = n && n[which]; return v > 0 ? v : null; };
+  const needOf    = which => { const n = window.TURF_WEEK_NET; const v = n && n[which]; return v != null && v >= 0 ? v : null; };   // water used minus rain, last 7 days
+  const usedOf    = which => { const n = window.TURF_WEEK_NEED; const v = n && n[which]; return v > 0 ? v : null; };
 
   const histOf = g => (state.hist[g] && state.hist[g].value > 0) ? state.hist[g].value : null;
 
@@ -4148,16 +4153,19 @@ checkSession();
     // Secondary number: the historical average from the "Water Needed, 7-Day Rolling Avg"
     // chart (its dashed Average line, 2010-2025) for the week ending this Saturday, i.e. the
     // typical full-week need for this same stretch of the calendar.
-    const tile = (label, v, hist) => {
+    const rain = window.TURF_WEEK_RAIN;
+    const tile = (label, v, hist, which) => {
       let sub;
       if (hist) sub = `Historical avg: ${num(hist.value, 2)} in/wk · ${num(hist.value / 7, 2)} in/day` +
         `<br><span style="font-weight:400;color:var(--text-tertiary)">${AVG_REF_YEARS.from}-${AVG_REF_YEARS.to} · week ending ${state.histWeekEnd || 'Sat'}</span>`;
       else sub = state.histState === 'loading' ? 'Historical avg: loading…' : 'Historical avg: -';
-      return { label, value: num(v, 2), unit: 'in', sub };
+      const used = usedOf(which);
+      if (used != null && rain != null) sub = `${num(used, 2)} used − ${num(rain, 2)} rain` + (v === 0 ? ' · rain covered it' : '') + '<br>' + sub;
+      return { label, value: v == null ? 'n/a' : num(v, 2), unit: 'in', sub };
     };
     renderKpiCards('budgetNeedKpis', [
-      tile('Bermuda need · last 7 days', b, state.hist.bermuda),
-      tile('Fescue need · last 7 days', f, state.hist.fescue),
+      tile('Bermuda net need · last 7 days', b, state.hist.bermuda, 'bermuda'),
+      tile('Fescue net need · last 7 days', f, state.hist.fescue, 'fescue'),
     ]);
   }
 
@@ -4168,8 +4176,8 @@ checkSession();
     const opt = (id, label, v) => `<option value="${id}" ${state.follow === id ? 'selected' : ''} ${id !== 'custom' && v == null ? 'disabled' : ''}>${label}${v != null ? ' · ' + num(v, 2) + ' in' : ''}</option>`;
     el('budChips').innerHTML = `<div class="filter-field"><label for="budFollow">Target from</label><select id="budFollow">` +
       opt('custom', 'Custom (type it above)', null) +
-      opt('bermuda', 'Bermuda need, last 7 days', b) +
-      opt('fescue', 'Fescue need, last 7 days', f) +
+      opt('bermuda', 'Bermuda net need (used − rain, 7 days)', b) +
+      opt('fescue', 'Fescue net need (used − rain, 7 days)', f) +
       opt('bermuda-hist', 'Bermuda historical avg', hb) +
       opt('fescue-hist', 'Fescue historical avg', hf) +
       opt('property', 'Property target', PROPERTY_TARGET) + `</select></div>`;
@@ -4178,7 +4186,9 @@ checkSession();
 
   function renderSummary(){
     const d = persist.days;
-    el('budSummary').innerHTML =
+    const netFollow = state.follow === 'bermuda' || state.follow === 'fescue';
+    const covered = netFollow && state.target <= 0.005;
+    el('budSummary').innerHTML = (covered ? `<b>Rain covered the last 7 days, so no watering is needed.</b> The budgets below sit at the controller's ${MIN_PCT}% floor; pausing the program or a rain delay skips it completely. ` : '') +
       `${num(state.target, 2)} in/week ÷ ${d} watering day${d > 1 ? 's' : ''} = <b>${num(state.target / d, 2)} in per watering day</b>. ` +
       `Budget only scales run time per cycle. Start times, programs and cycle counts stay as scheduled.`;
   }
@@ -4189,7 +4199,7 @@ checkSession();
     let note = '';
     if (clamped) note = raw > MAX_PCT
       ? `Needs ${raw}%, over the ${MAX_PCT}% cap. Add a watering day to bring it in range.`
-      : `Needs ${raw}%, under the ${MIN_PCT}% floor. Water on fewer days.`;
+      : (state.target <= 0.005 ? `Nothing to put back this week. ${MIN_PCT}% is the lowest budget the controller allows.` : `Needs ${raw}%, under the ${MIN_PCT}% floor. Water on fewer days.`);
     else if (pct == null) note = 'No zones counted. Turn one on in Zone setup below.';
 
     const body = rows.map(x => {
