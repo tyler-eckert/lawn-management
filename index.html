@@ -3991,7 +3991,7 @@ checkSession();
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
   </div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 28 (budget = water used minus rain)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 29 (switch cards keep their size, resizing fixed)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
@@ -4860,7 +4860,7 @@ async function onCtlClick(e){
     applySwitch(card);
     $('.mc-ctl', card).addEventListener('click', e => { const b = e.target.closest('[data-seg] button'); if (!b) return;
       const seg = b.closest('[data-seg]').dataset.seg, k = card.dataset.cid; UI.views[k] = { ...(UI.views[k] || {}), [seg]: b.dataset.v };
-      applySwitch(card); SYNC.schedule(); setTimeout(() => packFree(cur), 60); });
+      applySwitch(card); SYNC.schedule(); setTimeout(() => render(), 60); });   // full layout pass: heights follow the chart that's now showing
   });
   // pins / order / hidden saved under the old card keys follow their merged card
   { const mapK = k => MERGED_FROM[k] || k, uniq = a => a.filter((x, i) => a.indexOf(x) === i);
@@ -4921,7 +4921,11 @@ async function onCtlClick(e){
     card.style.gridColumn = m && free ? `${Math.max(1, Math.min(13 - need, +m[1]))} / span ${need}` : `span ${need}`;
   }
   // a card's chart box: extra height goes here, so the chart itself gets taller or shorter
-  const chartBox = c => c.querySelector('.chart-wrap');
+  // Switch cards (Bermuda / Fescue, Cum / YTD / By month) hold one chart per view. Height changes apply to ALL of
+  // them, and measuring uses the one that's showing -- the first chart in the card may be a hidden view.
+  const chartBoxes = c => [...c.querySelectorAll('.chart-wrap')];
+  const chartBox = c => { const all = chartBoxes(c); return all.find(w => w.offsetParent !== null && w.getBoundingClientRect().height > 0) || all[0] || null; };
+  const MIN_CHART_H = 160;
   function chartBase(cw){ const h = cw.style.height, f = cw.style.flex; cw.style.height = ''; cw.style.flex = 'none'; const b = cw.getBoundingClientRect().height; cw.style.height = h; cw.style.flex = f; return b; }
 
   function render(){ applyLayout(cur); requestAnimationFrame(() => { fitTallCards(cur); remeasure(cur); }); document.dispatchEvent(new Event('turfops:layout')); }
@@ -4955,7 +4959,10 @@ async function onCtlClick(e){
       if (FREE && POS[c.k]) { const n = spanOf(c.el), col = Math.max(1, Math.min(13 - n, POS[c.k].c)); c.el.style.gridColumn = `${col} / span ${n}`; c.el.dataset.pin = POS[c.k].r; if (fr) c.el.style.gridRow = `${POS[c.k].r} / span ${fr}`; }
       c.el.dataset.extra = TL[c.k] || ''; c.el.style.height = ''; c.el.style.minHeight = ''; c.el.style.overflow = ''; c.el.classList.remove('lay-tall-scroll');
       c.el.style.alignSelf = TL[c.k] ? 'start' : '';   // a card with its own height doesn't stretch to its row
-      const cw = chartBox(c.el); if (cw) { cw.style.height = ''; cw.style.flex = ''; if (TL[c.k]) { cw.style.height = Math.max(120, chartBase(cw) + TL[c.k]) + 'px'; cw.style.flex = 'none'; } }
+      { const boxes = chartBoxes(c.el); boxes.forEach(w => { w.style.height = ''; w.style.flex = ''; });
+        const cw = chartBox(c.el);
+        // a saved height smaller than a chart can show came from the old bug (it measured a hidden view): ignore it
+        if (cw && TL[c.k]) { const b0 = chartBase(cw); if (b0 + TL[c.k] >= MIN_CHART_H) { const h = (b0 + TL[c.k]) + 'px'; boxes.forEach(w => { w.style.height = h; w.style.flex = 'none'; }); } } }
       const LKH = !LAYOUT_EDIT && L.lock && L.lock[dk] && L.lock[dk][c.k]; c.el.classList.toggle('lay-locked', !!LKH);
       // a locked tile keeps AT LEAST its saved height (nothing below it jumps up), but grows when its content needs more
       if (LKH) { c.el.style.minHeight = LKH + 'px'; c.el.style.alignSelf = 'start'; }
@@ -4983,17 +4990,21 @@ async function onCtlClick(e){
       // drag the bottom edge: charts stretch; snaps every 8px, to the cards beside it, and to its natural height
       const rh = document.createElement('div'); rh.className = 'lay-rh'; rh.title = 'Drag to change the height · double-click to reset'; c.el.appendChild(rh);
       rh.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); rh.setPointerCapture(e.pointerId);
-        c.el.style.alignSelf = 'start'; const r0 = c.el.getBoundingClientRect(), h0 = r0.height, e0 = +(c.el.dataset.extra || 0), base = h0 - e0, y0 = e.clientY;
+        c.el.style.alignSelf = 'start'; const r0 = c.el.getBoundingClientRect(), h0 = r0.height, y0 = e.clientY;
+        // the extra height actually showing (a saved value can be far past what the chart's minimum height allows)
+        const cwNow = chartBox(c.el), cbase = cwNow ? chartBase(cwNow) : 0;
+        const e0 = cwNow ? Math.round(cwNow.getBoundingClientRect().height - cbase) : +(c.el.dataset.extra || 0), base = h0 - e0;
         const near = pageCards(page).filter(x => x !== c.el && x.style.display !== 'none' && Math.abs(x.getBoundingClientRect().top - r0.top) < 40).map(x => { const a = x.style.alignSelf; x.style.alignSelf = 'start'; const h = x.getBoundingClientRect().height; x.style.alignSelf = a; return h; });
         const mags = [...near, base]; let ex = e0, tgt = h0; c.el.classList.add('lay-sizing'); document.body.classList.add('lay-dragging'); FREE_PRIO = c.k;
-        const cw = chartBox(c.el), cw0 = cw ? cw.getBoundingClientRect().height : 0; if (cw) cw.style.flex = 'none';
+        const cw = chartBox(c.el), cws = chartBoxes(c.el), cw0 = cw ? cw.getBoundingClientRect().height : 0; cws.forEach(w => { w.style.flex = 'none'; });
         const tag = document.createElement('div'); tag.className = 'lay-hl'; c.el.appendChild(tag);
         rh.onpointermove = ev => { const t = Math.max(80, h0 + ev.clientY - y0), m = mags.find(x => Math.abs(x - t) <= 12);
           tgt = m != null ? Math.round(m) : Math.round(t / 8) * 8; ex = Math.round(tgt - base);
-          if (cw) cw.style.height = Math.max(120, cw0 + (tgt - h0)) + 'px'; else { c.el.style.height = tgt + 'px'; c.el.style.overflow = 'hidden'; }
+          if (cw) { const hh = Math.max(MIN_CHART_H, cw0 + (tgt - h0)) + 'px'; cws.forEach(w => { w.style.height = hh; }); } else { c.el.style.height = tgt + 'px'; c.el.style.overflow = 'hidden'; }
           freeRows(c.el, tgt);
           tag.textContent = m != null ? (Math.abs(m - base) < 1 ? 'Natural height' : 'Lined up with the next card') : (ex > 0 ? '+' : '') + ex + 'px'; };
         rh.onpointerup = rh.onpointercancel = () => { rh.onpointermove = rh.onpointerup = rh.onpointercancel = null; c.el.classList.remove('lay-sizing'); document.body.classList.remove('lay-dragging'); c.el.style.overflow = ''; tag.remove();
+          if (cwNow) ex = Math.max(ex, Math.round(MIN_CHART_H - cbase));   // never save a height the chart can't actually show
           const lay = pageLayout(page); ((lay.tall ||= {})[dk] ||= {})[c.k] = ex; if (Math.abs(ex) < 4) delete lay.tall[dk][c.k]; freezeFree(page, c.k); FREE_PRIO = null; SYNC.schedule(); render(); }; };
       rh.ondblclick = () => { const lay = pageLayout(page); if (lay.tall && lay.tall[dk]) delete lay.tall[dk][c.k]; SYNC.schedule(); render(); };
       ctl.onclick = e => e.stopPropagation();
