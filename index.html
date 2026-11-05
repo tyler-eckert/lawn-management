@@ -3538,18 +3538,81 @@ async function buildGrassBalanceChart(grassType, chartId, from, to){
   const rain = weeks.map(w => Number(weekBuckets[w].rain.toFixed(3)));
   const applied = weeks.map(w => Number(weekBuckets[w].applied.toFixed(3)));
 
+  // Outlier cap: one huge rain week (e.g. ~8" in a single week) used to
+  // flatten every other bar to near zero. If the biggest week is more than
+  // 2.5x the next-biggest week (or the water need, or 1" -- whichever is
+  // largest), the y-axis is capped at ~1.4x (rounded up to a whole inch) that "typical" level and the
+  // outlier bar is drawn cut off with a break mark + its real total on top.
+  // Irrigation keeps its true height inside a clipped bar; only the rain
+  // segment is truncated. Tooltips always show the real values.
+  const totals = weeks.map((w,i) => rain[i] + applied[i]);
+  const sortedTotals = totals.slice().sort((a,b) => b - a);
+  const typical = Math.max(sortedTotals[1] || 0, ...etc, 1);
+  const yCap = sortedTotals[0] > typical * 2.5 ? Math.ceil(typical * 1.4) : null; // round up to a whole inch so ticks stay clean
+  const clipTop = yCap != null ? yCap * 0.86 : null;  // leave headroom for the overflow label
+  const clipped = totals.map(t => yCap != null && t > yCap);
+  const appliedShown = applied.map((v,i) => clipped[i] ? Math.min(v, clipTop) : v);
+  const rainShown = rain.map((v,i) => clipped[i] ? Math.max(0, clipTop - appliedShown[i]) : v);
+
+  const overflowPlugin = {
+    id: 'wbOverflow',
+    afterDatasetsDraw(chart){
+      if (yCap == null) return;
+      const rainMeta = chart.getDatasetMeta(1), irrMeta = chart.getDatasetMeta(2);
+      if (rainMeta.hidden && irrMeta.hidden) return;
+      const ctx = chart.ctx;
+      clipped.forEach((isClipped, i) => {
+        if (!isClipped) return;
+        const rEl = rainMeta.data[i], iEl = irrMeta.data[i];
+        const el = !rainMeta.hidden && rEl ? rEl : iEl;
+        if (!el) return;
+        const half = el.width / 2 + 2;
+        // Break mark: cut a slanted gap through the rain segment (or the
+        // whole bar if rain is hidden). destination-out keeps it theme-safe.
+        const segTop = el.y, segBase = el.base;
+        const yMid = segTop + (segBase - segTop) * 0.45;
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.moveTo(el.x - half, yMid + 3);
+        ctx.lineTo(el.x + half, yMid - 3);
+        ctx.lineTo(el.x + half, yMid + 3);
+        ctx.lineTo(el.x - half, yMid + 9);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        // Real total above the bar.
+        const topEl = !irrMeta.hidden && iEl ? iEl : el;
+        const shownTotal = (rainMeta.hidden ? 0 : rain[i]) + (irrMeta.hidden ? 0 : applied[i]);
+        ctx.save();
+        ctx.fillStyle = Chart.defaults.color;
+        ctx.font = `600 11px ${Chart.defaults.font.family}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(`${shownTotal.toFixed(1)}″ ↑`, el.x, Math.min(topEl.y, el.y) - 4);
+        ctx.restore();
+      });
+    }
+  };
+
+  const rawByLabel = { 'Rain': rain, 'Irrigation': applied, 'Water Need': etc };
   makeChart(chartId, {
     type:'bar',
     data:{ labels:weeks, datasets:[
       { type:'line', label:'Water Need', data:etc,
         borderColor:'#8a948e', backgroundColor:'rgba(138,148,142,0.24)', fill:true, pointRadius:0, tension:.15, order:0 },
-      { type:'bar', label:'Rain', data:rain, backgroundColor:'#4472C4', stack:'water', order:1 },
-      { type:'bar', label:'Irrigation', data:applied, backgroundColor:CHART_COLORS.irrigation, stack:'water', order:1 },
+      { type:'bar', label:'Rain', data:rainShown, backgroundColor:'#4472C4', stack:'water', order:1 },
+      { type:'bar', label:'Irrigation', data:appliedShown, backgroundColor:CHART_COLORS.irrigation, stack:'water', order:1 },
     ]},
+    plugins:[overflowPlugin],
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom'}},
+      plugins:{legend:{position:'bottom'},
+        tooltip:{ callbacks:{
+          label:(c) => { const raw = rawByLabel[c.dataset.label]; const v = raw ? raw[c.dataIndex] : c.parsed.y; return `${c.dataset.label}: ${Number(v).toFixed(2)}″`; },
+          footer:(items) => { const i = items[0] && items[0].dataIndex; return (i != null && clipped[i]) ? `Total ${totals[i].toFixed(2)}″ — bar cut off (axis capped at ${yCap}″)` : ''; }
+        } } },
       scales:{ x:{type:'time', time:{unit: weeks.length>26?'month':'week', tooltipFormat:'MMM D', displayFormats:{ day:'MMM D', week:'MMM D', month:'MMM D' }}, stacked:true},
-               y:{title:{display:false}, stacked:true} } }
+               y:{title:{display:false}, stacked:true, ...(yCap != null ? { max: yCap } : {})} } }
   });
 }
 
