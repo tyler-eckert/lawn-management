@@ -18,7 +18,7 @@
 (function(){var t=null;try{t=localStorage.getItem('turfops.theme');}catch(e){}var d=document.documentElement;d.dataset.theme=t||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var m=document.getElementById('themeColor');if(m)m.content=d.dataset.theme==='dark'?'#030504':'#f4f6f5';})();</script>
 <meta name="apple-mobile-web-app-title" content="TurfOps">
 <script>try{ if (window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches)) document.documentElement.classList.add("is-standalone"); }catch(e){}</script>
-<meta name="turfops-build" content="2026-10-11 · build 8 (top restored, bottom clearance)">
+<meta name="turfops-build" content="2026-11-05 · build 30 (rain + irrigation on Water Applied charts)">
 <!-- Chart.js, moment, the moment adapter, and supabase-js are bundled
      inline below instead of loaded from a CDN, so this page works even on
      networks that block those CDN domains. -->
@@ -1343,12 +1343,12 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
       <div class="section-body">
         <div class="two-col">
           <div class="panel">
-            <h3 style="font-size:0.95rem; margin-bottom:6px;">vs. Need This Week (inches)</h3>
+            <h3 style="font-size:0.95rem; margin-bottom:6px;">Rain + Irrigation vs. Need This Week (inches)</h3>
             <div class="panel-sub" id="waterRadarWeekLabel" style="margin-bottom:10px;"></div>
             <div class="chart-wrap zone-tall"><canvas id="chartWaterRadar"></canvas></div>
           </div>
           <div class="panel">
-            <h3 style="font-size:0.95rem; margin-bottom:6px;">By Zone (total inches)</h3>
+            <h3 style="font-size:0.95rem; margin-bottom:6px;">By Zone: Irrigation + Rain (inches)</h3>
             <div class="year-controls" style="margin-bottom:12px;">
               <div class="year-group">
                 <div class="yg-label">Range</div>
@@ -3235,7 +3235,7 @@ async function buildWaterRadarChart(){
 
   const nw = needWindow();
   const { data: rows } = await supa.from('et_balance_by_zone')
-    .select('zone_number,grass_type,weather_date,etc_in,irrigation_applied_in')
+    .select('zone_number,grass_type,weather_date,etc_in,rain_in,irrigation_applied_in')
     .gte('weather_date', nw.start < start ? nw.start : start).lte('weather_date', end);
   const data = (rows || []).filter(r => r.weather_date >= start);                          // water applied: this week (Sun-Sat)
   const needRows = (rows || []).filter(r => r.weather_date >= nw.start && r.weather_date <= nw.end);   // need: last 7 complete days
@@ -3262,11 +3262,12 @@ async function buildWaterRadarChart(){
   // charts above, just with these coarser groupings.
   const byZone = {};
   data.forEach(r => {
-    byZone[r.zone_number] = byZone[r.zone_number] || { etc:0, applied:0 };
+    byZone[r.zone_number] = byZone[r.zone_number] || { etc:0, applied:0, rain:0 };
     byZone[r.zone_number].applied += (r.irrigation_applied_in || 0);
+    byZone[r.zone_number].rain += (r.rain_in || 0);
   });
   needRows.forEach(r => {
-    byZone[r.zone_number] = byZone[r.zone_number] || { etc:0, applied:0 };
+    byZone[r.zone_number] = byZone[r.zone_number] || { etc:0, applied:0, rain:0 };
     byZone[r.zone_number].etc += (r.etc_in || 0);
     if (r.grass_type) zoneGrass[r.zone_number] = r.grass_type;
   });
@@ -3278,29 +3279,45 @@ async function buildWaterRadarChart(){
   // weather-driven rate is.
   const distinctDays = new Set(needRows.map(r => r.weather_date)).size;   // normally 7; a gap in the data is scaled up to a full week
 
-  const labels = [], appliedVals = [], needVals = [], histVals = [];
+  // Water the lawn actually got = rain + irrigation. A radar can't stack, so it is drawn as nested bands:
+  // the inner band is RAIN, the outer edge is rain + irrigation (the ring between them is what irrigation added).
+  const labels = [], appliedVals = [], rainVals = [], totalVals = [], needVals = [], histVals = [];
   RADAR_GROUPS.forEach(g => {
     const hz = g.zones.map(z => histByGrass[zoneGrass[z]]).filter(v => v != null);
     histVals.push(hz.length ? Number(avg(hz).toFixed(2)) : null);
     const weeklyApplied = g.zones.filter(z => byZone[z]).map(z => byZone[z].applied);
     const weeklyNeed = g.zones.filter(z => byZone[z]).map(z => byZone[z].etc);
+    const weeklyRain = g.zones.filter(z => byZone[z]).map(z => byZone[z].rain);
+    const irrAvg = weeklyApplied.length ? avg(weeklyApplied) : 0, rainAvg = weeklyRain.length ? avg(weeklyRain) : 0;
     labels.push(g.label);
-    appliedVals.push(weeklyApplied.length ? Number(avg(weeklyApplied).toFixed(2)) : 0);
+    appliedVals.push(Number(irrAvg.toFixed(2)));
+    rainVals.push(Number(rainAvg.toFixed(2)));
+    totalVals.push(Number((irrAvg + rainAvg).toFixed(2)));
     let needAvg = weeklyNeed.length ? avg(weeklyNeed) : 0;
     if (distinctDays > 0 && distinctDays < 7) needAvg = (needAvg / distinctDays) * 7;
     needVals.push(Number(needAvg.toFixed(2)));
   });
+
+  // one-line answer to "how much do I still need to water?": the whole-property average
+  if (labelEl){
+    const mean = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+    const still = mean(needVals.map((n, i) => Math.max(0, n - totalVals[i])));
+    labelEl.innerHTML = `Week of ${weekFmt(sunday)} - ${weekFmt(saturday)} (Sun-Sat)<br>` +
+      `<span style="color:var(--text);">Average across groups: need <b>${num(mean(needVals),2)}</b> in, rain <b>${num(mean(rainVals),2)}</b>, irrigation <b>${num(mean(appliedVals),2)}</b>, still needed <b>${num(still,2)}</b> in</span>`;
+  }
 
   makeChart('chartWaterRadar', {
     type: 'radar',
     data: {
       labels,
       datasets: [
-        { label:'Applied', data:appliedVals, order:1,
+        { label:'Rain', data:rainVals, order:1,
+          borderColor:CHART_COLORS.rain, backgroundColor:'rgba(68,114,196,0.35)', borderWidth:2, pointBackgroundColor:CHART_COLORS.rain },
+        { label:'Rain + Irrigation', data:totalVals, order:2,
           borderColor:'#1a8f4e', backgroundColor:'rgba(26,143,78,0.28)', borderWidth:2 },
-        { label:'Need (last 7 days)', data:needVals, order:2,
+        { label:'Need (last 7 days)', data:needVals, order:3,
           borderColor:'#8a948e', backgroundColor:'transparent', borderWidth:2, borderDash:[5,3] },
-        ...(histVals.some(v => v != null) ? [{ label:'Historical Need', data:histVals, order:3,
+        ...(histVals.some(v => v != null) ? [{ label:'Historical Need', data:histVals, order:4,
           borderColor:'#eda100', backgroundColor:'transparent', borderWidth:2, borderDash:[2,3],
           pointBackgroundColor:'#eda100' }] : []),
       ],
@@ -3309,7 +3326,12 @@ async function buildWaterRadarChart(){
       responsive:true, maintainAspectRatio:false,
       layout:{ padding:0 },
       plugins:{ legend:{ position:'bottom', labels:{ boxWidth:18, padding:10 } },
-        tooltip:{ callbacks:{ title:(items) => items.length ? labels[items[0].dataIndex] : '', label:(ctx) => `${ctx.dataset.label}: ${num(ctx.raw, 2)} in` } } },
+        tooltip:{ callbacks:{ title:(items) => items.length ? labels[items[0].dataIndex] : '',
+          label:(ctx) => ctx.dataset.label === 'Rain + Irrigation'
+            ? [`${ctx.dataset.label}: ${num(ctx.raw, 2)} in`, `  irrigation: ${num(appliedVals[ctx.dataIndex], 2)} in`]
+            : `${ctx.dataset.label}: ${num(ctx.raw, 2)} in`,
+          afterBody:(items) => { if (!items.length) return ''; const i = items[0].dataIndex, gap = needVals[i] - totalVals[i];
+            return gap > 0.005 ? `Still needed: ${num(gap, 2)} in` : `Covered, ${num(-gap, 2)} in to spare`; } } } },
       // long group names wrap onto two lines, so the web itself can use more of the card
       scales:{ r:{ beginAtZero:true, ticks:{ precision:1, backdropColor:'transparent' },
         pointLabels:{ font:{ size:11, weight:'600' }, padding:6, callback:(l) => {
@@ -3379,17 +3401,18 @@ async function historicalNeedForWindow(grassType, from, to){
 
 async function buildZoneBarChart(from, to){
   const { data, error } = await supa.from('et_balance_by_zone')
-    .select('zone_number,grass_type,irrigation_applied_in,etc_in')
+    .select('zone_number,grass_type,irrigation_applied_in,rain_in,etc_in')
     .gte('weather_date', from).lte('weather_date', to);
 
   if (error) { console.error('Zone bar chart query failed:', error); emptyState('chartZoneBar', 'Error loading zone data.'); return; }
   if (!data || !data.length){ emptyState('chartZoneBar', 'No data in this range.'); return; }
 
-  const totals = {}, need = {}, grassOf = {};
-  for (let z = 1; z <= 12; z++) { totals[z] = 0; need[z] = null; }
+  const totals = {}, rainBy = {}, need = {}, grassOf = {};
+  for (let z = 1; z <= 12; z++) { totals[z] = 0; rainBy[z] = 0; need[z] = null; }
   data.forEach(r => {
     if (r.zone_number == null) return;
     totals[r.zone_number] = (totals[r.zone_number] || 0) + (r.irrigation_applied_in || 0);
+    rainBy[r.zone_number] = (rainBy[r.zone_number] || 0) + (r.rain_in || 0);
     if (r.etc_in != null) need[r.zone_number] = (need[r.zone_number] || 0) + r.etc_in;
     if (r.grass_type) grassOf[r.zone_number] = r.grass_type;
   });
@@ -3400,24 +3423,35 @@ async function buildZoneBarChart(from, to){
 
   const zones = Object.keys(totals).map(Number).sort((a,b)=>a-b);
   const labels = zones.map(z => String(z));
-  const values = zones.map(z => Number(totals[z].toFixed(2)));
+  const values = zones.map(z => Number(totals[z].toFixed(2)));            // irrigation (first stacked segment)
+  const rainVals = zones.map(z => Number(rainBy[z].toFixed(2)));          // rain (stacked on top)
+  const totalVals = zones.map(z => Number((totals[z] + rainBy[z]).toFixed(2)));   // irrigation + rain
   const needVals = zones.map(z => need[z] == null ? null : Number(need[z].toFixed(2)));
   const histVals = zones.map(z => { const h = histByGrass[grassOf[z]]; return h == null || need[z] == null ? null : Number(h.toFixed(2)); });
   const barColors = zones.map(z => ZONE_GROUP_COLOR[z] || ZONE_UNGROUPED_COLOR);
 
   // Need and historical need are thin floating bars (a short tick at the value), so each zone's
   // applied bar can be read against both benchmarks at a glance.
-  const maxVal = Math.max(0, ...values, ...needVals.filter(v => v != null), ...histVals.filter(v => v != null));
+  const maxVal = Math.max(0, ...totalVals, ...needVals.filter(v => v != null), ...histVals.filter(v => v != null));
   const axisMax = Math.max(maxVal * 1.2, 0.5), tick = axisMax * 0.006;
   const marker = vals => vals.map(v => v == null ? null : [Math.max(0, v - tick), v + tick]);
 
   makeChart('chartZoneBar', {
     type:'bar',
     data:{ labels, datasets:[
-      { label:'Applied', data:values, backgroundColor:barColors, order:3, barPercentage:0.8, categoryPercentage:0.9, grouped:false },
-      { label:'Need', data:marker(needVals), backgroundColor:() => cssVar('--text'), order:1, barPercentage:0.95, categoryPercentage:0.9, grouped:false,
+      // irrigation is the first stacked segment, rain stacks on top, and the total sits at the end of each bar
+      { label:'Irrigation', data:values, backgroundColor:barColors, stack:'water', order:3, barPercentage:0.8, categoryPercentage:0.9, grouped:false },
+      { label:'Rain', data:rainVals, backgroundColor:CHART_COLORS.rain, stack:'water', order:3, barPercentage:0.8, categoryPercentage:0.9, grouped:false,
+        datalabels:{ labels:{
+          totalIn:  { display:(c) => totalVals[c.dataIndex] > axisMax * 0.12, color:'#fff', anchor:'end', align:'start', offset:4,
+                      font:{ weight:'700', size:10.5 }, formatter:(v, c) => num(totalVals[c.dataIndex], 2) },
+          totalOut: { display:(c) => totalVals[c.dataIndex] <= axisMax * 0.12, color:cssVar('--text'), anchor:'end', align:'right', offset:4,
+                      font:{ weight:'700', size:10.5 }, backgroundColor:'rgba(255,255,255,0.85)', borderRadius:3, padding:{ top:1, bottom:1, left:3, right:3 },
+                      formatter:(v, c) => num(totalVals[c.dataIndex], 2) },
+        } } },
+      { label:'Need', data:marker(needVals), backgroundColor:() => cssVar('--text'), stack:'need', order:1, barPercentage:0.95, categoryPercentage:0.9, grouped:false,
         datalabels:{ display:false }, _vals:needVals },
-      { label:'Historical Need', data:marker(histVals), backgroundColor:'#eda100', order:2, barPercentage:0.95, categoryPercentage:0.9, grouped:false,
+      { label:'Historical Need', data:marker(histVals), backgroundColor:'#eda100', stack:'hist', order:2, barPercentage:0.95, categoryPercentage:0.9, grouped:false,
         datalabels:{ display:false }, _vals:histVals },
     ] },
     options:{
@@ -3427,13 +3461,14 @@ async function buildZoneBarChart(from, to){
         legend:{ display:true, position:'bottom', labels:{ usePointStyle:false, boxWidth:12, boxHeight:12, padding:12,
           generateLabels:(chart) => chart.data.datasets.map((d, i) => ({ text:d.label, datasetIndex:i, hidden:!chart.isDatasetVisible(i),
             fillStyle: i === 0 ? '#1a8f4e' : (typeof d.backgroundColor === 'function' ? d.backgroundColor() : d.backgroundColor), strokeStyle:'transparent', lineWidth:0, fontColor:cssVar('--text-tertiary') })) } },
-        tooltip:{ filter:(it) => !it.dataset._vals || it.dataset._vals[it.dataIndex] != null, callbacks:{ title:(items) => items.length ? `Zone ${items[0].label}` : '',
-          label:(ctx) => { const v = ctx.dataset._vals ? ctx.dataset._vals[ctx.dataIndex] : ctx.raw; return v == null ? null : `${ctx.dataset.label}: ${num(v, 2)} in`; } } },
+        tooltip:{ mode:'index', intersect:false, filter:(it) => !it.dataset._vals || it.dataset._vals[it.dataIndex] != null, callbacks:{ title:(items) => items.length ? `Zone ${items[0].label}` : '',
+          label:(ctx) => { const v = ctx.dataset._vals ? ctx.dataset._vals[ctx.dataIndex] : ctx.raw; return v == null ? null : `${ctx.dataset.label}: ${num(v, 2)} in`; },
+          footer:(items) => items.length ? `Irrigation + rain: ${num(totalVals[items[0].dataIndex], 2)} in` : '' } },
         // values sit inside the end of each bar, so they never collide with the benchmark ticks
-        datalabels:{ display:(ctx) => ctx.datasetIndex === 0 && ctx.dataset.data[ctx.dataIndex] > axisMax * 0.12, color:'#fff', anchor:'end', align:'start', offset:4, font:{ weight:'600', size:10.5 }, formatter:(v)=>num(v,2) } },
+        datalabels:{ display:(ctx) => ctx.datasetIndex === 0 && ctx.dataset.data[ctx.dataIndex] > axisMax * 0.12 && rainVals[ctx.dataIndex] > axisMax * 0.12, color:'#fff', anchor:'end', align:'start', offset:4, font:{ weight:'600', size:10.5 }, formatter:(v)=>num(v,2) } },
       scales: {
-        x:{ beginAtZero:true, suggestedMax: axisMax, title:{display:true, text:'inches'} },
-        y:{ ticks:{ autoSkip:false } },
+        x:{ stacked:true, beginAtZero:true, suggestedMax: axisMax, title:{display:true, text:'inches'} },
+        y:{ stacked:true, ticks:{ autoSkip:false } },
       },
     },
   });
@@ -4054,7 +4089,7 @@ checkSession();
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
   </div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-10-29 · build 29 (switch cards keep their size, resizing fixed)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-11-05 · build 30 (rain + irrigation on Water Applied charts)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
