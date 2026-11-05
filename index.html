@@ -18,7 +18,7 @@
 (function(){var t=null;try{t=localStorage.getItem('turfops.theme');}catch(e){}var d=document.documentElement;d.dataset.theme=t||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var m=document.getElementById('themeColor');if(m)m.content=d.dataset.theme==='dark'?'#030504':'#f4f6f5';})();</script>
 <meta name="apple-mobile-web-app-title" content="TurfOps">
 <script>try{ if (window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches)) document.documentElement.classList.add("is-standalone"); }catch(e){}</script>
-<meta name="turfops-build" content="2026-11-05 · build 30 (rain + irrigation on Water Applied charts)">
+<meta name="turfops-build" content="2026-11-05 · build 31 (By Zone: rain first)">
 <!-- Chart.js, moment, the moment adapter, and supabase-js are bundled
      inline below instead of loaded from a CDN, so this page works even on
      networks that block those CDN domains. -->
@@ -1348,7 +1348,7 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
             <div class="chart-wrap zone-tall"><canvas id="chartWaterRadar"></canvas></div>
           </div>
           <div class="panel">
-            <h3 style="font-size:0.95rem; margin-bottom:6px;">By Zone: Irrigation + Rain (inches)</h3>
+            <h3 style="font-size:0.95rem; margin-bottom:6px;">By Zone: Rain + Irrigation (inches)</h3>
             <div class="year-controls" style="margin-bottom:12px;">
               <div class="year-group">
                 <div class="yg-label">Range</div>
@@ -3439,13 +3439,19 @@ async function buildZoneBarChart(from, to){
   makeChart('chartZoneBar', {
     type:'bar',
     data:{ labels, datasets:[
-      // irrigation is the first stacked segment, rain stacks on top, and the total sits at the end of each bar
-      { label:'Irrigation', data:values, backgroundColor:barColors, stack:'water', order:3, barPercentage:0.8, categoryPercentage:0.9, grouped:false },
+      // rain is the first (base) stacked segment, so every zone starts at the same level; irrigation stacks on top
+      // and the total sits at the end of each bar
       { label:'Rain', data:rainVals, backgroundColor:CHART_COLORS.rain, stack:'water', order:3, barPercentage:0.8, categoryPercentage:0.9, grouped:false,
+        datalabels:{ display:false } },
+      { label:'Irrigation', data:values, backgroundColor:barColors, stack:'water', order:3, barPercentage:0.8, categoryPercentage:0.9, grouped:false,
         datalabels:{ labels:{
-          totalIn:  { display:(c) => totalVals[c.dataIndex] > axisMax * 0.12, color:'#fff', anchor:'end', align:'start', offset:4,
+          // labels are placed by the irrigation segment's real width in pixels: the irrigation value only when there
+          // is room for it AND the total; the total inside the bar end when the segment can hold it, else just outside
+          irr:      { display:(c) => c.chart.scales.x.getPixelForValue(totalVals[c.dataIndex]) - c.chart.scales.x.getPixelForValue(rainVals[c.dataIndex]) >= 100,
+                      color:'#fff', anchor:'center', align:'center', font:{ weight:'600', size:10.5 }, formatter:(v) => num(v, 2) },
+          totalIn:  { display:(c) => c.chart.scales.x.getPixelForValue(totalVals[c.dataIndex]) - c.chart.scales.x.getPixelForValue(rainVals[c.dataIndex]) >= 40, color:'#fff', anchor:'end', align:'start', offset:4,
                       font:{ weight:'700', size:10.5 }, formatter:(v, c) => num(totalVals[c.dataIndex], 2) },
-          totalOut: { display:(c) => totalVals[c.dataIndex] <= axisMax * 0.12, color:cssVar('--text'), anchor:'end', align:'right', offset:4,
+          totalOut: { display:(c) => c.chart.scales.x.getPixelForValue(totalVals[c.dataIndex]) - c.chart.scales.x.getPixelForValue(rainVals[c.dataIndex]) < 40, color:cssVar('--text'), anchor:'end', align:'right', offset:4,
                       font:{ weight:'700', size:10.5 }, backgroundColor:'rgba(255,255,255,0.85)', borderRadius:3, padding:{ top:1, bottom:1, left:3, right:3 },
                       formatter:(v, c) => num(totalVals[c.dataIndex], 2) },
         } } },
@@ -3460,12 +3466,12 @@ async function buildZoneBarChart(from, to){
       plugins:{
         legend:{ display:true, position:'bottom', labels:{ usePointStyle:false, boxWidth:12, boxHeight:12, padding:12,
           generateLabels:(chart) => chart.data.datasets.map((d, i) => ({ text:d.label, datasetIndex:i, hidden:!chart.isDatasetVisible(i),
-            fillStyle: i === 0 ? '#1a8f4e' : (typeof d.backgroundColor === 'function' ? d.backgroundColor() : d.backgroundColor), strokeStyle:'transparent', lineWidth:0, fontColor:cssVar('--text-tertiary') })) } },
+            fillStyle: d.label === 'Irrigation' ? '#1a8f4e' : (typeof d.backgroundColor === 'function' ? d.backgroundColor() : d.backgroundColor), strokeStyle:'transparent', lineWidth:0, fontColor:cssVar('--text-tertiary') })) } },
         tooltip:{ mode:'index', intersect:false, filter:(it) => !it.dataset._vals || it.dataset._vals[it.dataIndex] != null, callbacks:{ title:(items) => items.length ? `Zone ${items[0].label}` : '',
           label:(ctx) => { const v = ctx.dataset._vals ? ctx.dataset._vals[ctx.dataIndex] : ctx.raw; return v == null ? null : `${ctx.dataset.label}: ${num(v, 2)} in`; },
           footer:(items) => items.length ? `Irrigation + rain: ${num(totalVals[items[0].dataIndex], 2)} in` : '' } },
         // values sit inside the end of each bar, so they never collide with the benchmark ticks
-        datalabels:{ display:(ctx) => ctx.datasetIndex === 0 && ctx.dataset.data[ctx.dataIndex] > axisMax * 0.12 && rainVals[ctx.dataIndex] > axisMax * 0.12, color:'#fff', anchor:'end', align:'start', offset:4, font:{ weight:'600', size:10.5 }, formatter:(v)=>num(v,2) } },
+        datalabels:{ display:false, color:'#fff', anchor:'end', align:'start', offset:4, font:{ weight:'600', size:10.5 }, formatter:(v)=>num(v,2) } },
       scales: {
         x:{ stacked:true, beginAtZero:true, suggestedMax: axisMax, title:{display:true, text:'inches'} },
         y:{ stacked:true, ticks:{ autoSkip:false } },
@@ -4089,7 +4095,7 @@ checkSession();
   <div id="notifyBox" class="lay-ranges nt-box"></div>
   <div id="layoutList"></div>
   </div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-11-05 · build 30 (rain + irrigation on Water Applied charts)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-11-05 · build 31 (By Zone: rain first)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
