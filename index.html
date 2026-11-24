@@ -1001,6 +1001,14 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
   #overviewKpis > .kpi-card{ grid-column:span 2; }
   #overviewKpis > .kpi-card.kpi-need{ grid-column:span 5; }
 }
+/* narrower desktop card (free layout): 3 tiles, then 2, then the 2 need tiles, so no row ends with an empty slot */
+@media (min-width:861px){
+  @container (max-width:699px){
+    #overviewKpis{ grid-template-columns:repeat(6, minmax(0, 1fr)); }
+    #overviewKpis > .kpi-card{ grid-column:span 2; }
+    #overviewKpis > .kpi-card:nth-child(4), #overviewKpis > .kpi-card:nth-child(5), #overviewKpis > .kpi-card.kpi-need{ grid-column:span 3; }
+  }
+}
 
 /* ---- build 21: desktop only (mouse + wide screen; phones and tablets untouched) ---- */
 @media (min-width:1200px) and (hover:hover) and (pointer:fine){
