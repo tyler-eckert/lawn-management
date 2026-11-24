@@ -777,7 +777,8 @@ table.pm-steps tr.pm-group td{ border-top:1.5px solid var(--border-strong); }
 
 /* ---- tablet portrait (601-860px): keep the phone layout, but as a centered column instead of edge to edge ---- */
 @media (min-width:601px) and (max-width:860px){
-  main, header.top .header-row{ max-width:700px; margin-left:auto; margin-right:auto; }
+  main{ max-width:700px; margin-left:auto; margin-right:auto; }
+  header.top .header-row{ max-width:668px; margin-left:auto; margin-right:auto; } /* 700 minus main's 16px side padding, so title and buttons line up with the cards */
   .bottom-tabs{ left:50%; right:auto; width:min(560px, calc(100% - 24px)); transform:translateX(-50%); }
 }
 /* ---- small phones: give the six tab labels (Irrigation, Calculator) room to breathe ---- */
