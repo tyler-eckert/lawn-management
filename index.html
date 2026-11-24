@@ -775,6 +775,20 @@ table.pm-steps tr.pm-group td{ border-top:1.5px solid var(--border-strong); }
   .section-toggle h2{ font-size:var(--fs-lg); }
 }
 
+/* ---- tablet portrait (601-860px): keep the phone layout, but as a centered column instead of edge to edge ---- */
+@media (min-width:601px) and (max-width:860px){
+  main, header.top .header-row{ max-width:700px; margin-left:auto; margin-right:auto; }
+  .bottom-tabs{ left:50%; right:auto; width:min(560px, calc(100% - 24px)); transform:translateX(-50%); }
+}
+/* ---- small phones: give the six tab labels (Irrigation, Calculator) room to breathe ---- */
+@media (max-width:420px){
+  .bottom-tabs{ left:8px; right:8px; padding:5px !important; }
+  .bottom-tabs button{ font-size:10px; letter-spacing:-.01em; }
+}
+@media (max-width:340px){
+  .bottom-tabs button{ font-size:9px; padding-inline:0; }
+}
+
 /* =====================================================================
    CARD GRID + LAYOUT EDITOR (ported from eckert.fin)
    ===================================================================== */
