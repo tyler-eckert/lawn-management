@@ -18,7 +18,7 @@
 (function(){var t=null;try{t=localStorage.getItem('turfops.theme');}catch(e){}var d=document.documentElement;d.dataset.theme=t||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var m=document.getElementById('themeColor');if(m)m.content=d.dataset.theme==='dark'?'#030504':'#f4f6f5';})();</script>
 <meta name="apple-mobile-web-app-title" content="TurfOps">
 <script>try{ if (window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches)) document.documentElement.classList.add("is-standalone"); }catch(e){}</script>
-<meta name="turfops-build" content="2026-11-05 · build 31 (By Zone: rain first)">
+<meta name="turfops-build" content="2026-11-25 · build 32 (header, calculator and settings tidy)">
 <!-- Chart.js, moment, the moment adapter, and supabase-js are bundled
      inline below instead of loaded from a CDN, so this page works even on
      networks that block those CDN domains. -->
@@ -255,6 +255,7 @@ main{ max-width:1200px; margin:0 auto; padding:20px 20px 60px; }
 /* ---------- Filters ---------- */
 .filter-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px; }
 .filter-field{ display:flex; flex-direction:column; gap:4px; flex:1; min-width:120px; }
+.filter-field input[type=date]{ min-width:0; width:100%; box-sizing:border-box; }
 .filter-field label{ font-size:var(--fs-xs); color:var(--text-secondary); font-weight:500; }
 .filter-field select, .filter-field input{
   padding:10px 11px; border:1px solid var(--line); border-radius:10px;
@@ -756,13 +757,19 @@ table.pm-steps tr.pm-group td{ border-top:1.5px solid var(--border-strong); }
 @media (max-width:860px){
   .shell{ grid-template-columns:1fr; }
   .side{ display:none; }
-  header.top{ padding:calc(16px + env(safe-area-inset-top, 0px)) 16px 0; }
-  header.top h1{ font-size:var(--fs-2xl); }
-  .top-actions{ margin-left:0; width:100%; }
+  header.top{ padding:calc(28px + env(safe-area-inset-top, 0px)) 16px 0; }
+  header.top h1{ font-size:var(--fs-2xl); line-height:1.15; }
+  /* title on the left, buttons on the right, both centred on the title line; the Overview date sits under the title */
+  .header-row{ display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:10px; row-gap:0; align-items:center; }
+  .hdr-title{ display:contents; }
+  #pageTitle{ grid-column:1; grid-row:1; min-width:0; }
+  header.top .page-sub{ grid-column:1; grid-row:2; margin-top:2px; }
+  header.top .page-sub:empty{ display:none; }
+  .top-actions{ grid-column:2; grid-row:1; margin-left:0; width:auto; flex:none; }
     .mob-only{ display:inline-flex !important; }
   .top-actions{ flex-wrap:nowrap; gap:8px; }
   .speed{ display:none; }
-  .top-actions{ justify-content:flex-end; }
+  .top-actions{ justify-content:flex-end; gap:6px; }
   #layoutBtn span{ display:none; }
   #layoutBtn, #themeMob, #settingsBtn{ width:38px; padding:0; flex:none; }
   #logoutBtn{ flex:none; padding:0 14px; }
@@ -808,6 +815,8 @@ table.pm-steps tr.pm-group td{ border-top:1.5px solid var(--border-strong); }
 .ce-ic svg{ width:13px; height:13px; }
 .card-head h3 .ce-ic{ width:26px; height:26px; border-radius:8px; }
 .card-head h3 .ce-ic svg{ width:15px; height:15px; }
+.card-head:has(.otd-date){ padding-right:0; }
+.card-head h3 .otd-date{ margin:0 0 0 auto !important; line-height:inherit; margin-left:auto; font-size:var(--fs-sm); font-weight:500; color:var(--text-tertiary); white-space:nowrap; letter-spacing:0; }
 .ce-from{ display:none; margin-left:2px; font-size:var(--fs-2xs); font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-500); background:var(--brand-100); padding:2px 7px; border-radius:var(--r-pill); }
 #g-overview > .card:not([data-home="overview"]) .ce-from{ display:inline-block; }
 .card.panel .card-head + .panel-sub{ margin-top:-4px; }
@@ -896,6 +905,24 @@ body.lay-dragging{ overscroll-behavior:none; touch-action:none; -webkit-user-sel
   .toast{ bottom:calc(96px + env(safe-area-inset-bottom, 0px)); }
 }
 
+/* ---- build 32 ---- */
+@media (max-width:860px){
+  .filter-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .filter-row .filter-field{ min-width:0; }
+  .filter-row .filter-field:nth-child(-n+3){ grid-column:1 / -1; }
+  .filter-row .btn{ width:100%; }
+}
+button.lay-sechead{ font-size:var(--fs-md); font-weight:600; color:var(--text); padding:15px 16px; border-top:1px solid var(--line-soft); }
+#notifySec{ padding:0 12px; }
+#notifySec > button.lay-sechead{ border-top:0; }
+button.lay-sechead .lay-count{ margin-left:2px; }
+.lay-sec > .lay-fold-body{ padding:0 16px 8px; }
+.lay-sec .lay-ranges{ padding:2px 0 8px; }
+.lay-sec .lay-ranges.lay-in + .lay-ranges.lay-in{ border-top:1px solid var(--line-soft); margin-top:8px; padding-top:14px; }
+.lay-sec .lay-help{ padding:0 0 8px; border-bottom:0; }
+.nt-box{ border-bottom:0; margin:0; padding:2px 16px 12px; }
+#notifySec .nt-box{ padding:2px 16px 12px; }
+#notifyBox[hidden]{ display:none; }
 /* ---- build 15 ---- */
 /* Years & range: a slim, collapsible bar */
 #rangeControlsHeading{ padding:0 !important; margin:0 0 12px !important; background:var(--card) !important; border:1px solid var(--border) !important; box-shadow:var(--shadow) !important; border-radius:var(--r-lg) !important; }
@@ -1099,10 +1126,10 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
     <div class="nav-label">Yard</div>
     <nav id="sideNav" aria-label="Dashboard pages">
       <button class="nav-btn" type="button" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Overview</button>
-      <button class="nav-btn" type="button" data-nav="temps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg>Temperature</button>
+      <button class="nav-btn" type="button" data-nav="temps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg>Temps</button>
       <button class="nav-btn" type="button" data-nav="rain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13v6M8 13v6M12 15v6"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>Rain</button>
       <button class="nav-btn" type="button" data-nav="irrigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7s6 6.3 6 11a6 6 0 0 1-12 0c0-4.7 6-11 6-11z"/></svg>Irrigation</button>
-      <button class="nav-btn" type="button" data-nav="calculator"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>Budget calculator</button>
+      <button class="nav-btn" type="button" data-nav="calculator"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>Water calculator</button>
       <button class="nav-btn" type="button" data-nav="records"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>Records</button>
     </nav>
     <div class="side-foot">
@@ -1114,7 +1141,7 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
   <div class="shell-main">
   <header class="top">
     <div class="header-row">
-      <div><h1 id="pageTitle">Overview</h1><p class="page-sub" id="pageSub"></p></div>
+      <div class="hdr-title"><h1 id="pageTitle">Overview</h1><p class="page-sub" id="pageSub"></p></div>
       <div class="top-actions">
         <button class="btn ghost mob-only" type="button" id="themeMob" aria-label="Switch light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg></button>
         <button class="btn ghost icon-only" type="button" id="settingsBtn" aria-label="Page settings" title="Cards on every page, default ranges"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
@@ -1149,7 +1176,7 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
     <section class="collapsible" id="sec-on-this-day" data-tab="overview">
       <button class="section-toggle" data-target="sec-on-this-day" data-icon="trend"><h2>On This Day</h2><span class="chevron">︿</span></button>
       <div class="section-body">
-        <div class="panel-sub" id="onThisDayLabel" style="margin-bottom:10px;"></div>
+        <div class="panel-sub" id="onThisDayLabel"></div>
         <div class="panel">
           <h3 style="font-size:var(--fs-md); margin-bottom:6px;">High &amp; Low Spread by Year</h3>
           <div class="chart-wrap scatter-tall"><canvas id="chartOnThisDayScatter"></canvas></div>
@@ -1245,7 +1272,6 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
     <section class="collapsible" id="sec-deficit-bermuda" data-tab="irrigation">
       <button class="section-toggle" data-target="sec-deficit-bermuda" data-icon="droplet"><h2>Running Water Deficit</h2><span class="chevron">︿</span></button>
       <div class="section-body">
-        <div class="panel-sub" style="margin-bottom:10px;">Inches. Shortfall carried day to day, never below 0.</div>
         <div class="two-col">
           <div class="panel">
             <h3 style="font-size:var(--fs-md); margin-bottom:6px;">Bermuda</h3>
@@ -1260,40 +1286,6 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
     </section>
 
     <!-- ================= CUMULATIVE WATER DEFICIT ================= -->
-    <section class="collapsible" id="sec-cumdef-year" data-tab="irrigation">
-      <button class="section-toggle" data-target="sec-cumdef-year" data-icon="droplet"><h2>Cumulative Water Deficit, YTD</h2><span class="chevron">︿</span></button>
-      <div class="section-body">
-        <div class="panel-sub" style="margin-bottom:10px;">Inches. Need minus rain and irrigation, summed since Jan 1. <span style="color:var(--neg); font-weight:600;">Above 0 = behind</span> · <span style="color:var(--pos); font-weight:600;">below 0 = ahead</span>. Current year.</div>
-        <div class="two-col">
-          <div class="panel">
-            <h3 style="font-size:var(--fs-md); margin-bottom:6px;">Bermuda</h3>
-            <div class="chart-wrap tall"><canvas id="chartCumDefYearBermuda"></canvas></div>
-          </div>
-          <div class="panel">
-            <h3 style="font-size:var(--fs-md); margin-bottom:6px;">Fescue</h3>
-            <div class="chart-wrap tall"><canvas id="chartCumDefYearFescue"></canvas></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="collapsible" id="sec-cumdef-month" data-tab="irrigation">
-      <button class="section-toggle" data-target="sec-cumdef-month" data-icon="droplet"><h2>Cumulative Water Deficit by Month</h2><span class="chevron">︿</span></button>
-      <div class="section-body">
-        <div class="panel-sub" style="margin-bottom:10px;">Inches. Same total, reset on the 1st of each month. <span style="color:var(--neg); font-weight:600;">Above 0 = behind</span> · <span style="color:var(--pos); font-weight:600;">below 0 = ahead</span>. Current year.</div>
-        <div class="two-col">
-          <div class="panel">
-            <h3 style="font-size:var(--fs-md); margin-bottom:6px;">Bermuda</h3>
-            <div class="chart-wrap tall"><canvas id="chartCumDefMonthBermuda"></canvas></div>
-          </div>
-          <div class="panel">
-            <h3 style="font-size:var(--fs-md); margin-bottom:6px;">Fescue</h3>
-            <div class="chart-wrap tall"><canvas id="chartCumDefMonthFescue"></canvas></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ================= 5. ET WEEKLY ================= -->
     <section class="collapsible" id="sec-etweekly-bermuda" data-tab="irrigation">
       <button class="section-toggle" data-target="sec-etweekly-bermuda" data-icon="droplet"><h2>Water Needed, 7-Day Rolling Avg</h2><span class="chevron">︿</span></button>
@@ -1359,7 +1351,7 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
       <div class="section-body">
         <div class="two-col">
           <div class="panel">
-            <h3 style="font-size:var(--fs-md); margin-bottom:6px;">Rain + Irrigation vs. Need This Week (inches)</h3>
+            <h3 style="font-size:var(--fs-md); margin-bottom:6px;">Rain + irrigation Need (in)</h3>
             <div class="panel-sub" id="waterRadarWeekLabel" style="margin-bottom:10px;"></div>
             <div class="chart-wrap zone-tall"><canvas id="chartWaterRadar"></canvas></div>
           </div>
@@ -1395,22 +1387,22 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
 
     <!-- ================= IRRIGATION BUDGET CALCULATOR ================= -->
     <section class="collapsible" id="sec-budget" data-tab="calculator">
-      <button class="section-toggle" data-target="sec-budget" data-icon="droplet"><h2>Irrigation Budget Calculator</h2><span class="chevron">︿</span></button>
+      <button class="section-toggle" data-target="sec-budget" data-icon="droplet"><h2>Water Calculator</h2><span class="chevron">︿</span></button>
       <div class="section-body">
         <div class="kpi-row" id="budgetNeedKpis"></div>
         <div class="panel">
           <div class="bud-controls">
             <div class="bud-chips" id="budChips"></div>
             <div class="filter-field">
-              <label for="budTarget">Water needed (in / week)</label>
+              <label for="budTarget">Water needed</label>
               <input id="budTarget" type="number" inputmode="decimal" step="0.05" min="0" value="1.50">
             </div>
             <div class="filter-field">
-              <label for="budDays">Watering days per week</label>
+              <label for="budDays">Water days per week</label>
               <select id="budDays"></select>
             </div>
             <div class="filter-field">
-              <label for="budAgg">Program budget based on</label>
+              <label for="budAgg">Program based on</label>
               <select id="budAgg">
                 <option value="avg">Average of zones</option>
                 <option value="max">Highest-need zone (none short)</option>
@@ -1418,18 +1410,15 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
               </select>
             </div>
           </div>
-          <div class="bud-summary" id="budSummary"></div>
-        </div>
+          </div>
         <div id="budgetPrograms"></div>
         <div class="bud-legendrow"><div class="bud-legend" id="budLegend">"At budget" column: <span class="bud-ok">on target (±5%)</span> · <span class="bud-lo">short</span> · <span class="bud-hi">over</span></div><button type="button" class="bud-mathbtn" id="budMathAll">Show all zone detail</button></div>
         <div class="panel" id="ctlPanel">
           <h3>Push to controller</h3>
-          <div class="panel-sub">Send the budgets above or a rain delay to the B-hyve. Nothing changes until you confirm.</div>
           <div id="ctlBody"><div class="wt-msg">Connecting to the controller…</div></div>
         </div>
         <div class="panel" id="budTimelinePanel">
           <h3 style="font-size:var(--fs-lg); margin-bottom:2px;">When each program finishes</h3>
-          <div class="panel-sub" style="margin-bottom:12px;">Run time = baseline × budget × cycles per day, plus any gap between cycles.</div>
           <div class="bud-controls">
             <div class="filter-field"><label for="budStart">Programs start at</label><input id="budStart" type="time" value="04:00"></div>
             <div class="filter-field"><label for="budWinEnd">Watering window ends</label><input id="budWinEnd" type="time" value="12:00"></div>
@@ -1442,7 +1431,7 @@ button.lay-tabhead{ padding:10px 4px 6px; border-top:1px solid var(--line-soft);
           <div id="budTimeline" style="margin-top:14px;"></div>
         </div>
         <details class="panel bud-setup" id="budSetup">
-          <summary>Zone setup: baseline times, cycles &amp; precip rates</summary>
+          <summary>Zone setup: baseline times</summary>
           <div id="budSetupBody"></div>
         </details>
       </div>
@@ -2259,7 +2248,15 @@ function fmtCentral(isoStr, opts={}){
   return new Intl.DateTimeFormat('en-US', {
     timeZone:'America/Chicago', month:'short', day:'numeric',
     ...(opts.dateOnly ? {} : {hour:'numeric', minute:'2-digit', hour12:true}),
-  }).format(d) + (opts.dateOnly ? '' : ' CT');
+  }).format(d);
+}
+// "11/25 10:05pm" (Central implied)
+function fmtShortCT(isoStr){
+  if (!isoStr) return null;
+  const d = new Date(isoStr); if (isNaN(d.getTime())) return null;
+  const p = {}; new Intl.DateTimeFormat('en-US', { timeZone:'America/Chicago', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true })
+    .formatToParts(d).forEach(x => { p[x.type] = x.value; });
+  return `${p.month}/${p.day} ${p.hour}:${p.minute}${String(p.dayPeriod || '').toLowerCase()}`;
 }
 
 async function renderDataFreshness(){
@@ -2267,16 +2264,13 @@ async function renderDataFreshness(){
     supa.from('weather_daily').select('weather_date,updated_at').order('weather_date',{ascending:false}).limit(1),
     supa.from('irrigation_runs').select('start_time').order('start_time',{ascending:false}).limit(1),
   ]);
-  const parts = [];
   const wx = wxRes.data && wxRes.data[0];
-  if (wx) {
-    const upd = fmtCentral(wx.updated_at);
-    parts.push(`Weather data through ${fmtCentral(wx.weather_date, {dateOnly:true})}${upd ? ' (synced '+upd+')' : ''}`);
-  }
   const irr = irrRes.data && irrRes.data[0];
-  if (irr) parts.push(`Irrigation data through ${fmtCentral(irr.start_time)}`);
+  const wTxt = wx ? (fmtShortCT(wx.updated_at) || fmtShortCT(wx.weather_date + 'T12:00:00Z').split(' ')[0]) : null;
+  const iTxt = irr ? fmtShortCT(irr.start_time) : null;
+  const bits = [wTxt && `Weather ${wTxt}`, iTxt && `irrigation ${iTxt}`].filter(Boolean);
   const el = $('#dataFreshness');
-  if (el) el.textContent = parts.join('   ·   ');
+  if (el) el.textContent = bits.length ? 'Data sync: ' + bits.join(', ') : '';
   const syncTxt = $('#syncTxt'), syncDot = $('#syncDot');
   // amber after 12 h without a weather update, red after 36 h (the weather puller normally runs every 5 minutes)
   const ageH = wx && wx.updated_at ? (Date.now() - new Date(wx.updated_at).getTime()) / 36e5 : Infinity;
@@ -2306,8 +2300,14 @@ async function renderOverviewKpis(){
 
     kpis.push(compareCard('High today', today.temp_high_f, avgHigh30, '°F', 0, 'vs 30d avg'));
     kpis.push(compareCard('Low today', today.temp_low_f, avgLow30, '°F', 0, 'vs 30d avg'));
-    kpis.push(compareCard('Rain today', today.rain_in, totalRain30, 'in', 2, 'vs 30d total'));
-    kpis.push({label:'Rain this week', value:num(weekRows.reduce((s,r)=>s+(r.rain_in||0),0),2), unit:'in'});
+    const rainToday = compareCard('Rain today', today.rain_in, totalRain30, 'in', 2, 'vs 30d total');
+    if (today.rain_in != null && !(Number(today.rain_in) >= 0.005)) { rainToday.value = '---'; rainToday.unit = ''; }
+    kpis.push(rainToday);
+    // "this week" resets every Sunday, so the trailing 7 days sits under it
+    const weekRain = weekRows.reduce((s,r)=>s+(r.rain_in||0),0);
+    const trail7 = wx.filter(r => r.weather_date >= fmtDate(daysAgo(6))).reduce((s,r)=>s+(r.rain_in||0),0);
+    kpis.push({label:'Rain this week', value: weekRain >= 0.005 ? num(weekRain,2) : '---', unit: weekRain >= 0.005 ? 'in' : '',
+      sub: `Trailing 7d: ${trail7 >= 0.005 ? num(trail7,2) + ' in' : '---'}`});
   } else {
     ['High today','Low today','Rain today','Rain this week']
       .forEach(l=>kpis.push({label:l,value:'n/a'}));
@@ -3192,8 +3192,6 @@ async function initTrendCharts(){
     }),
     buildDeficitChart('bermuda', 'chartDeficitBermuda', 'sl-deficit-bermuda'),
     buildDeficitChart('fescue', 'chartDeficitFescue', 'sl-deficit-fescue'),
-    buildCumulativeDeficitCharts('bermuda', 'chartCumDefYearBermuda', 'chartCumDefMonthBermuda'),
-    buildCumulativeDeficitCharts('fescue', 'chartCumDefYearFescue', 'chartCumDefMonthFescue'),
     buildMultiYearChart({
       chartId:'chartEtWeeklyBermuda', sliderContainerId:'sl-etweekly-bermuda', cumulative:false, yLabel:'inches / week', zeroFloorY:true,
       fetchRows: async () => rollingWeeklyRows('bermuda')
@@ -3313,14 +3311,6 @@ async function buildWaterRadarChart(){
     if (distinctDays > 0 && distinctDays < 7) needAvg = (needAvg / distinctDays) * 7;
     needVals.push(Number(needAvg.toFixed(2)));
   });
-
-  // one-line answer to "how much do I still need to water?": the whole-property average
-  if (labelEl){
-    const mean = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
-    const still = mean(needVals.map((n, i) => Math.max(0, n - totalVals[i])));
-    labelEl.innerHTML = `Week of ${weekFmt(sunday)} - ${weekFmt(saturday)} (Sun-Sat)<br>` +
-      `<span style="color:var(--text);">Average across groups: need <b>${num(mean(needVals),2)}</b> in, rain <b>${num(mean(rainVals),2)}</b>, irrigation <b>${num(mean(appliedVals),2)}</b>, still needed <b>${num(still,2)}</b> in</span>`;
-  }
 
   makeChart('chartWaterRadar', {
     type: 'radar',
@@ -4106,12 +4096,12 @@ checkSession();
 <div id="layoutOverlay"></div>
 <aside id="layoutPanel" aria-hidden="true" aria-label="Layout settings">
   <div class="lay-head"><h2>Page settings</h2><button id="layoutClose" class="icon-btn" type="button" aria-label="Close">✕</button></div>
-  <p class="lay-help">Show, hide, pin and reorder every card. Press <b>Layout</b> on a page to drag and resize.</p>
   <div id="layScroll">
-  <div id="notifyBox" class="lay-ranges nt-box"></div>
+  <div class="lay-sec" id="notifySec"><button type="button" class="lay-fold lay-sechead" id="notifyHead" aria-expanded="false">Notifications<span class="lay-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+  <div id="notifyBox" class="lay-ranges nt-box" hidden></div></div>
   <div id="layoutList"></div>
   </div>
-  <div class="lay-build" id="layBuild">TurfOps build: 2026-11-05 · build 31 (By Zone: rain first)</div>
+  <div class="lay-build" id="layBuild">TurfOps build: 2026-11-25 · build 32 (header, calculator and settings tidy)</div>
   <div class="lay-foot"><button class="btn ghost" id="layoutReset" type="button">Reset all pages</button><button class="btn" id="layoutDone" type="button">Done</button></div>
 </aside>
 <script>
@@ -4304,24 +4294,11 @@ checkSession();
     const sel = el('budFollow'); if (sel && !state.follow) sel.value = 'custom';
   }
 
-  function renderSummary(){
-    const d = persist.days;
-    const netFollow = state.follow === 'bermuda' || state.follow === 'fescue';
-    const covered = netFollow && state.target <= 0.005;
-    el('budSummary').innerHTML = (covered ? `<b>Rain covered the last 7 days, so no watering is needed.</b> The budgets below sit at the controller's ${MIN_PCT}% floor; pausing the program or a rain delay skips it completely. ` : '') +
-      `${num(state.target, 2)} in/week ÷ ${d} watering day${d > 1 ? 's' : ''} = <b>${num(state.target / d, 2)} in per watering day</b>. ` +
-      `Budget only scales run time per cycle. Start times, programs and cycle counts stay as scheduled.`;
-  }
+  function renderSummary(){}   // the Weekly target card shows only its four fields
 
   function programHtml(r, t){
     const { p, cyc, rows, pct, raw, clamped } = r;
     const open = !!persist.open[p.key];
-    let note = '';
-    if (clamped) note = raw > MAX_PCT
-      ? `Needs ${raw}%, over the ${MAX_PCT}% cap. Add a watering day to bring it in range.`
-      : (state.target <= 0.005 ? `Nothing to put back this week. ${MIN_PCT}% is the lowest budget the controller allows.` : `Needs ${raw}%, under the ${MIN_PCT}% floor. Water on fewer days.`);
-    else if (pct == null) note = 'No zones counted. Turn one on in Zone setup below.';
-
     const body = rows.map(x => {
       const nr = x.needPct == null ? null : Math.round(x.needPct);
       const needCls = nr != null && (nr > MAX_PCT || nr < MIN_PCT) ? 'bud-lo' : '';
@@ -4337,11 +4314,10 @@ checkSession();
 
     return `<div class="panel">
       <div class="bud-prog-head">
-        <div><h3>${esc(p.title)}</h3><div class="bud-area">${esc(p.area)} · ${cyc} cycles per watering day (times are per cycle)</div>
+        <div><h3>${esc(p.title)}</h3><div class="bud-area">${esc(p.area)}</div>
           <button type="button" class="bud-mathbtn" data-math="${p.key}" aria-expanded="${open}">${open ? '▾ Hide' : '▸ Show'} zone detail · ${rows.length} zones</button></div>
         <div class="bud-set"><div class="lbl">Set budget to</div><div class="big ${clamped ? 'warn' : ''}">${pct == null ? 'n/a' : pct + '%'}</div>${t && t.end != null ? `<div class="bud-ends ${t.over ? 'warn' : ''}">ends ${fmtClock(t.end)}</div>` : ''}</div>
       </div>
-      ${note ? `<div class="bud-note">${note}</div>` : ''}
       ${r.placeholder ? `<div class="bud-note" style="color:var(--text-secondary);">Run times and cycles for ${esc(p.title)} are placeholders (copied from each zone's other program). Enter its real times in Zone setup below, or <a href="#" data-confirm-prog="${p.key}" style="color:var(--turf);font-weight:600;">use these as-is</a>.</div>` : ''}
       <div class="bud-math" ${open ? '' : 'hidden'}><div class="table-wrap" style="max-height:none;"><table class="data bud-table">
         <thead><tr><th>Zone</th><th>Baseline</th><th>Budget needed</th><th>At ${pct == null ? 'n/a' : pct + '%'} budget</th></tr></thead>
@@ -4359,9 +4335,10 @@ checkSession();
     const pctOf = m => Math.max(0, Math.min(100, (m - domStart) / span * 100));
 
     document.querySelectorAll('#budMode button').forEach(b => b.classList.toggle('on', b.dataset.mode === persist.mode));
-    el('budModeNote').textContent = persist.mode === 'queue'
+    const mn = el('budModeNote'); mn.hidden = persist.mode !== 'queue';
+    mn.textContent = persist.mode === 'queue'
       ? `Everything is scheduled for the same morning: Program A starts at ${fmtClock(startMin)}, B starts when A finishes, then C, then D.`
-      : `Each program begins at ${fmtClock(startMin)} on its own watering day.`;
+      : '';
 
     const blocks = results.map((r, i) => {
       const t = tl[i], p = r.p;
@@ -4370,12 +4347,10 @@ checkSession();
       const inEnd = Math.min(t.end, winEnd), overStart = Math.max(t.start, winEnd);
       const bars = (inEnd > t.start ? `<div class="bud-tl-bar" style="left:${pctOf(t.start)}%;width:${pctOf(inEnd) - pctOf(t.start)}%"></div>` : '') +
                    (t.end > winEnd ? `<div class="bud-tl-bar over" style="left:${pctOf(overStart)}%;width:${pctOf(t.end) - pctOf(overStart)}%"></div>` : '');
-      const detail = `${fmtClock(t.start)} → ${fmtClock(t.end)} · ${r.cyc} × ${fmtMin(t.perCycle)} min` +
-        (t.gaps ? ` + ${fmtMin(t.gaps)} min between cycles` : '') + ` = ${fmtDur(t.total)}` +
-        (t.over ? ` <span class="warn">⚠ ${fmtDur(t.overBy)} past ${fmtClock(winEnd)}</span>` : '');
-      return `<div class="bud-tl-block">${head('ends ' + fmtClock(t.end), t.over ? 'over' : '')}
+      const detail = t.over ? `<span class="warn">⚠ ${fmtDur(t.overBy)} past ${fmtClock(winEnd)}</span>` : '';
+      return `<div class="bud-tl-block">${head(`${fmtClock(t.start)} - ${fmtClock(t.end)}`.replace(/ AM/g, ' am').replace(/ PM/g, ' pm'), t.over ? 'over' : '')}
         <div class="bud-tl-track">${bars}<div class="bud-tl-win" style="left:${pctOf(winEnd)}%"></div></div>
-        <div class="bud-tl-detail">${detail}</div></div>`;
+        ${detail ? `<div class="bud-tl-detail">${detail}</div>` : ''}</div>`;
     }).join('');
 
     const wp = pctOf(winEnd);
@@ -4417,11 +4392,7 @@ checkSession();
         </tr>`;
       });
     });
-    host.innerHTML = `<p class="panel-sub" style="margin:10px 0 12px;">
-        Gap = idle minutes between one cycle finishing and the next starting (0 = cycles run back-to-back), used for the finish times.
-        Baseline = the run time per cycle in your B-hyve program at 100% budget. Precip rates are read from your zones table;
-        changing one here overrides it on this device only. Zones left unchecked are shown but not counted toward a program's budget
-        (zone 11, the mister, starts unchecked).</p>
+    host.innerHTML = `
       <div class="table-wrap" style="max-height:none;"><table class="data bud-table bud-setup-table">
         <thead><tr><th>Zone</th><th>Min / cycle</th><th>Precip in/hr</th><th>Count</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
@@ -4813,7 +4784,7 @@ async function onCtlClick(e){
 
   const main = document.querySelector('main'); if (!main) return;
   const TABS = ['overview', 'temps', 'rain', 'irrigation', 'calculator', 'records'];
-  const TAB_LABELS = { overview: 'Overview', temps: 'Temperature', rain: 'Rain', irrigation: 'Irrigation', calculator: 'Calculator', records: 'Records' };
+  const TAB_LABELS = { overview: 'Overview', temps: 'Temps', rain: 'Rain', irrigation: 'Irrigation', calculator: 'Calculator', records: 'Records' };
   const normKey = t => String(t || '').toLowerCase().replace(/[’'°%()]/g, '').replace(/[^a-z0-9&+]+/g, '-').replace(/^-+|-+$/g, '') || 'card';
 
   /* =====================================================================
@@ -4862,6 +4833,7 @@ async function onCtlClick(e){
       if (h3 && h3.tagName === 'H3') { h3.removeAttribute('style'); head.appendChild(h3); if (!showEyebrow) { h3.insertAdjacentHTML('afterbegin', icon ? `<span class="ce-ic">${icon}</span>` : ''); h3.insertAdjacentHTML('beforeend', `<span class="ce-from">${esc(TAB_LABELS[tab])}</span>`); } }
       // the section's subtitle: on every card of a pair (Bermuda / Fescue), only the first card of a longer section
       if ((!u.misc || $('#overviewKpis', el) || $('#budgetNeedKpis', el)) && (i === 0 || units.length <= 2)) subs.forEach((s, si) => { const n = i === 0 ? s : s.cloneNode(true); if (i) n.removeAttribute('id'); n.classList.add('card-sub'); head.appendChild(n); });
+      { const otd = $('#onThisDayLabel', head), hh = $('h3', head); if (otd && hh) { otd.classList.remove('card-sub'); otd.classList.add('otd-date'); hh.appendChild(otd); } }   // date sits right-aligned on the title row
       if (h3 && h3.tagName === 'SUMMARY') el.insertBefore(head, h3.nextSibling); else el.insertBefore(head, el.firstChild);
       grid.appendChild(el);
     });
@@ -4876,10 +4848,8 @@ async function onCtlClick(e){
     if (c) { const hold = document.createElement('div'); hold.hidden = true; hold.id = 'hiddenHold'; document.body.appendChild(hold); hold.appendChild(nk); c.remove(); } }
   const GRASSES = [['bermuda', 'Bermuda'], ['fescue', 'Fescue']];
   const MERGES = [
-    { key: 'deficit', title: 'Water deficit', grass: true, views: [
-        ['running', 'Cum', { bermuda: 'chartDeficitBermuda', fescue: 'chartDeficitFescue' }],
-        ['ytd', 'YTD', { bermuda: 'chartCumDefYearBermuda', fescue: 'chartCumDefYearFescue' }],
-        ['monthly', 'By month', { bermuda: 'chartCumDefMonthBermuda', fescue: 'chartCumDefMonthFescue' }]] },
+    { key: 'deficit', title: 'Water deficit (in)', grass: true, views: [
+        ['running', 'Cum', { bermuda: 'chartDeficitBermuda', fescue: 'chartDeficitFescue' }]] },
     { key: 'etweekly', title: 'Water needed, 7-day rolling avg', grass: true, views: [['all', '', { bermuda: 'chartEtWeeklyBermuda', fescue: 'chartEtWeeklyFescue' }]] },
     { key: 'balance', title: 'What the grass needed vs. what it got', grass: true, extra: '#wbRangeChips', views: [['all', '', { bermuda: 'chartBalanceBermuda', fescue: 'chartBalanceFescue' }]] },
   ];
@@ -5249,7 +5219,7 @@ async function onCtlClick(e){
   UI.presets ||= {};
   function presetsHtml(){
     const names = Object.keys(UI.presets).sort();
-    return `<div class="lay-ranges"><h3>Saved layouts</h3><p>Save how every page is arranged right now, then switch back any time (e.g. Summer, Winter).</p>
+    return `<div class="lay-ranges lay-in"><h3>Saved layouts</h3><p>Save how every page is arranged right now, then switch back any time (e.g. Summer, Winter).</p>
       <div class="pre-save"><input class="pre-in" id="preName" maxlength="40" placeholder="Name, e.g. Summer"><button type="button" class="btn" id="preSave">Save</button></div>
       ${names.length ? names.map(n => `<div class="lay-row pre-row" data-pre="${esc(n)}"><div class="lay-name">${esc(n)}<span class="lay-count">${new Date(UI.presets[n].savedAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' })}</span></div>
         <button type="button" class="btn ghost pre-btn" data-pre-act="apply">Use</button><button type="button" class="lay-ic" data-pre-act="del" title="Delete">✕</button></div>`).join('') : '<p class="lay-dev">No saved layouts yet.</p>'}</div>`;
@@ -5280,8 +5250,12 @@ async function onCtlClick(e){
     const dk = devKey();
     const chev = '<span class="lay-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>';
     const open = (k, def) => (k in FOLD ? !FOLD[k] : def);
-    const layOpen = open('layout', true);
-    list.innerHTML = `<button type="button" class="lay-fold lay-dev" data-fold="layout" aria-expanded="${layOpen}">${dk === 'phone' ? 'Phone' : 'Computer'} layout${chev}</button><div class="lay-fold-body" ${layOpen ? '' : 'hidden'}>` + TABS.map(t => {
+    // top-level sections (Notifications, Layout, Default day ranges, Chart animation) all start folded and remember their state
+    const sec = (k, title, extra, body) => { const o = open('sec:' + k, false);
+      return `<div class="lay-sec"><button type="button" class="lay-fold lay-sechead" data-fold="sec:${k}" aria-expanded="${o}">${title}${extra || ''}${chev}</button><div class="lay-fold-body" ${o ? '' : 'hidden'}>${body}</div></div>`; };
+    const nh = $('#notifyHead'), nb = $('#notifyBox');
+    if (nh && nb) { const o = open('sec:notify', false); nh.setAttribute('aria-expanded', String(o)); nb.hidden = !o; }
+    const tabsHtml = TABS.map(t => {
       const L = UI.layout[t] || {}, H = LGET(L, 'hidden'), keys = t === 'overview' ? [...Object.keys(CARDS).filter(k => CARDS[k].home === 'overview'), ...UI.pins] : Object.keys(CARDS).filter(k => CARDS[k].home === t);
       const O = LGET(L, 'order'), ord = keys.map((k, i) => ({ k, o: O.indexOf(k) < 0 ? 1000 + i : O.indexOf(k) })).sort((a, b) => a.o - b.o).map(x => x.k);
       const tOpen = open('tab:' + t, t === cur);
@@ -5291,13 +5265,19 @@ async function onCtlClick(e){
           ${canPin && t !== 'overview' ? `<button type="button" class="lay-ic ${pin ? 'on' : ''}" data-act="pin" title="${pin ? 'Unpin from' : 'Pin to'} Overview">${svg(IC.pin, 1.8)}</button>` : ''}
           <button type="button" class="lay-ic ${hid ? '' : 'on'}" data-act="hide" title="${hid ? 'Show' : 'Hide'}">${svg(hid ? IC.eyeOff : IC.eye)}</button>
           <div class="lay-btns"><button type="button" data-act="up" ${i ? '' : 'disabled'} aria-label="Move up">▲</button><button type="button" data-act="down" ${i < ord.length - 1 ? '' : 'disabled'} aria-label="Move down">▼</button></div></div>`; }).join('') + '</div>';
-    }).join('') + `</div><div class="lay-ranges"><h3>Default day ranges</h3>
-      <p>What each chart group shows when the page opens.</p>` +
+    }).join('');
+    const rangesHtml = `<div class="lay-ranges lay-in"><p>What each chart group shows when the page opens.</p>` +
       RANGE_UI.map(u => `<label for="layRange-${u.key}">${esc(u.label)}</label>
-        <select id="layRange-${u.key}" data-range="${u.key}">${u.opts.map(o => `<option value="${o[0]}" ${o[0] === rangeDefaults[u.key] ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`).join('') + `</div>`
-      + `<div class="lay-ranges"><h3>Chart animation <span class="lay-count" id="layAnimV">${ANIMATION_SPEED_MS ? ANIMATION_SPEED_MS + ' ms / point' : 'Instant'}</span></h3><input type="range" id="layAnim" min="0" max="30" step="0.5" value="${ANIMATION_SPEED_MS}" style="width:100%;accent-color:var(--brand-500)"></div>`
-      + presetsHtml();
+        <select id="layRange-${u.key}" data-range="${u.key}">${u.opts.map(o => `<option value="${o[0]}" ${o[0] === rangeDefaults[u.key] ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`).join('') + `</div>`;
+    const animHtml = `<div class="lay-ranges lay-in"><input type="range" id="layAnim" min="0" max="30" step="0.5" value="${ANIMATION_SPEED_MS}" style="width:100%;accent-color:var(--brand-500)"></div>`;
+    list.innerHTML =
+      sec('layout', 'Layout', `<span class="lay-count">${dk === 'phone' ? 'Phone' : 'Computer'}</span>`,
+        `<p class="lay-help">Show, hide, pin and reorder every card. Press <b>Layout</b> on a page to drag and resize.</p>` + tabsHtml + presetsHtml()) +
+      sec('ranges', 'Default day ranges', '', rangesHtml) +
+      sec('anim', 'Chart animation', `<span class="lay-count" id="layAnimV">${ANIMATION_SPEED_MS ? ANIMATION_SPEED_MS + ' ms / point' : 'Instant'}</span>`, animHtml);
   }
+  const notifyHead = $('#notifyHead');
+  if (notifyHead) notifyHead.addEventListener('click', () => { FOLD['sec:notify'] = notifyHead.getAttribute('aria-expanded') === 'true'; try { localStorage.setItem(FOLD_KEY, JSON.stringify(FOLD)); } catch (err) {} drawer(); });
   if (list) {
     list.addEventListener('click', e => {
       const fb = e.target.closest('[data-fold]');
@@ -5354,15 +5334,9 @@ async function onCtlClick(e){
    ============================================================ */
 (function eckertShell(){
   'use strict';
-  const TITLES = { overview: 'Overview', temps: 'Temperature', rain: 'Rain', irrigation: 'Irrigation', calculator: 'Budget calculator', records: 'Records' };
-  const SUBS = {
-    temps: 'Daily highs, lows and feels-like, year over year',
-    rain: 'Rainfall totals against past years',
-    irrigation: 'What the grass needed against what it got',
-    calculator: 'Turn a weekly water target into B-hyve budgets',
-    records: 'Records, reference and the data explorer',
-  };
-  const todayLabel = () => new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const TITLES = { overview: 'Overview', temps: 'Temps', rain: 'Rain', irrigation: 'Irrigation', calculator: 'Water calculator', records: 'Records' };
+  const SUBS = {};   // no page subtitles except the Overview date
+  const todayLabel = () => { const d = new Date(); return d.toLocaleDateString('en-US', { weekday: 'long' }) + ', ' + (d.getMonth() + 1) + '/' + d.getDate(); };
 
   // page title + active sidebar item follow the bottom tabs
   document.addEventListener('turfops:tab', e => {
@@ -5457,7 +5431,7 @@ async function onCtlClick(e){
   'use strict';
   const TABS = ['overview', 'temps', 'rain', 'irrigation', 'calculator', 'records'];
   const RANGE_TABS = ['temps', 'rain', 'irrigation'];            // tabs whose charts follow the shared Years & range bar
-  const RANGE_SECTIONS = ['sec-daily-highs', 'sec-feels-high', 'sec-cum-rain', 'sec-deficit-bermuda', 'sec-cumdef-year', 'sec-cumdef-month', 'sec-etweekly-bermuda'];
+  const RANGE_SECTIONS = ['sec-daily-highs', 'sec-feels-high', 'sec-cum-rain', 'sec-deficit-bermuda', 'sec-etweekly-bermuda'];
   const KEY = 'turfops.tab';
   const main = document.querySelector('main'), nav = document.getElementById('bottomTabs'), empty = document.getElementById('tabEmpty');
   if (!main || !nav) return;
@@ -5609,14 +5583,14 @@ window.turfNotify = (() => {
   }
   function render(){
     if (!box) return;
-    if (!ST.loaded) { box.innerHTML = '<h3>Notifications</h3><p>Loading…</p>'; return; }
+    if (!ST.loaded) { box.innerHTML = '<p>Loading…</p>'; return; }
     const r = ST.row || {}, em = !!r.email_on, pu = r.push_on !== false, dis = ST.busy ? 'disabled' : '';
     const sw = (id, on, d) => `<label class="nt-sw"><input type="checkbox" id="${id}" ${on ? 'checked' : ''} ${d || ''}><span></span></label>`;
     let dev;
     if (!pushOK) dev = isIOS && !standalone ? 'On iPhone, add TurfOps to your Home Screen (Share → Add to Home Screen) and open it from there to turn on push.' : 'This browser can\'t receive push notifications.';
     else if (Notification.permission === 'denied') dev = 'Notifications are blocked for this site in this browser.';
     else dev = ST.sub ? 'This device gets the push.' : 'This device is not getting the push yet.';
-    box.innerHTML = `<h3>Notifications</h3><p>A morning digest: water today or not, yesterday, the week, rain coming, and the controller.</p>
+    box.innerHTML = `<p>A morning digest: water today or not, yesterday, the week, rain coming, and the controller.</p>
       <div class="nt-row"><div>Email digest<small>${h(r.email || (ST.me && ST.me.email) || '')}</small></div>${sw('ntEmail', em, dis)}</div>
       <div class="nt-row"><div>Push to this device<small class="nt-dev">${h(dev)}</small></div>${sw('ntPush', pushOK && !!ST.sub, (!pushOK || ST.busy) ? 'disabled' : '')}</div>
       <label for="ntMode">Push</label><select id="ntMode" ${dis}><option value="daily" ${r.push_mode !== 'alerts' ? 'selected' : ''}>Every morning</option><option value="alerts" ${r.push_mode === 'alerts' ? 'selected' : ''}>Only when there's something to do</option></select>
