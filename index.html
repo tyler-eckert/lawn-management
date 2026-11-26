@@ -5138,6 +5138,7 @@ async function onCtlClick(e){
   /* ---------- non-chart cards: extra height (taller = more room, shorter = scrolls) ---------- */
   function fitTallCards(page){
     pageCards(page).forEach(c => { const ex = +(c.dataset.extra || 0); if (!ex || chartBox(c) || c.classList.contains('lay-locked')) return;
+      if (ex < 0 && c.querySelector('.kpi-row')) return;   // the At a glance tiles never scroll or clip, whatever shorter height was saved
       c.style.alignSelf = 'start'; const nat = c.getBoundingClientRect().height;
       if (ex > 0) c.style.minHeight = (nat + ex) + 'px'; else { c.style.height = Math.max(90, nat + ex) + 'px'; c.classList.add('lay-tall-scroll'); } });
     packFree(page);
