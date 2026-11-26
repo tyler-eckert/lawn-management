@@ -4958,6 +4958,9 @@ async function onCtlClick(e){
     Object.values(UI.layout).forEach(L => ['orderBy', 'hiddenBy'].forEach(f => { if (L[f]) Object.keys(L[f]).forEach(dk => { L[f][dk] = uniq((L[f][dk] || []).map(mapK)); }); })); }
   /* ---------- device kind, sizes ---------- */
   const devKey = () => innerWidth <= 860 ? 'phone' : 'desk';
+  // Card heights saved by an older build were measured against content that has since changed (this build trims several cards);
+  // they are ignored until Layout > Done is pressed again on that device, so cards don't keep stale blank space.
+  const LOCK_VER = 32;
   const SIZES = { desk: [2, 3, 4, 5, 6, 7, 8, 9, 10, 12], phone: [4, 6, 12] };
   const SIZE_NAME = n => ({2: '⅙', 3: '¼', 4: '⅓', 5: '5/12', 6: '½', 7: '7/12', 8: '⅔', 9: '¾', 10: '⅚', 11: '11/12', 12: 'Full'})[n] || n + '/12';
   const isCompact = () => UI.compact[devKey()] !== false;   // on unless turned off for this kind of device
@@ -4969,7 +4972,7 @@ async function onCtlClick(e){
   const LDK = (page, key) => { const L = pageLayout(page), dk = devKey(); L[key + 'By'] ||= {}; if (!L[key + 'By'][dk]) L[key + 'By'][dk] = (L[key] || []).slice(); return L[key + 'By'][dk]; };
   const setOrder = (page, list) => { LDK(page, 'order'); pageLayout(page).orderBy[devKey()] = list; };
   function resetPageDev(page){ const L = UI.layout[page]; if (!L) return; const dk = devKey();
-    (L.orderBy ||= {})[dk] = []; (L.hiddenBy ||= {})[dk] = []; ['size', 'tall', 'free', 'pos', 'lock'].forEach(k => { if (L[k]) delete L[k][dk]; }); }
+    (L.orderBy ||= {})[dk] = []; (L.hiddenBy ||= {})[dk] = []; ['size', 'tall', 'free', 'pos', 'lock', 'lockVer'].forEach(k => { if (L[k]) delete L[k][dk]; }); }
   const spanOf = el => { const cs = getComputedStyle(el), m = cs.gridColumnEnd.match(/span (\d+)/) || cs.gridColumnStart.match(/span (\d+)/); return m ? +m[1] : 12; };
 
   /* ---------- current tab ---------- */
@@ -5053,7 +5056,7 @@ async function onCtlClick(e){
         const cw = chartBox(c.el);
         // a saved height smaller than a chart can show came from the old bug (it measured a hidden view): ignore it
         if (cw && TL[c.k]) { const b0 = chartBase(cw); if (b0 + TL[c.k] >= MIN_CHART_H) { const h = (b0 + TL[c.k]) + 'px'; boxes.forEach(w => { w.style.height = h; w.style.flex = 'none'; }); } } }
-      const LKH = !LAYOUT_EDIT && L.lock && L.lock[dk] && L.lock[dk][c.k]; c.el.classList.toggle('lay-locked', !!LKH);
+      const LKH = !LAYOUT_EDIT && L.lockVer && L.lockVer[dk] === LOCK_VER && L.lock && L.lock[dk] && L.lock[dk][c.k]; c.el.classList.toggle('lay-locked', !!LKH);
       // a locked tile keeps AT LEAST its saved height (nothing below it jumps up), but grows when its content needs more
       if (LKH) { c.el.style.minHeight = LKH + 'px'; c.el.style.alignSelf = 'start'; }
       if (!LAYOUT_EDIT) fitMinWidth(c.el, FREE);
@@ -5123,7 +5126,7 @@ async function onCtlClick(e){
     [list[i], list[j]] = [list[j], list[i]]; setOrder(page, list); SYNC.schedule(); render();
   }
   // Done: every card's current height is locked in, per device -- outside Layout a card never gets shorter than that
-  function layLock(page){ const dk = devKey(), L = pageLayout(page), K = ((L.lock ||= {})[dk] = {});
+  function layLock(page){ const dk = devKey(), L = pageLayout(page), K = ((L.lock ||= {})[dk] = {}); (L.lockVer ||= {})[dk] = LOCK_VER;
     pageCards(page).forEach(c => { if (!c.dataset.cid || c.style.display === 'none' || c.classList.contains('lay-hidden')) return; const h = Math.round(c.getBoundingClientRect().height); if (h > 20) K[c.dataset.cid] = h; });
     SYNC.schedule(); }
   function setEdit(on){
